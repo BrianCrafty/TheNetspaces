@@ -1,0 +1,41 @@
+function toCodeoneliner_(that,strArgs){
+	/*TODO: else and all the = ; checks*/
+	/*to ensure that the JavaScript oneliner is always correct*/
+	alert("toCodeoneliner");
+	var intIndent;
+	var intCounter=0;
+	var intCounterLimit=netspace.wndEditing.lstTextBuffer_fastCruncher.length+1;
+	var strOneliner="";
+	var strLine="";
+	var intCounterProgress=Math.floor(0.01*(intCounterLimit-2));
+	var intPercent=0;
+	console.log("Progress="+intPercent+"% intCounter="+intCounter);
+	for(var jj=0;jj<netspace.wndEditing.lstTextBuffer_fastCruncher.length;jj++){
+		strLine=netspace.wndEditing.lstTextBuffer_fastCruncher[jj];
+		intIndent=netspace.wndEditing.indentSizeToPreserve(jj);
+		strLine=strLine.substring(intIndent);
+		strOneliner+=netspace.wndEditing.copyString(strLine);
+		if(intCounter>intCounterLimit){
+			console.log("intCounter>intCounterLimit");
+			break;
+		}
+		intCounter++;
+		if(0==intCounter%intCounterProgress){
+			intPercent+=1;
+			console.log("Progress="+intPercent+"% intCounter="+intCounter);
+		}
+	}
+	netspace.wndEditing.lstTextBuffer_fastCruncher=[];
+	netspace.wndEditing.lstTextBuffer_fastCruncher[0]=strOneliner;
+	/*wndEditing.loadEditingText(strOneliner,"toCodeoneliner_fast");*/
+	/*wndEditing.intUndoRedoLimit=intPreviousLineIndent;*/
+	console.log("toCodeoneliner_ done");
+}
+function toCodeoneliner(that,strArgs){
+	that.wndEditing.initFastCruncher(false);
+	/*that.wndEditing.initFastCruncher(true);*/
+	that.runExtension("=>toCodeoneliner_");
+	netspace.wndEditing.loadEditingText_fastCruncher();
+	netspace.wndEditing.updateWndEditing(true);
+	netspace.wndEditing.freeFastCruncher();
+}
