@@ -31,10 +31,10 @@ textarea{background-color:black;
 }
 </style>
 		<script type="text/javascript">
-var strLoadDictionaryFirst="Load dictionary first";
-var strLoadKeyboardDictionaryFirst="Load keyboard dictionary first";
-var varDictionary=null,varDictionaryKeys=null,varDictionaryValues=null;
-var varDictionaryEntries=null;
+var strLoadLanguageDictionaryFirst="Load language dictionary or both first";
+var strLoadKeyboardDictionaryFirst="Load keyboard dictionary or both first";
+var varKeyboardDictionary=null,varKeyboardDictionaryKeys=null,varKeyboardDictionaryValues=null;
+var varKeyboardDictionaryEntries=null;
 var textArea;
 var txtInputs=[];
 var intPreviousTxtInput=-1;
@@ -67,22 +67,23 @@ var txtInput=function(textArea,divInches,chkInches){
 		}
 	};
 };
-var varSlownik=null,varSlownikKeys=null,varSlownikValues=null;
-var varSlownikEntries=null;
+var varLanguageDictionary=null,varLanguageDictionaryKeys=null,varLanguageDictionaryValues=null;
+var varLanguageDictionaryEntries=null;
 var lstLastSearch=[];
 var lstStringsToConvert=["aāáǎà","eēéěè","iíīǐì","oōóǒò","uūúǔù"];
-function btnOpenDictionaryPressed(){
-	openFile(dispFile);
+var strPhraseToFilterOut="";
+function btnOpenKeyboardDictionaryPressed(){
+	openFile(dispKeyboardDictionary);
 }
 function btnOpenBothDictionaryPressed(){
 	openFile(dispBothDictionaries);
 }
-function btnOpenSlownikPressed(){
-	openFile(dispSlownik);
+function btnOpenLanguageDictionaryPressed(){
+	openFile(dispLanguageDictionary);
 }
 function btnFindSymbolsPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var txtSymbols=document.getElementById("txtSymbols");
@@ -92,12 +93,12 @@ function btnFindSymbolsPressed(){
 	var lstEntry,jj=-1;
 	var theKey=null;
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	var intSymbols=-1;
 	var strPinyin,strMeanings0,strMeanings1,strMeaning2;
-	for(var strKey in varSlownik){
-		lstEntry=varSlownik[strKey];
-		intKey=varSlownikKeys.indexOf(strKey);
+	for(var strKey in varLanguageDictionary){
+		lstEntry=varLanguageDictionary[strKey];
+		intKey=varLanguageDictionaryKeys.indexOf(strKey);
 		strPinyin=lstEntry[0];
 		strMeanings0=lstEntry[1][0];
 		strMeanings1=lstEntry[2][0];
@@ -111,7 +112,7 @@ function btnFindSymbolsPressed(){
 	}
 	if(null==theKey)return;
 	else{
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		var txtSymbols=document.getElementById("txtSymbols");
 		var txtMeanings0=document.getElementById("txtMeanings0");
 		var txtMeanings1=document.getElementById("txtMeanings1");
@@ -132,8 +133,8 @@ function btnFindSymbolsPressed(){
 	}
 }
 function btnFindSymbolsNextPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var txtSymbols=document.getElementById("txtSymbols");
@@ -143,12 +144,12 @@ function btnFindSymbolsNextPressed(){
 	var lstEntry,jj=-1;
 	var theKey=null;
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	var intSymbols=-1;
 	var strPinyin,strMeanings0,strMeanings1,strMeaning2;
-	for(var strKey in varSlownik){
-		lstEntry=varSlownik[strKey];
-		intKey=varSlownikKeys.indexOf(strKey);
+	for(var strKey in varLanguageDictionary){
+		lstEntry=varLanguageDictionary[strKey];
+		intKey=varLanguageDictionaryKeys.indexOf(strKey);
 		strPinyin=lstEntry[0];
 		strMeanings0=lstEntry[1][0];
 		strMeanings1=lstEntry[2][0];
@@ -163,7 +164,7 @@ function btnFindSymbolsNextPressed(){
 	}
 	if(null==theKey)return;
 	else{
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		var txtSymbols=document.getElementById("txtSymbols");
 		var txtMeanings0=document.getElementById("txtMeanings0");
 		var txtMeanings1=document.getElementById("txtMeanings1");
@@ -185,8 +186,8 @@ function btnFindSymbolsNextPressed(){
 
 }
 function btnFindWordPressed(blnPrompt){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	}
 	var btnUpdate=document.getElementById("btnUpdate");
@@ -197,15 +198,15 @@ function btnFindWordPressed(blnPrompt){
 	var strPrevKey=txtSymbols.value;
 
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	var strKey;
 	if(false==blnPrompt)
 		strKey=strPrevKey;
 	else strKey=prompt("Enter word symbols string to find:",strPrevKey);
 	if(undefined==strKey||strKey.length<=0)return;
 	if(null==strKey||0==strKey.length)return;
-	var lstEntry=varSlownik[strKey];
-	intKey=varSlownikKeys.indexOf(strKey);
+	var lstEntry=varLanguageDictionary[strKey];
+	intKey=varLanguageDictionaryKeys.indexOf(strKey);
 	var txtPinyin=document.getElementById("txtPinyin");
 	var txtMeanings0=document.getElementById("txtMeanings0");
 	var txtMeanings1=document.getElementById("txtMeanings1");
@@ -236,8 +237,8 @@ function btnFindWordPressed(blnPrompt){
 	}
 }
 function btnFindPinyinPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var txtPinyin=document.getElementById("txtPinyin");
@@ -247,12 +248,12 @@ function btnFindPinyinPressed(){
 	var lstEntry,jj=-1;
 	var theKey=null;
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	var strPinyin,strMeanings0,strMeanings1,strMeaning2;
 	var strSimplePinyin0,strSimplePinyin1;
-	for(var strKey in varSlownik){
-		lstEntry=varSlownik[strKey];
-		intKey=varSlownikKeys.indexOf(strKey);
+	for(var strKey in varLanguageDictionary){
+		lstEntry=varLanguageDictionary[strKey];
+		intKey=varLanguageDictionaryKeys.indexOf(strKey);
 		strPinyin=lstEntry[0];
 		strMeanings0=lstEntry[1][0];
 		strMeanings1=lstEntry[2][0];
@@ -266,7 +267,7 @@ function btnFindPinyinPressed(){
 	}
 	if(null==theKey)return;
 	else{
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		var txtSymbols=document.getElementById("txtSymbols");
 		var txtMeanings0=document.getElementById("txtMeanings0");
 		var txtMeanings1=document.getElementById("txtMeanings1");
@@ -287,8 +288,8 @@ function btnFindPinyinPressed(){
 	}
 }
 function btnFindPinyinNextPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var txtPinyin=document.getElementById("txtPinyin");
@@ -298,12 +299,12 @@ function btnFindPinyinNextPressed(){
 	var lstEntry,jj=-1;;
 	var theKey=null;
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	var strPinyin,strMeanings0,strMeanings1,strMeaning2;
 	var strSimplePinyin0,strSimplePinyin1;
-	for(var strKey in varSlownik){
-		lstEntry=varSlownik[strKey];
-		intKey=varSlownikKeys.indexOf(strKey);
+	for(var strKey in varLanguageDictionary){
+		lstEntry=varLanguageDictionary[strKey];
+		intKey=varLanguageDictionaryKeys.indexOf(strKey);
 		strPinyin=lstEntry[0];
 		strMeanings0=lstEntry[1][0];
 		strMeanings1=lstEntry[2][0];
@@ -318,7 +319,7 @@ function btnFindPinyinNextPressed(){
 	}
 	if(null==theKey)return;
 	else{
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		var txtSymbols=document.getElementById("txtSymbols");
 		var txtMeanings0=document.getElementById("txtMeanings0");
 		var txtMeanings1=document.getElementById("txtMeanings1");
@@ -338,8 +339,8 @@ function btnFindPinyinNextPressed(){
 	}
 }
 function btnFindMeaningsPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var txtMeanings0=document.getElementById("txtMeanings0");
@@ -347,7 +348,7 @@ function btnFindMeaningsPressed(){
 	var txtMeanings2=document.getElementById("txtMeanings2");
 	var strPrevMeaningsSearched=null;
 	var intKey=-1;
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 	if(txtMeanings0.value.length>0)strPrevMeaningsSearched=txtMeanings0.value;
 	if(null==strPrevMeaningsSearched&&txtMeanings1.value.length>0)strPrevMeaningsSearched=txtMeanings1.value;
 	if(null==strPrevMeaningsSearched&&txtMeanings2.value.length>0)strPrevMeaningsSearched=txtMeanings2.value;
@@ -358,10 +359,10 @@ function btnFindMeaningsPressed(){
 	var intMeaning0=-1,intMeaning1=-1,intMeaning2=-1;
 	var lstEntry,jj=-1;
 	var theKey=null;
-	for(var strKey in varSlownik){
-		intKey=varSlownikKeys.indexOf(strKey);
+	for(var strKey in varLanguageDictionary){
+		intKey=varLanguageDictionaryKeys.indexOf(strKey);
 		intMeaning0=-1;intMeaning1=-1;intMeaning2=-1;
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		strMeanings0=lstEntry[1][0];
 		strMeanings1=lstEntry[2][0];
 		strMeanings2=lstEntry[3][0];
@@ -377,7 +378,7 @@ function btnFindMeaningsPressed(){
 	if(null==theKey)return;
 	else{
 		var txtPinyin=document.getElementById("txtPinyin");
-		lstEntry=varSlownik[strKey];
+		lstEntry=varLanguageDictionary[strKey];
 		var txtSymbols=document.getElementById("txtSymbols");
 		txtSymbols.value=strKey;
 		txtPinyin.value=lstEntry[0];
@@ -388,8 +389,8 @@ function btnFindMeaningsPressed(){
 	}
 }
 function btnFindMeaningsNextPressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	};
 	var strPrevMeaningsSearched=lstLastSearch[5];
@@ -400,16 +401,16 @@ function btnFindMeaningsNextPressed(){
 		var intMeaning0=-1,intMeaning1=-1,intMeaning2=-1;
 		var lstEntry,jj=-1;;
 		var theKey=null;
-		varSlownikKeys=Object.keys(varSlownik);
+		varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 		var intKey=-1;
-		for(var strKey in varSlownik){
+		for(var strKey in varLanguageDictionary){
 			intMeaning0=-1;intMeaning1=-1;intMeaning2=-1;
-			lstEntry=varSlownik[strKey];
+			lstEntry=varLanguageDictionary[strKey];
 			strMeanings0=lstEntry[1][0];
 			strMeanings1=lstEntry[2][0];
 			strMeanings2=lstEntry[3][0];
 			strPinyin=lstEntry[0];
-			intKey=varSlownikKeys.indexOf(strKey);
+			intKey=varLanguageDictionaryKeys.indexOf(strKey);
 			if(intKey<=intPrevKey)continue;
 			if(undefined!=strMeanings0)intMeaning0=strMeanings0.toLowerCase().indexOf(strPrevMeaningsSearched.toLowerCase());
 			if(undefined!=strMeanings1)intMeaning1=strMeanings1.toLowerCase().indexOf(strPrevMeaningsSearched.toLowerCase());
@@ -421,7 +422,7 @@ function btnFindMeaningsNextPressed(){
 		if(null==theKey)return;
 		else{
 			var txtPinyin=document.getElementById("txtPinyin");
-			lstEntry=varSlownik[strKey];
+			lstEntry=varLanguageDictionary[strKey];
 			var txtSymbols=document.getElementById("txtSymbols");
 			txtSymbols.value=strKey;
 			txtPinyin.value=lstEntry[0];
@@ -439,7 +440,9 @@ function btnDeletePressed(){
 	var txtSymbols=document.getElementById("txtSymbols");
 	var strKey=txtSymbols.value;
 	if(0==strKey.length)return;
-    	delete varSlownik[strKey];
+    	delete varLanguageDictionary[strKey];
+	var chkRecomputeWholeKeyboardDictionary=document.getElementById("chkRecomputeWholeKeyboardDictionary");
+	chkRecomputeWholeKeyboardDictionary.checked=true;
 	var btnDelete=document.getElementById("btnDelete");
 	btnDelete.innerText="Deleted";
 	var txtSymbols=document.getElementById("txtSymbols");
@@ -449,14 +452,14 @@ function btnDeletePressed(){
 	var txtMeanings2=document.getElementById("txtMeanings2");
 }
 function btnUpdatePressed(){
-	if(null==varSlownik){
-		alert(strLoadDictionaryFirst);
+	if(null==varLanguageDictionary){
+		alert(strLoadLanguageDictionaryFirst);
 		return;
 	}
 	var txtSymbols=document.getElementById("txtSymbols");
 	var strKey=txtSymbols.value;
 	if(0==strKey.length)return;
-	var lstEntry=varSlownik[strKey];
+	var lstEntry=varLanguageDictionary[strKey];
 	var txtPinyin=document.getElementById("txtPinyin");
     	if(txtPinyin.value.length<=0){
     		alert("Pinyin empty");
@@ -471,23 +474,23 @@ function btnUpdatePressed(){
 		strMeanings0=txtMeanings0.value;
 		strMeanings1=txtMeanings1.value;
 		strMeanings2=txtMeanings2.value;
-		varSlownik[strKey][0]=strPinyin;
-		varSlownik[strKey][1][0]=strMeanings0;
-		varSlownik[strKey][2][0]=strMeanings1;
-		varSlownik[strKey][3][0]=strMeanings2;
+		varLanguageDictionary[strKey][0]=strPinyin;
+		varLanguageDictionary[strKey][1][0]=strMeanings0;
+		varLanguageDictionary[strKey][2][0]=strMeanings1;
+		varLanguageDictionary[strKey][3][0]=strMeanings2;
 	}else{
-		varSlownik[strKey]=[];
+		varLanguageDictionary[strKey]=[];
 		strPinyin=txtPinyin.value;
 		strMeanings0=txtMeanings0.value;
 		strMeanings1=txtMeanings1.value;
 		strMeanings2=txtMeanings2.value;
-		varSlownik[strKey][0]=strPinyin;
-		varSlownik[strKey][1]=[];
-		varSlownik[strKey][1].push(strMeanings0);
-		varSlownik[strKey][2]=[];
-		varSlownik[strKey][2].push(strMeanings1);
-		varSlownik[strKey][3]=[];
-		varSlownik[strKey][3].push(strMeanings2);
+		varLanguageDictionary[strKey][0]=strPinyin;
+		varLanguageDictionary[strKey][1]=[];
+		varLanguageDictionary[strKey][1].push(strMeanings0);
+		varLanguageDictionary[strKey][2]=[];
+		varLanguageDictionary[strKey][2].push(strMeanings1);
+		varLanguageDictionary[strKey][3]=[];
+		varLanguageDictionary[strKey][3].push(strMeanings2);
 	}
 	var btnUpdate=document.getElementById("btnUpdate");
 	btnUpdate.innerText="Updated";
@@ -535,7 +538,7 @@ function btnResize1pressed(){
 	textArea.rows=intHeight;
 }
 function btnResize2pressed(){
-	var textArea=document.getElementById("txtSlownik");
+	var textArea=document.getElementById("txtDictionaries");
 	var strNewSize=prompt("Enter new dimensions in format [width,height]. String empty or with errors will set the fullscreen size.","["+textArea.cols+","+textArea.rows+"]");
 	if(null==strNewSize)return;
 	if(0==strNewSize.length){
@@ -568,6 +571,16 @@ function btnResize2pressed(){
 	}
 	textArea.cols=intWidth;
 	textArea.rows=intHeight;
+}
+function btnPhraseToFilterOutPressed(){
+	alert("Because symbols are the primary key in the language dictionary, that is indexed with them, they must be unique - sometimes in languages like Chinese for one symbol you have more than one pinyin. In such situation write some 0-127 characters to distinguish it from the previous one in the language dictionary and set to filter out that characters when computing new entries in the keyboard dictionary - previous are copied. Alternatively set a fixed phrase with this button and press OK to filter out in new entries in the keyboard dictionary.");
+	var strPhrase=prompt("Write phrase to filter out. Digit in the phrase will be understood as any digit slot to filter out, so e.x. _0 will fillter the phrases from _0 to _9 etc. Set the phrase to zero length string to reset it.","");
+	if(undefined==strPhrase)return;
+	strPhraseToFilterOut=strPhrase;
+	if(strPhraseToFilterOut.length>0){
+		var chkFilterOut0127=document.getElementById("chkFilterOut0127");
+		chkFilterOut0127.checked=false;
+	}
 }
 function btnArtificialEscapeClicked(){
 	var txtActualInput=txtInputs[intPreviousTxtInput];
@@ -661,7 +674,7 @@ function getLists(strSubstring){
 	return lstReturn;
 }
 function parseContents(contents){
-	varDictionary={};
+	varKeyboardDictionary={};
 	var int123,int125,int58;
 	int123=contents.indexOf("{");
 	int125=contents.indexOf("}");
@@ -676,20 +689,20 @@ function parseContents(contents){
 		if(0==strKey.length)continue;
 		if(","==strKey)continue;
 		lstValues=getLists(strLine.substring(int58+1));
-		if(undefined==varDictionary[strKey]){
-			varDictionary[strKey]=[];
+		if(undefined==varKeyboardDictionary[strKey]){
+			varKeyboardDictionary[strKey]=[];
 			for(var jj=0;jj<lstValues.length;jj++)
-				varDictionary[strKey].push(lstValues[jj]);
+				varKeyboardDictionary[strKey].push(lstValues[jj]);
 		}else for(var jj=0;jj<lstValues.length;jj++)
-				varDictionary[strKey].push(lstValues[jj]);
+				varKeyboardDictionary[strKey].push(lstValues[jj]);
 
 	}
-	return varDictionary;
+	return varKeyboardDictionary;
 }
-function dispFile(contents) {
-	/*varDictionary=JSON.parse(contents);*/
-	varDictionary=parseContents(contents);
-	varDictionaryKeys=Object.keys(varDictionary);
+function dispKeyboardDictionary(contents) {
+	/*varKeyboardDictionary=JSON.parse(contents);*/
+	varKeyboardDictionary=parseContents(contents);
+	varKeyboardDictionaryKeys=Object.keys(varKeyboardDictionary);
 }
 function linkSaveFile(contents,strFilename,strLinkname){
 	var a=document.getElementById(strLinkname);
@@ -711,21 +724,21 @@ function listToString(lstList){
 	strList+="]";
 	return strList;
 }
-function dictionaryToString(dctSlownik){
+function dictionaryToString(dctDictionary){
 	var strContent="{";
 	var strKey;
-	dctSlownikKeys=Object.keys(dctSlownik);
-	for(var ii=0;ii<dctSlownikKeys.length;ii++){
-		strKey=dctSlownikKeys[ii];
-		strContent+=String.fromCharCode(10)+String.fromCharCode(34)+strKey+String.fromCharCode(34)+":"+listToString(dctSlownik[strKey]);
-		if(ii<dctSlownikKeys.length-1)
+	dctDictionaryKeys=Object.keys(dctDictionary);
+	for(var ii=0;ii<dctDictionaryKeys.length;ii++){
+		strKey=dctDictionaryKeys[ii];
+		strContent+=String.fromCharCode(10)+String.fromCharCode(34)+strKey+String.fromCharCode(34)+":"+listToString(dctDictionary[strKey]);
+		if(ii<dctDictionaryKeys.length-1)
 			strContent+=",";
 	}
 	strContent+=String.fromCharCode(10)+"}";
 	return strContent;
 }
-function saveSlownik(){
-	return dictionaryToString(varSlownik);
+function saveLanguageDictionary(){
+	return dictionaryToString(varLanguageDictionary);
 }
 function simplifyPinyin(strPinyin){
 	var strSimplifiedPinyin="";
@@ -793,8 +806,85 @@ function strKeyOnList(strKey,lstEntry){
 	}
 	return false;
 }
+function filterRegExp(strKey,strRegExp){
+	var strPhraseToFilterOutLength=strPhraseToFilterOut.length;
+	var lstMatches=[];
+	var theRegExp=new RegExp(strRegExp,"g");
+	var strFilteredKey="";
+	lstMatches=strKey.match(theRegExp);
+	var strMatch;
+	if(null!=strMatch)strMatch=lstMatches.pop();
+	var jj0=-1,jj1=-1;
+	var blnFoundOnce=false;
+	for(var ii=0;ii<strKey.length;ii++){
+		if(null==lstMatches){
+			strFilteredKey+=strKey[ii];
+		}
+		else{
+			jj0=strKey.substring(ii).indexOf(strMatch);
+			while(-1==jj0){
+				strMatch=lstMatches.pop();
+				jj0=strKey.substring(ii).indexOf(strMatch);
+				if(undefined==strMatch)break;
+			}
+			if(-1!=jj0)
+			{
+				jj1=jj0+ii;
+				blnFoundOnce=true;
+			}
+			if(-1!=jj1&&(!(ii>=jj1&&ii<=jj1+strPhraseToFilterOutLength)))strFilteredKey+=strKey[ii];
+			if(-1==jj1&&false==blnFoundOnce)strFilteredKey+=strKey[ii];
+		}
+	}
+	return strFilteredKey;
+
+}
+function filterOutSymbols(strKey){
+	var chkFilterOut0127=document.getElementById("chkFilterOut0127");
+	var strPhraseToFilterOutLength=strPhraseToFilterOut.length;
+	var strKeyLength=strKey.length;
+	var blnFoundOnce=false;
+	if(true==chkFilterOut0127.checked||strPhraseToFilterOutLength>0){
+		if(strPhraseToFilterOutLength>0){
+			var strRegExp="",blnRegExp=false;
+			for(var ii=0;ii<strPhraseToFilterOutLength;ii++)
+			{
+				strCharCode=strPhraseToFilterOut.charCodeAt(ii);
+				if(strCharCode>=48&&strCharCode<=57){
+					strRegExp+="[0-9]";
+					blnRegExp=true;
+				}
+				else strRegExp+=strPhraseToFilterOut[ii];
+			}
+			if(true==blnRegExp)
+				return filterRegExp(strKey,strRegExp);
+
+		}
+		var strFilteredKey="",jj0=-1,jj1=-1;
+		var strCharCode;
+		for(var ii=0;ii<strKeyLength;ii++){
+			if(true==chkFilterOut0127.checked){
+				if(strKeyLength<=1||strKey.charCodeAt(ii)>127)strFilteredKey+=strKey[ii];
+			}
+			if(strPhraseToFilterOutLength>0){
+				jj0=strKey.substring(ii).indexOf(strPhraseToFilterOut);
+				if(-1!=jj0){
+					jj1=jj0+ii;
+					blnFoundOnce=true;
+				}
+				if(-1!=jj1&&(!(ii>=jj1&&ii<=jj1+strPhraseToFilterOutLength)))strFilteredKey+=strKey[ii];
+				if(-1==jj1&&false==blnFoundOnce)strFilteredKey+=strKey[ii];
+			}
+		}
+		return strFilteredKey;
+	}else return strKey;
+}
 function saveToKeyboardDictionary(){
-	var dctKeyboard=copyDictionary(varDictionary);
+	var chkRecomputeWholeKeyboardDictionary=document.getElementById("chkRecomputeWholeKeyboardDictionary");
+	var dctKeyboard;
+	if(false==chkRecomputeWholeKeyboardDictionary.checked)
+		dctKeyboard=copyDictionary(varKeyboardDictionary);
+	else dctKeyboard={};
 	var strPinyin,strSimplifiedPinyin,lstEntry;
 	var strPinyinChunk="";
 	var strSimplifiedPinyinChunk="";
@@ -802,38 +892,42 @@ function saveToKeyboardDictionary(){
 	var strUnknownPinyin=null;
 	var blnAllComponentsAlreadyAdded=false;
 	var chkIgnoreUnknownPinyins=document.getElementById("chkIgnoreUnknownPinyins");
-	for(var strKey in varSlownik){
-		lstEntry=varSlownik[strKey];
+	var strFilteredKey="";
+	for(var strKey in varLanguageDictionary){
+		lstEntry=varLanguageDictionary[strKey];
+		strFilteredKey=filterOutSymbols(strKey);
 		strPinyin=lstEntry[0];
 		strSimplifiedPinyin=simplifyPinyin(strPinyin);
 		if(undefined==dctKeyboard[strSimplifiedPinyin]){
 			dctKeyboard[strSimplifiedPinyin]=[];
 		}
 		/*assumption:keys are unique*/
-		if(false==strKeyOnList(strKey,dctKeyboard[strSimplifiedPinyin])){
-			dctKeyboard[strSimplifiedPinyin].push([strKey,strPinyin]);
+		if(false==strKeyOnList(strFilteredKey,dctKeyboard[strSimplifiedPinyin])){
+			dctKeyboard[strSimplifiedPinyin].push([strFilteredKey,strPinyin]);
 		}
 		/*and now every new symbol and pinyin component*/
-		if(strKey.length>1){
+		if(strFilteredKey.length>1){
 			lstPinyinChunks=getPinyinChunks(strPinyin);
-			if(lstPinyinChunks.length!=strKey.length){
+			if(lstPinyinChunks.length!=strFilteredKey.length){
 				if(true==chkIgnoreUnknownPinyins.checked)continue;
-				strUnknownPinyin=prompt("Unknown pinyin for: "+strKey+" Write lstPinyinSymbols","["+lstPinyinChunks+"]");
+				if(strKey!=strFilteredKey)
+					strUnknownPinyin=prompt("Unknown pinyin for: "+strKey+" i.e. "+strFilteredKey+" Write lstPinyinSymbols","["+lstPinyinChunks+"]");
+				else strUnknownPinyin=prompt("Unknown pinyin for: "+strKey+" Write lstPinyinSymbols","["+lstPinyinChunks+"]");
 				if(null==strUnknownPinyin)continue;
 				lstPinyinChunks=strUnknownPinyin.substring(1,strUnknownPinyin.length-1).split(",");
-				if(lstPinyinChunks.length!=strKey.length){
-					alert("Incorrect pinyin "+[lstPinyinChunks.length,strKey.length]);
+				if(lstPinyinChunks.length!=strFilteredKey.length){
+					alert("Incorrect pinyin "+[lstPinyinChunks.length,strFilteredKey.length]);
 					return;
 				}
 			}	
-			for(var ii=0;ii<strKey.length;ii++){
+			for(var ii=0;ii<strFilteredKey.length;ii++){
 				strPinyinChunk=lstPinyinChunks[ii];
 				strSimplifiedPinyinChunk=simplifyPinyin(strPinyinChunk);
 				if(undefined==dctKeyboard[strSimplifiedPinyinChunk]){
 					dctKeyboard[strSimplifiedPinyinChunk]=[];
 				}
-				if(false==strKeyOnList(strKey[ii],dctKeyboard[strSimplifiedPinyinChunk])){
-					dctKeyboard[strSimplifiedPinyinChunk].push([strKey[ii],strPinyinChunk]);
+				if(false==strKeyOnList(strFilteredKey[ii],dctKeyboard[strSimplifiedPinyinChunk])){
+					dctKeyboard[strSimplifiedPinyinChunk].push([strFilteredKey[ii],strPinyinChunk]);
 				}
 				
 			}
@@ -841,15 +935,15 @@ function saveToKeyboardDictionary(){
 	}
 	return dctKeyboard;
 }
-function btnSaveSlownikPressed(){
-	var strContent=saveSlownik();
-	linkSaveFile(strContent,"dictionary.txt","save");
+function btnSaveLanguageDictionaryPressed(){
+	var strContent=saveLanguageDictionary();
+	linkSaveFile(strContent,"languageDictionary.txt","save");
 }
 function btnCorrectTonesPressed(){
 	alert("Functionality not implemented yet.");
 }
 function removeDuplicates(dctDictionary){
-	/*no need now, adding unique, but nonunique can be required*/
+	/*no need now, adding unique*/
 }
 function symbolInEntry(lstEntry,strSymbol){
 	for(var ii=0;ii<lstEntry.length;ii++){
@@ -889,48 +983,55 @@ function concatenateDictionaries(dctDictionary0,dctDictionary1){
 	return dctDictionary2;
 }
 function btnAppendToKeyboardDictionaryPressed(){
-	var dctDictionary=saveToKeyboardDictionary();
-	var strContent=dictionaryToString(dctDictionary);
+	/*var dctKeyboardDictionary=saveToKeyboardDictionary();*/
+	varKeyboardDictionary=saveToKeyboardDictionary();
+	var strContent=dictionaryToString(varKeyboardDictionary);
 	linkSaveFile(strContent,"keyboardDictionary.txt","save");
+	var chkRecomputeWholeKeyboardDictionary=document.getElementById("chkRecomputeWholeKeyboardDictionary");
+	chkRecomputeWholeKeyboardDictionary.checked=false;
 }
 function btnSaveBothDictionariesPressed(){
-	var dctDictionary=saveToKeyboardDictionary();
-	var strContent=dictionaryToString(dctDictionary);
-	var strSlownikContent=saveSlownik();
+	/*var dctKeyboardDictionary=saveToKeyboardDictionary();*/
+	varKeyboardDictionary=saveToKeyboardDictionary();
+	var strContent=dictionaryToString(varKeyboardDictionary);
+	var strLanguageDictionaryContent=saveLanguageDictionary();
      	strContent+=String.fromCharCode(10);
-	strContent+=strSlownikContent;
+	strContent+=strLanguageDictionaryContent;
 	linkSaveFile(strContent,"bothDictionaries.txt","save");
+	var chkRecomputeWholeKeyboardDictionary=document.getElementById("chkRecomputeWholeKeyboardDictionary");
+	chkRecomputeWholeKeyboardDictionary.checked=false;
 }
-function printSlownik(){
-	var strContent=saveSlownik();
-	var txtSlownik=document.getElementById("txtSlownik");
-	txtSlownik.value=strContent;
+function printLanguageDictionary(){
+	var strContent=saveLanguageDictionary();
+	var txtDictionaries=document.getElementById("txtDictionaries");
+	txtDictionaries.value=strContent;
 }
 function printKeyboardDictionary(){
-	var txtSlownik=document.getElementById("txtSlownik");
-	var dctDictionary=saveToKeyboardDictionary();
-	var strContent=dictionaryToString(dctDictionary);
-	txtSlownik.value=strContent;
+	var txtDictionaries=document.getElementById("txtDictionaries");
+	/*var dctKeyboardDictionary=saveToKeyboardDictionary();
+	var strContent=dictionaryToString(dctKeyboardDictionary);*/
+	var strContent=dictionaryToString(varKeyboardDictionary);
+	txtDictionaries.value=strContent;
 }
-function dispSlownik(contents) {
-	varSlownik=JSON.parse(contents);
-	varSlownikKeys=Object.keys(varSlownik);
-	/*varDictionaryEntries=Object.entries(varSlownik);*/
+function dispLanguageDictionary(contents) {
+	varLanguageDictionary=JSON.parse(contents);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
+	/*varKeyboardDictionaryEntries=Object.entries(varLanguageDictionary);*/
 }
 function dispBothDictionaries(contents) {
 	var lstContents=contents.split(String.fromCharCode(10));
-	var slownikContents="",keyboardContents="";
+	var languageDictionaryContents="",keyboardDictionaryContents="";
 	var blnSecondDictionary=false;
   	for(var ii=0;ii<lstContents.length;ii++){
-     		if(false==blnSecondDictionary)keyboardContents+=(lstContents[ii]+String.fromCharCode(10));
-     		else slownikContents+=(lstContents[ii]+String.fromCharCode(10));
+     		if(false==blnSecondDictionary)keyboardDictionaryContents+=(lstContents[ii]+String.fromCharCode(10));
+     		else languageDictionaryContents+=(lstContents[ii]+String.fromCharCode(10));
      		if(-1!=lstContents[ii].indexOf("}"))blnSecondDictionary=true;
      	}
-	varDictionary=parseContents(keyboardContents);
-	varDictionaryKeys=Object.keys(varDictionary);
+	varKeyboardDictionary=parseContents(keyboardDictionaryContents);
+	varKeyboardDictionaryKeys=Object.keys(varKeyboardDictionary);
 
-	varSlownik=JSON.parse(slownikContents);
-	varSlownikKeys=Object.keys(varSlownik);
+	varLanguageDictionary=JSON.parse(languageDictionaryContents);
+	varLanguageDictionaryKeys=Object.keys(varLanguageDictionary);
 }
 function clickElem(elem){
 	var eventMouse=document.createEvent("MouseEvents");
@@ -994,13 +1095,13 @@ txtInput.prototype.keyInKeys=function(tblKeys,strKey){
 	return -1;
 };
 txtInput.prototype.renderDivInches=function(strCurrentWord,intSubentry){
-	var intIndex=this.keyInKeys(varDictionaryKeys,strCurrentWord);
+	var intIndex=this.keyInKeys(varKeyboardDictionaryKeys,strCurrentWord);
 	if (-1==intIndex){
 		this.clearDivInches();
 		return;
 	}
 	var strDivInchesHTML="<table><tr>";
-	varInches=varDictionary[strCurrentWord];
+	varInches=varKeyboardDictionary[strCurrentWord];
 	this.intReplaceEntryIndex=intIndex;
 	if(undefined==intSubentry)
 		this.intReplaceEntrySubindex=0;
@@ -1206,7 +1307,7 @@ txtInput.prototype.txtInputKeyDown=function(evtKey){
 			return;
                     }
 	}else{
-		if(null==varDictionary&&true==that.chkInches.checked){
+		if(null==varKeyboardDictionary&&true==that.chkInches.checked){
 			alert(strLoadKeyboardDictionaryFirst);
 			return;
 		}
@@ -1250,9 +1351,10 @@ function init(){
 	document.getElementById("btnArtificialBackspace").onclick=btnArtificialBackspaceClicked;
 	document.getElementById("btnResize1").onclick=btnResize1pressed;
 	document.getElementById("btnResize2").onclick=btnResize2pressed;
+	document.getElementById("btnPhraseToFilterOut").onclick=btnPhraseToFilterOutPressed;
 	document.getElementById("txtSymbols").onchange=txtSymbolsChanged;
-	document.getElementById("btnOpenSlownik").onclick=btnOpenSlownikPressed;
-	document.getElementById("btnOpenDictionary").onclick=btnOpenDictionaryPressed;
+	document.getElementById("btnOpenLanguageDictionary").onclick=btnOpenLanguageDictionaryPressed;
+	document.getElementById("btnOpenKeyboardDictionary").onclick=btnOpenKeyboardDictionaryPressed;
 	document.getElementById("btnOpenBothDictionaries").onclick=btnOpenBothDictionaryPressed;
 	document.getElementById("btnFindWord").onclick=btnFindWordPressed;
 	document.getElementById("btnFindSymbols").onclick=btnFindSymbolsPressed;
@@ -1264,13 +1366,13 @@ function init(){
 	document.getElementById("btnUpdate").onclick=btnUpdatePressed;
 	document.getElementById("btnDelete").onclick=btnDeletePressed;
 	document.getElementById("btnSearchFrom0").onclick=btnSearchFrom0pressed;
-	document.getElementById("btnSaveSlownik").onclick=btnSaveSlownikPressed;
+	document.getElementById("btnSaveLanguageDictionary").onclick=btnSaveLanguageDictionaryPressed;
 	document.getElementById("btnCorrectTones").onclick=btnCorrectTonesPressed;
 	document.getElementById("btnAppendToKeyboardDictionary").onclick=btnAppendToKeyboardDictionaryPressed;
 	document.getElementById("btnSaveBothDictionaries").onclick=btnSaveBothDictionariesPressed;
-	document.getElementById("btnPrintSlownik").onclick=printSlownik;
+	document.getElementById("btnPrintLanguageDictionary").onclick=printLanguageDictionary;
 	document.getElementById("btnPrintKeyboardDictionary").onclick=printKeyboardDictionary;
-	openFile(dispFile);
+	openFile(dispKeyboardDictionary);
 }
 txtInput.prototype.chkInchesChanged=function(){
 	var that0,that1;
@@ -1296,8 +1398,8 @@ window.onload=init;
 			<button id="btnResize1">Textarea size</button>
 			
 			<p id="demo"></p>
-			<button id="btnOpenDictionary">Open keyboard dictionary</button>
-			<button id="btnOpenSlownik">Open dictionary</button>
+			<button id="btnOpenKeyboardDictionary">Open keyboard dictionary</button>
+			<button id="btnOpenLanguageDictionary">Open language dictionary</button>
 			<button id="btnOpenBothDictionaries">Open both dictionaries</button>
 			<div id="divInchesSymbols"> </div>
 			<table>
@@ -1327,22 +1429,26 @@ window.onload=init;
 					<td><input type="text" id="txtMeanings0"></input></td>
 					<td><input type="text" id="txtMeanings1"></input></td>
 					<td><input type="text" id="txtMeanings2"></input></td>
+					<td><input type="checkbox" id="chkRecomputeWholeKeyboardDictionary">Recompute whole keyboard dictionary</input></td>
 				</tr>
 			</table>
-			<textarea id="txtSlownik" cols=120 rows=30></textarea>
+			<textarea id="txtDictionaries" cols=120 rows=30></textarea>
 			<br/>
 			<table><tr>
-					<td><button id="btnSaveSlownik">Save dictionary from memory</button></td>
+					<td><button id="btnSaveLanguageDictionary">Save language dictionary from memory</button></td>
 					<td><button id="btnCorrectTones">Correct tones from loaded keyboard dictionary</button></td>
 					<td><button id="btnAppendToKeyboardDictionary">Append to keyboard dictionary from memory and save</button></td>
 					<td><a id="save" download="dictionary.txt" href="data:text/plain,no data to save, press the button first&#10;">Download dictionary.txt</a></td>
 					</tr><tr>
-					<td><button id="btnPrintSlownik">Print dictionary</button></td>
+					<td><button id="btnPrintLanguageDictionary">Print language dictionary</button></td>
 					<td><button id="btnPrintKeyboardDictionary">Print keyboard dictionary</button>
 					<input type="checkbox" id="chkIgnoreUnknownPinyins">Ignore unknown pinyins</input></td>
 					<td><button id="btnSaveBothDictionaries">Save both dictionaries from memory</button></td>
 					<td><button id="btnResize2">Textarea size</button></td>
-				</tr></table>
+				</tr>
+				</table>
+					<button id="btnPhraseToFilterOut">Phrase to filter out in the keyboard dictionary new entries from repeating symbols - info</button>
+					<input type="checkbox" id="chkFilterOut0127">Filter out all 0-127 chars from symbols longer than 1 in the keyboard dictionary new entries</input>
 
 
 		</body>
