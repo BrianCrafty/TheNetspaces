@@ -1,0 +1,102 @@
+function insertDay(that,strArgs){
+	/*functions from the global namespace have to be rewritten*/
+	var flush=function(strInput,intMax){
+        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;
+	};
+	var nonNumber=function(a){
+        	if("number"!=typeof(a))return true;
+        	if(true==Number.isNaN(a))return true;
+        	return false;
+	};
+	var insertGreatDay=function(intFrom,intTo){
+		var strLine="";
+		for(var h=intFrom;h<intTo+1;h++){
+			strLine=flush(""+h,2)+":00 ";
+			that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);
+			that.wndEditing.setLstCursor_buffer0(strLine.length+1);
+			that.updateWndEditing(true);
+			that.wndEditing.insertEditingEnter_();
+		}
+	};
+	var intMinH=0, intMaxH=23;
+	var lstHours=strArgs.split(" ");
+	if(2==lstHours.length){
+		intMinH=parseInt(lstHours[0]);
+		intMaxH=parseInt(lstHours[1]);
+		if(true==nonNumber(intMinH))intMinH=0;
+		if(true==nonNumber(intMaxH))intMaxH=23;
+		
+	}
+	/*that.wndEditing.insertEditingEnter_();*/
+	if(intMinH<=intMaxH){
+		insertGreatDay(intMinH,intMaxH);
+	}else{
+		insertGreatDay(intMinH,23);
+		insertGreatDay(0,intMaxH);
+	}
+}
+function insertMonth(that,strArgs){
+	/*functions from the global namespace have to be rewritten*/
+	var flush=function(strInput,intMax){
+        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;
+	};
+	var nonNumber=function(a){
+        	if("number"!=typeof(a))return true;
+        	if(true==Number.isNaN(a))return true;
+        	return false;
+	};
+	var getLastDay=function(intMonth,intYear){
+		var intLastDay=(intMonth==(new Date(intYear,intMonth,31,0,0,0,0)).getMonth())?31:30;
+		if(2==intMonth)intLastDay=28;
+		return intLastDay;
+	};
+	var getWeek=function(intMonthDay,intMonth,intYear,strInchySpaces){
+		var strWeek=strInchySpaces;
+		var dateCounter=new Date(intYear,intMonth,intMonthDay,0,0,0,0);
+		var intWeekDay=dateCounter.getDay();
+		var intMonthDayCounter=intMonthDay-intWeekDay;
+		for(var d=0;d<intWeekDay;d++){
+			strWeek+=" "+flush(""+(new Date(intYear,intMonth,intMonthDayCounter,0,0,0,0)).getDate(),2)+strInchySpaces;
+			intMonthDayCounter++;
+		}
+		for(var d=intWeekDay;d<7;d++){
+			strWeek+=" "+flush(""+(new Date(intYear,intMonth,intMonthDayCounter,0,0,0,0)).getDate(),2)+strInchySpaces;
+			intMonthDayCounter++;
+		}
+		return strWeek;
+	};
+	var lstDate=strArgs.split(" ");
+	var intMonth;
+	var intYear
+	var nowDate=new Date();
+	intMonth=nowDate.getMonth();
+	intYear=nowDate.getFullYear();
+	if(2==lstDate.length){
+		intMonth=parseInt(lstDate[0])-1;
+		intYear=parseInt(lstDate[1]);
+		if(true==nonNumber(intMonth))intMonth=nowDate.getMonth();
+		if(true==nonNumber(intYear))intYear=nowDate.getFullYear();
+	}
+	var theDate=new Date(intYear,intMonth,1,0,0,0,0);
+	var intWeeks=5;
+	if(1==intMonth&&0==theDate.getDay())intWeeks=4;
+	var strInchySpaces="   "
+	/*var strLine=strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces+"Sun"+strInchySpaces;*/
+	var strLine=strInchySpaces+"Sun"+strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces;
+	that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);
+	that.wndEditing.setLstCursor_buffer0(strLine.length+1);
+	that.updateWndEditing(true);
+	that.wndEditing.insertEditingEnter_();
+	var intMonthDay=theDate.getDate();
+	var intWeekDay;
+	for(var w=0;w<intWeeks;w++){
+		theDate=new Date(intYear,intMonth,intMonthDay,0,0,0,0);
+		intWeekDay=theDate.getDay();
+		strLine=getWeek(intMonthDay,intMonth,intYear,strInchySpaces);
+		that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);
+		that.wndEditing.setLstCursor_buffer0(strLine.length+1);
+		that.updateWndEditing(true);
+		that.wndEditing.insertEditingEnter_();
+		intMonthDay=intMonthDay+7
+	}
+}
