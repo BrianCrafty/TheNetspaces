@@ -197,7 +197,7 @@ Other commands:
 -":wshd" - compile the actual shader  for the Shader Thinkpad.
 -":owshd" - open and compile the shader at once for the Shader Thinkpad.
 -":initFastCruncher" loads the initFastCruncher function with the fastCruncher engine great for the external scripts.
--":extensions++" opens the file dialog to load the file with extensions - that can be also done from the extensions menu. If the extension code is correct (more details in the texteditor extensions or TextEditor extensions section and example extensions in the extensions directory. Convention - TextEditor like names stand for the class, texteditor like names stand for the object, i.e. particular realization of the abstract class in the memory.), that the extension function name is added to the menu. Nevertheless you may wish to use many help functions to modularise the computations and it is well to remember the main entering function name then to run it from the commandline. There is no ":extensions--" - restarting the webpage starts the session without the extensions in the memory.
+-":extensions++" opens the file dialog to load the file with the texteditor program extensions (naturally different that The Netspaces extensions like computer, piano etc. from the injection files) - that can be also done from the extensions menu. If the extension code is correct (more details in the texteditor extensions or TextEditor extensions section and example extensions in the extensions directory. Convention - TextEditor like names stand for the class, texteditor like names stand for the object, i.e. particular realization of the abstract class in the memory.), that the extension function name is added to the menu. Nevertheless you may wish to use many help functions to modularise the computations and it is well to remember the main entering function name then to run it from the commandline. There is no ":extensions--" - restarting the webpage starts the session without the extensions in the memory.
 ":=>" and the extension function function name will launch the extension from the commandline. It is good idea to use the initFastCruncher function there instead of doing that from commandline.
 There is no way to run the freeFastCruncher command that rolls back the settings from the initFastCruncher functions with the freeFastCruncher function. Naturally you can always quickly launch that function from the extension file or the console. Anyway, such "1modeCommand" will be added in the future versions.
 
@@ -258,10 +258,10 @@ More functionality will be described in the future versions of the documentation
 TextEditor configuration variables
 
 TextEditor extensions
+The Program_TextEditor extensions (naturally different that The Netspaces extensions like computer, piano etc. from the injection files), that can be added from the external extension text files with defined extensions function, with the command:
+":extensions++" that opens the file dialog to load the file with the texteditor program extensions. There are also default, defined at start texteditor extensions defined in the Program_TextEditor.prototype.setInternalCodeExtensions. These are that three texteditor extensions in the extensions directory: toCodeonelinerExtension, calendarExtension and whitespacesExtension. They are divided into separate files, but often it is not a bad idea to copy them into one file and load them all with the ":extensions++" at once if they have separate commands. Since they are by default loaded in the setInternalCodeExtensions, they are in fact instructive example, how to write own extensions, since there is no necessity to load that file. Those extension use various techniques like fastCruncher extension interface and also call directly texteditor functions. Extension functions have to be in form "function functionName(that,strArgs){" then the function content and "}". When loading the parity of brackets is calculated and other functions will not be loaded. So if you have any other functions that you don't need as extension, but would like to write as a shared functionality, used by other functions, code them as the following signature or repeat definitions everywhere where required, e.x. as internal variables like "var functionName=function(){}" etc. From the level of the extension you have access to the calling Program_TextEditor through that pointer. You have also access to the arguments string that you have written when calling the extensions from the command line ":=>functionName strArgs". Without arguments the strArgs will be the zero length string. From the extension functions you have also access to global "netspace" object, where the whole TheNetspaces object has been linked. Also "netspace.computer" is accessible etc.
 
-There are two extensions in the extensions directory. They are divided into separate files, but often it is not a bad idea to copy them into one file and load them all with the ":extensions++" at once if they have separate commands. Extension functions have to be in form "function functionName(that,strArgs){" then the function content and "}". When loading the parity of brackets is calculated and other functions will not be loaded. So if you have any other functions that you don't need as extension, but would like to write as a shared functionality, used by other functions, code them as the following signature or repeat definitions everywhere where required, e.x. as internal variables like "var functionName=function(){}" etc. From the level of the extension you have access to the calling Program_TextEditor through that pointer. You have also access to the arguments string that you have written when calling the extensions from the command line ":=>functionName strArgs". Without arguments the strArgs will be the zero length string. From the extension functions you have also access to global "netspace" object, where the whole TheNetspaces object has been linked. Also "netspace.computer" is accessible etc.
-
-So, there are two extensions in the extensions directory, first is toCodeonelinerExtension.txt
+So now, there are three default extensions also in the extensions directory, first is toCodeonelinerExtension.txt
 ":=>toCodeoneliner"
 extension and the second is calendarExtension.txt with the calendar with two commands:
 ":=>insertDay intMinH intMaxH"
@@ -286,6 +286,116 @@ that you can also set from the commandline like all set internal variables of th
 By default the intUndoRedoLimit is set quite high, i.e. to 1000 entries:
 "that.intUndoRedoLimit=1000;"
 so if it too much, you can reduce it - it is 1000 optimized entries. Usually it is not a problem nowadays at all. If there are other problems with accumulating content, use copyString function, that will care more than usual for the garbage collection instead of setting just the substring. That problem can be significant with huge fast FastCruncher tasks on huge texts. Good to print the progress e.x. on the console with "console.log" functions, to make sure that the program is responsive. Overestimating computational task e.x. ten times is nothing unusual. On the other hand massive output to the console can be the slowest task from all. After finished computations freeFastCruncher will get back the previous settings like the previous intUndoRedoLimit etc.
+
+The third extension is the whitespacesExtension with two extension functions
+:=>noWhitespaces 
+and 
+:=>whitespacesMM
+They both do exactly the same, they remove the C-style programs redundant whitespaces that can be all removed automatically without spoiling the program, first extension function on the string strToModify, to provide easy and portable algorithm, second uses the internal fastCruncher and uses the the internal texteditor stuff. It often turns out, that the first version is quicker. Anyway, possible strArgs in arbitrary sequence:
+:=>noWhitespaces emptylines-- withQuotes noComments
+:=>whitespacesMM emptylines-- withQuotes noComments
+where with emptylines-- you also delete empty or lines only with whitespaces. By default, without emptylines-- option, algorithm leaves that "newlines" for readability. With the withQuotes argument you remove whitespaces also in the quotes. It spoils many programs, but with many programs e.x. only aesthetic appearance will be modified. With the noComments option you leave comments from the whitespace removal, since people usually use the human language there. By default, without the option, comments are also affected, so it would be "emptylines--option" instead of "emptylines-- option". In lot of codes people often write short not complicated phrases and comment out the whole code excerpts, therefore the default settings.
+Extension probably will be compatible with all the C, C++, Java, JavaScript, C# etc. codes, although never say never, especially with extensions like documentation tools etc. As usual, like with all the soft, better to make backup in order not to spoil the code in huge automated tasks, eventually finetune the extension functions. Tested mainly on JavaScript yet. Also with the :=>toCodeoneliner extension don't forget, that the code must be specially written to transfer it to oneliner - especially avoid "else enter instruction;" (in case of else without {} brackets) since it will transfer it to elseinstruction and put semicolon after every equation e.x. var testFunction=function(){............}; With the :=> toCodeoneliner backup is also required. Often everything works at once or don't work at all, but with some codes in-depth testing of all the functionality is required. Well, code oneliners are slightly more sophisticated codes than the manyline codes newlines. The Netspaces are written with the priority to be oneliner compatible from the first stage and it's tested in both versions every time. The extensions make the whole code changes and have been tested mainly on TheNetspaces.html.
+
+Code without whites is definitely a matter of personal taste - we personally like that code without whites very much. So dense, so aesthetic, so beautiful, so hackish, so geekish, so "orange". Just like we personally prefer code without code coloring - such a black terminal with the white/gray code on top of it, eventually with orange highlighting, just like in the whole The Netspaces, is what we like so much - already the first look on such screen makes the heartbeats a bit quicker - not only a programming passion - a codebreaking passion :-P A codebreaking seduction :-P
+
+Other code conventions applied in the whole The Netspaces code are not applied in the whitespacesExtension.txt, e.x. instead of
+if(intTest==0){
+we like
+if(0==intTest){
+that prevents programmer from accidentally writing
+if(intTest=0){
+In the second case the compiler will detect the error. 
+So the whitespacesExtension.txt isn't "The Netspaces default coding style converter".
+
+It is not bad idea to place all the external extensions in one file and load them at once. Anyway, with default extensions directly in the code, that way, by writing only one command, using the extensions like calendar extensions starts to be very easy and handy and the texteditor can quickly start to be the calendar app.
+
+In the extensions there is a convention that the quick extension documentation is introduced in the first comment after the function definition. In such comment it is quickly explained what does the extension do and what optional strArgs can be applied. They are following:
+
+toCodeonelinerExtension.txt:
+
+function toCodeoneliner_(that,strArgs){
+	/**
+	* That function is subfunction only - use toCodeoneliner instead.
+	* Transform C-style code to its equivalent oneliner
+	* one line of code version. In that version it only removes quickly
+	* the newlines.
+	* Commandline call:
+	*	:=>toCodeoneliner_
+	* TODO: else enter instruction; and all the = ; checks
+	* to ensure that the JavaScript oneliner is always correct
+	*/
+
+function toCodeoneliner(that,strArgs){
+	/**
+	* Transform C-style code to its equivalent oneliner
+	* one line of code version. In that version it only removes quickly
+	* the newlines.
+	* Commandline call:
+	*	:=>toCodeoneliner
+	* TODO: else enter instruction; and all the = ; checks
+	* to ensure that the JavaScript oneliner is always correct
+	*/
+
+calendarExtension.txt:
+
+function insertMonth(that,strArgs){
+	/**
+	* Insert calendar month in the month weekdays view. Part of the calendar extension.
+	* Default commandline call:
+	*	:=>insertMonth
+	* inserts actual month.
+	* With optional arguments:
+	*	:=>insertMonth intMonth intYear
+	* it inserts the intMonth/intYear month. Arguments provided in most popular
+	* calendar convention, not in diverse computer science conventions,
+	* so e.x. months are numbered from 1 instead of 0 etc.
+	* You can also quickly set the formatting of the month by setting the internal strInchySpaces variable, by default set to:
+	* var strInchySpaces="   ";
+	*/
+
+function insertDay(that,strArgs){
+	/**
+	* Insert hours of the day. Part of the calendar extension.
+	* Default commandline call:
+	*	:=>insertDay
+	* inserts hours from 00:00 to 23:00.
+	* With optional arguments:
+	*	:=>insertDay intMinH intMaxH
+	* it inserts hours from intMinH to intMaxH, also if intMinH>intMaxH - then the next day hours are inserted.
+	*/
+
+whitespacesExtension.txt:
+
+function noWhitespaces(that,strArgs){
+	/**
+	* Remove C-style programs redundant whitespaces.
+	* Default commandline call:
+	*	:=>whitespacesMM
+	* With optional arguments in arbitrary sequence:
+	*	:=>whitespacesMM emptylines-- withQuotes noComments
+	* emptylines--: remove also the empty lines or lines with the whitespaces only
+	* withQuotes: remove whitespaces also from content inside the 'quotes' and "double quotes"
+	* noComments: don't remove whitespaces from the comments 
+	*
+	* Portable version of the algorithm on the strToModify string.
+	* Not fully tested yet, naturally previous backup of the code as always highly suggested.
+	*/
+
+function whitespacesMM(that,strArgs){
+	/**
+	* Remove C-style programs redundant whitespaces.
+	* By default
+	*	:=>whitespacesMM
+	* With optional arguments in arbitrary sequence:
+	*	:=>whitespacesMM emptylines-- withQuotes noComments
+	* emptylines--: remove also the empty lines or lines with the whitespaces only
+	* withQuotes: remove whitespaces also from content inside the 'quotes' and "double quotes"
+	* noComments: don't remove whitespaces from the comments 
+	*
+	* Version of the algorithm on the texteditor fastCruncher.
+	* Not fully tested yet, naturally previous backup of the code as always highly suggested.
+	*/
 
 DictionaryEditor
 

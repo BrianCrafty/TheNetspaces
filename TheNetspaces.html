@@ -20349,8 +20349,6 @@ Program_TextEditorConstructor=function(that,computer,base){
 	that.initialCommands=[];
 	that.theKeyAliases={};
 	that.theKeyCodeAliases={};
-	that.lstExtensionFunctionNames=[];
-	that.lstExtensionFunctions=[];
 	that.lstCPbuffer=[[],[],[],[],[],[],[],[],[],[]];
 	that.blnSimpleMode=false;
 	that.wndEditing=null;
@@ -20367,12 +20365,423 @@ Program_TextEditorConstructor=function(that,computer,base){
 	that.intScrollSize=5;
 	that.wndPendingMouseEvent=null;
 	that.inchesKeyboard=new InchesKeyboard(that);
+	that.lstInternalCodeExtensionFunctions=[];
+	that.setInternalCodeExtensions();
+	that.lstExtensionFunctionNames=[];
+	that.lstExtensionFunctions=[];
+	that.loadInternalCodeExtensions();
 };
 Program_TextEditorConstructor_strF=function(that,computer,base){
 };
 Program_TextEditor=function(computer,base){
 	Program_TextEditorConstructor(this,computer,base);
 	Program_TextEditorConstructor_strF(this,computer,base);
+};
+Program_TextEditor.prototype.setInternalCodeExtensions=function(){
+	var strToCodeoneliner='function toCodeoneliner_(that,strArgs){'+
+'	/*TODO: else and all the = ; checks*/'+
+'	/*to ensure that the JavaScript oneliner is always correct*/'+
+'	alert("toCodeoneliner");'+
+'	var intIndent;'+
+'	var intCounter=0;'+
+'	var intCounterLimit=netspace.wndEditing.lstTextBuffer_fastCruncher.length+1;'+
+'	var strOneliner="";'+
+'	var strLine="";'+
+'	var intCounterProgress=Math.floor(0.01*(intCounterLimit-2));'+
+'	var intPercent=0;'+
+'	console.log("Progress="+intPercent+"% intCounter="+intCounter);'+
+'	for(var jj=0;jj<netspace.wndEditing.lstTextBuffer_fastCruncher.length;jj++){'+
+'		strLine=netspace.wndEditing.lstTextBuffer_fastCruncher[jj];'+
+'		intIndent=netspace.wndEditing.indentSizeToPreserve(jj);'+
+'		strLine=strLine.substring(intIndent);'+
+'		strOneliner+=netspace.wndEditing.copyString(strLine);'+
+'		if(intCounter>intCounterLimit){'+
+'			console.log("intCounter>intCounterLimit");'+
+'			break;'+
+'		}'+
+'		intCounter++;'+
+'		if(0==intCounter%intCounterProgress){'+
+'			intPercent+=1;'+
+'			console.log("Progress="+intPercent+"% intCounter="+intCounter);'+
+'		}'+
+'	}'+
+'	netspace.wndEditing.lstTextBuffer_fastCruncher=[];'+
+'	netspace.wndEditing.lstTextBuffer_fastCruncher[0]=strOneliner;'+
+'	/*wndEditing.loadEditingText(strOneliner,"toCodeoneliner_fast");*/'+
+'	/*wndEditing.intUndoRedoLimit=intPreviousLineIndent;*/'+
+'	console.log("toCodeoneliner_ done");'+
+'}'+
+'function toCodeoneliner(that,strArgs){'+
+'	that.wndEditing.initFastCruncher(false);'+
+'	/*that.wndEditing.initFastCruncher(true);*/'+
+'	that.runExtension("=>toCodeoneliner_");'+
+'	netspace.wndEditing.loadEditingText_fastCruncher();'+
+'	netspace.wndEditing.updateWndEditing(true);'+
+'	netspace.wndEditing.freeFastCruncher();'+
+'}';
+	this.lstInternalCodeExtensionFunctions.push(strToCodeoneliner);
+	var strInsertDay='function insertDay(that,strArgs){'+
+'	/*functions from the global namespace have to be rewritten*/'+
+'	var flush=function(strInput,intMax){'+
+'        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;'+
+'	};'+
+'	var nonNumber=function(a){'+
+'        	if("number"!=typeof(a))return true;'+
+'        	if(true==Number.isNaN(a))return true;'+
+'        	return false;'+
+'	};'+
+'	var insertGreatDay=function(intFrom,intTo){'+
+'		var strLine="";'+
+'		for(var h=intFrom;h<intTo+1;h++){'+
+'			strLine=flush(""+h,2)+":00 ";'+
+'			that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);'+
+'			that.wndEditing.setLstCursor_buffer0(strLine.length+1);'+
+'			that.updateWndEditing(true);'+
+'			that.wndEditing.insertEditingEnter_();'+
+'		}'+
+'	};'+
+'	var intMinH=0, intMaxH=23;'+
+'	var lstHours=strArgs.split(" ");'+
+'	if(2==lstHours.length){'+
+'		intMinH=parseInt(lstHours[0]);'+
+'		intMaxH=parseInt(lstHours[1]);'+
+'		if(true==nonNumber(intMinH))intMinH=0;'+
+'		if(true==nonNumber(intMaxH))intMaxH=23;'+
+'		'+
+'	}'+
+'	/*that.wndEditing.insertEditingEnter_();*/'+
+'	if(intMinH<=intMaxH){'+
+'		insertGreatDay(intMinH,intMaxH);'+
+'	}else{'+
+'		insertGreatDay(intMinH,23);'+
+'		insertGreatDay(0,intMaxH);'+
+'	}'+
+'}';
+	this.lstInternalCodeExtensionFunctions.push(strInsertDay);
+	var strInsertMonth='function insertMonth(that,strArgs){'+
+'	/*functions from the global namespace have to be rewritten*/'+
+'	var flush=function(strInput,intMax){'+
+'        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;'+
+'	};'+
+'	var nonNumber=function(a){'+
+'        	if("number"!=typeof(a))return true;'+
+'        	if(true==Number.isNaN(a))return true;'+
+'        	return false;'+
+'	};'+
+'	var getLastDay=function(intMonth,intYear){'+
+'		var intLastDay=(intMonth==(new Date(intYear,intMonth,31,0,0,0,0)).getMonth())?31:30;'+
+'		if(2==intMonth)intLastDay=28;'+
+'		return intLastDay;'+
+'	};'+
+'	var getWeek=function(intMonthDay,intMonth,intYear,strInchySpaces){'+
+'		var strWeek=strInchySpaces;'+
+'		var dateCounter=new Date(intYear,intMonth,intMonthDay,0,0,0,0);'+
+'		var intWeekDay=dateCounter.getDay();'+
+'		var intMonthDayCounter=intMonthDay-intWeekDay;'+
+'		for(var d=0;d<intWeekDay;d++){'+
+'			strWeek+=" "+flush(""+(new Date(intYear,intMonth,intMonthDayCounter,0,0,0,0)).getDate(),2)+strInchySpaces;'+
+'			intMonthDayCounter++;'+
+'		}'+
+'		for(var d=intWeekDay;d<7;d++){'+
+'			strWeek+=" "+flush(""+(new Date(intYear,intMonth,intMonthDayCounter,0,0,0,0)).getDate(),2)+strInchySpaces;'+
+'			intMonthDayCounter++;'+
+'		}'+
+'		return strWeek;'+
+'	};'+
+'	var lstDate=strArgs.split(" ");'+
+'	var intMonth;'+
+'	var intYear;'+
+'	var nowDate=new Date();'+
+'	intMonth=nowDate.getMonth();'+
+'	intYear=nowDate.getFullYear();'+
+'	if(2==lstDate.length){'+
+'		intMonth=parseInt(lstDate[0])-1;'+
+'		intYear=parseInt(lstDate[1]);'+
+'		if(true==nonNumber(intMonth))intMonth=nowDate.getMonth();'+
+'		if(true==nonNumber(intYear))intYear=nowDate.getFullYear();'+
+'	}'+
+'	var theDate=new Date(intYear,intMonth,1,0,0,0,0);'+
+'	var intWeeks=5;'+
+'	if(1==intMonth&&0==theDate.getDay())intWeeks=4;'+
+'	var strInchySpaces="   ";'+
+'	/*var strLine=strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces+"Sun"+strInchySpaces;*/'+
+'	var strLine=strInchySpaces+"Sun"+strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces;'+
+'	that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);'+
+'	that.wndEditing.setLstCursor_buffer0(strLine.length+1);'+
+'	that.updateWndEditing(true);'+
+'	that.wndEditing.insertEditingEnter_();'+
+'	var intMonthDay=theDate.getDate();'+
+'	var intWeekDay;'+
+'	for(var w=0;w<intWeeks;w++){'+
+'		theDate=new Date(intYear,intMonth,intMonthDay,0,0,0,0);'+
+'		intWeekDay=theDate.getDay();'+
+'		strLine=getWeek(intMonthDay,intMonth,intYear,strInchySpaces);'+
+'		that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);'+
+'		that.wndEditing.setLstCursor_buffer0(strLine.length+1);'+
+'		that.updateWndEditing(true);'+
+'		that.wndEditing.insertEditingEnter_();'+
+'		intMonthDay=intMonthDay+7'+
+'	}'+
+'}';
+	this.lstInternalCodeExtensionFunctions.push(strInsertMonth);
+	var strNoWhitespaces='function noWhitespaces(that,strArgs){'+
+'	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;'+
+'	var blnRemoveEmptyLines=false;'+
+'	var blnLeaveComments=false;'+
+'	var blnLeaveQuotes=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;'+
+'	var isAlphanumeric=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		intActual=chrActual.charCodeAt(0);'+
+'		if(intActual>=48&&intActual<=57)return true;'+
+'		if(intActual>=65&&intActual<=90)return true;'+
+'		if(intActual>=97&&intActual<=122)return true;'+
+'		return false;'+
+'	};'+
+'	var isWhitespace=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;'+
+'		return false;'+
+'	};'+
+'	var isEnter=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		if(chrActual==String.fromCharCode(10)||chrActual==String.fromCharCode(13))return true;'+
+'		return false;'+
+'	};'+
+'	var isQuote=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;'+
+'		return false;'+
+'	};'+
+'	var isIndent=function(ii,strToModify){'+
+'		for(var jj=ii;jj>=0;jj--){'+
+'			if(true==isEnter(strToModify[jj]))return true;'+
+'			if(false==isWhitespace(strToModify[jj]))return false;'+
+'		}'+
+'		return true;'+
+'	};'+
+'	var isEmptyLine=function(ii,strToModify){'+
+'		var lstEmptyLine=[ii,ii];'+
+'		'+
+'		for(var jj=ii;jj>=0;jj--){'+
+'			if(true==isEnter(strToModify[jj]))break;'+
+'			if(false==isWhitespace(strToModify[jj]))break;'+
+'			lstEmptyLine[0]=jj;'+
+'		}'+
+'		for(var jj=ii;jj<strToModify.length;jj++){'+
+'			if(true==isEnter(strToModify[jj]))break;'+
+'			if(false==isWhitespace(strToModify[jj]))break;'+
+'			lstEmptyLine[1]=jj;'+
+'		}'+
+'		if(ii==lstEmptyLine[0]&&ii==lstEmptyLine[1]&&false==isEnter(strToModify[lstEmptyLine[0]-1])){'+
+'			return null;'+
+'		}'+
+'		if(true==isEnter(strToModify[lstEmptyLine[1]])){'+
+'			return lstEmptyLine;'+
+'		}'+
+'		return null;'+
+'	};'+
+'	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strToModify){'+
+'		/*true==isWhitespace(chrActual)*/'+
+'		if(true==blnLeaveQuotes)'+
+'			if(0!=intDoublequote||0!=intQuote)return true;'+
+'		if(true==blnLeaveComments)'+
+'			if(0!=intComment||true==blnDoubleComment)return true;'+
+'		if(true==isIndent(ii,strToModify))return true;'+
+'		if(true==isWhitespace(chrNext))return false;'+
+'		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;'+
+'		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;'+
+'		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;'+
+'		return false;'+
+'	};'+
+'	var removeWhitespaces=function(strToModify){'+
+'		var chrPrev,chrII,chrNext;'+
+'		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;'+
+'		for(var ii=1;ii<strToModify.length;ii++){'+
+'			blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;'+
+'			chrPrev=strToModify[ii-1];'+
+'			chrII=strToModify[ii];'+
+'			chrNext=strToModify[ii+1];'+
+'			if(undefined==chrII)break;'+
+'			/*if(true==isEnter(chrII))continue;*/'+
+'			if(0==intQuote&&String.fromCharCode(34)==chrII){'+
+'				intDoublequote=(intDoublequote+1)%2;'+
+'				blnDoublequoteChanged=true;'+
+'			}'+
+'			if(0==intDoublequote&&String.fromCharCode(39)==chrII){'+
+'				intQuote=(intQuote+1)%2;'+
+'				blnQuoteChanged=true;'+
+'			}'+
+'			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;'+
+'			if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){'+
+'				intComment=(intComment+1)%2;'+
+'				blnCommentChanged=true;'+
+'			}'+
+'			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;'+
+'			if(true==isEnter(chrII))blnDoubleComment=false;'+
+'			if(true==isWhitespace(chrII)){'+
+'				if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strToModify)){'+
+'					strToModify=strToModify.substring(0,ii)+strToModify.substring(ii+1);'+
+'					ii--;'+
+'					if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;'+
+'					if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;'+
+'					if(true==blnCommentChanged)intComment=(intComment+1)%2;'+
+'				}'+
+'			}'+
+'		}'+
+''+
+'		if(true==blnRemoveEmptyLines){'+
+'			var lstEmptyLine=null;'+
+'			for(var ii=1;ii<strToModify.length;ii++){'+
+'				chrPrev=strToModify[ii-1];'+
+'				chrII=strToModify[ii];'+
+'				if(undefined==chrII)break;'+
+'				if(undefined!=chrPrev){'+
+'					lstEmptyLine=isEmptyLine(ii,strToModify);'+
+'					if(null!=lstEmptyLine){'+
+'						strToModify=strToModify.substring(0,lstEmptyLine[0])+strToModify.substring(lstEmptyLine[1]+1);'+
+'						ii=lstEmptyLine[0]-1;'+
+'					}'+
+'				}'+
+'			}'+
+'		}'+
+'		if(true==isWhitespace(strToModify[0]))strToModify=strToModify.substring(1);'+
+'		return strToModify;'+
+'	};'+
+'	var strToModify="";'+
+'	strToModify=that.wndEditing.getStrContents();'+
+'	strToModify=removeWhitespaces(strToModify);'+
+'	that.wndEditing.loadEditingText(strToModify,"noWhitespaces");'+
+'}';
+	this.lstInternalCodeExtensionFunctions.push(strNoWhitespaces);
+	
+	var strWhitespacesMM='function whitespacesMM(that,strArgs){'+
+'	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;'+
+'	var blnRemoveEmptyLines=false;'+
+'	var blnLeaveComments=false;'+
+'	var blnLeaveQuotes=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;'+
+'	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;'+
+'	var isAlphanumeric=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		intActual=chrActual.charCodeAt(0);'+
+'		if(intActual>=48&&intActual<=57)return true;'+
+'		if(intActual>=65&&intActual<=90)return true;'+
+'		if(intActual>=97&&intActual<=122)return true;'+
+'		return false;'+
+'	};'+
+'	var isWhitespace=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;'+
+'		return false;'+
+'	};'+
+'	var isQuote=function(chrActual){'+
+'		if(undefined==chrActual)return false;'+
+'		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;'+
+'		return false;'+
+'	};'+
+'	var isIndent=function(ii,strLine){'+
+'		for(var intii=ii;intii>=0;intii--){'+
+'			if(false==isWhitespace(strLine[intii]))return false;'+
+'		}'+
+'		return true;'+
+'	};'+
+'	var isEmptyLine=function(strLine){'+
+'		var intii=0;'+
+'		if(0==strLine.length)return true;'+
+'		for(var ii=0;ii<strLine.length;ii++){'+
+'			if(false==isWhitespace(strLine[ii]))break;'+
+'			intii=ii;'+
+'		}'+
+'		if(intii<strLine.length-1)return false;'+
+'		return true;'+
+'	};'+
+'	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strLine){'+
+'		/*true==isWhitespace(chrActual)*/'+
+'		if(true==blnLeaveQuotes)'+
+'			if(0!=intDoublequote||0!=intQuote)return true;'+
+'		if(true==blnLeaveComments)'+
+'			if(0!=intComment||true==blnDoubleComment)return true;'+
+'		if(true==isIndent(ii,strLine))return true;'+
+'		if(true==isWhitespace(chrNext))return false;'+
+'		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;'+
+'		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;'+
+'		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;'+
+'		return false;'+
+'	};'+
+'	var removeWhitespaces=function(){'+
+'		var chrPrev,chrII,chrNext;'+
+'		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;'+
+'		var strLine;'+
+'		for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){'+
+'			strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
+'			blnDoubleComment=false;'+
+'			for(var ii=0;ii<strLine.length;ii++){'+
+'				blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;'+
+'				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
+'				chrPrev=strLine[ii-1];'+
+'				chrII=strLine[ii];'+
+'				chrNext=strLine[ii+1];'+
+'				if(undefined==chrII)break;'+
+'				if(0==intQuote&&String.fromCharCode(34)==chrII){'+
+'					intDoublequote=(intDoublequote+1)%2;'+
+'					blnDoublequoteChanged=true;'+
+'				}'+
+'				if(0==intDoublequote&&String.fromCharCode(39)==chrII){'+
+'					intQuote=(intQuote+1)%2;'+
+'					blnQuoteChanged=true;'+
+'				}'+
+'				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;'+
+'				if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){'+
+'					intComment=(intComment+1)%2;'+
+'					blnCommentChanged=true;'+
+'				}'+
+'				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;'+
+'				if(true==isWhitespace(chrII)){'+
+'					if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strLine)){'+
+'						that.wndEditing.setLstCursor_buffer_fastCruncher(ii+1,jj);'+
+'						that.wndEditing.insertEditingBackspace_fastCruncher();'+
+'						ii--;'+
+'						if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;'+
+'						if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;'+
+'						if(true==blnCommentChanged)intComment=(intComment+1)%2;'+
+'					}'+
+'				}'+
+'			}'+
+'		}'+
+'		if(true==blnRemoveEmptyLines){'+
+'			for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){'+
+'				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
+'				if(true==isEmptyLine(strLine)){'+
+'					that.wndEditing.setLstCursor_buffer_fastCruncher(strLine.length,jj);'+
+'					for(var ii=0;ii<=strLine.length;ii++)'+
+'						that.wndEditing.insertEditingBackspace_fastCruncher();'+
+'					jj--;'+
+'					'+
+'				}'+
+'			}'+
+'		}'+
+'		if(true==isWhitespace(that.wndEditing.lstTextBuffer_fastCruncher[0][0]))'+
+'		{'+
+'			that.wndEditing.setLstCursor_buffer_fastCruncher(0,1);'+
+'			that.wndEditing.insertEditingBackspace_fastCruncher();'+
+'		}'+
+'	};'+
+'	that.wndEditing.initFastCruncher(false);'+
+'	removeWhitespaces();'+
+'	that.wndEditing.loadEditingText_fastCruncher();'+
+'	that.wndEditing.updateWndEditing(true);'+
+'	that.wndEditing.freeFastCruncher();'+
+'}';
+	this.lstInternalCodeExtensionFunctions.push(strWhitespacesMM);
+};
+Program_TextEditor.prototype.loadInternalCodeExtensions=function(){
+	for(var ii=0;ii<this.lstInternalCodeExtensionFunctions.length;ii++)
+		this.addExtensionsContent(this.lstInternalCodeExtensionFunctions[ii]);
+	
 };
 Program_TextEditor.prototype.interpretInitialCommands=function(){
 	for(var ii=0;ii<this.initialCommands.length;ii++)
@@ -20721,6 +21130,17 @@ Program_TextEditor.prototype.closeAllSubmenuWindows=function(){
 	}
 	this.wndMenu.intMenuClicked=-1;
 };
+Program_TextEditor.prototype.submenuWindowsExtensions=function(){
+	var strFunctionName="";
+	for(var ii=0;ii<this.lstExtensionFunctionNames.length;ii++){
+		strFunctionName=this.lstExtensionFunctionNames[ii];
+		this.wndMenu.mnuExtensions.lstFunctions.push(function(){if(-1==that.wndMenu.mnuExtensions.intMenuHighlight){that.closeAllSubmenuWindows();return;}var strArgs=prompt("Extension strArgs:");if(null==strArgs){that.closeAllSubmenuWindows();return;};var intFunctionIndex=that.wndMenu.mnuExtensions.intMenuHighlight-5;that.closeAllSubmenuWindows();that.lstExtensionFunctions[intFunctionIndex](that,strArgs)});
+
+		intJ=this.wndMenu.mnuExtensions.lstTextBuffer.length;
+		this.wndMenu.mnuExtensions.insertNewline_noUndo(intJ,strFunctionName);
+		this.wndMenu.mnuExtensions.updateWndEditing(true);
+	}
+};
 Program_TextEditor.prototype.submenuWindows=function(){
 	var strSubenuContents="New"+String.fromCharCode(10)+"Open..."+String.fromCharCode(10)+"Save as"+String.fromCharCode(10)+"Save as..."+"Exit";
 	this.wndMenu.lstSubmenuWindows=[];
@@ -20907,6 +21327,7 @@ function(){that.closeAllSubmenuWindows();that.mnuExtensions_addExtensionsFromFil
 		}
 	
 	}
+	this.submenuWindowsExtensions();
 };
 Program_TextEditor.prototype.menuWindows=function(){
 	var strMenuContents="File Edit View Extensions";
@@ -21490,6 +21911,7 @@ Program_TextEditor.prototype.addExtensionsContent=function(strTextContent){
 	intExtensionCounter=this.lstExtensionFunctions.length;
 	var intJ;
 	var that=this;
+	var strFunctionAlreadyLoaded="";
 	while(-1!=intFunction){
 		intFunction=strRest.indexOf("function");
 		if(-1==intFunction)break;
@@ -21506,17 +21928,25 @@ Program_TextEditor.prototype.addExtensionsContent=function(strTextContent){
 		if(-1==intBracket125||intBracket123>intBracket125)break;
 		strFunctionCode=strRest.substring(intBracket123+1,intBracket125);
 		if(0==strFunctionCode.length)break;
-		this.lstExtensionFunctionNames.push(strFunctionName);
-		strFunctionNewName="Program_TextEditor_extension"+intExtensionCounter;
-		funExtension=eval(strFunctionNewName+"=function(that,strArgs){"+strFunctionCode+"}");
-		this.lstExtensionFunctions.push(funExtension);
-		intExtensionCounter++;
-		strRest=strRest.substring(intBracket125+1);
-		this.wndMenu.mnuExtensions.lstFunctions.push(function(){if(-1==that.wndMenu.mnuExtensions.intMenuHighlight){that.closeAllSubmenuWindows();return;}var strArgs=prompt("Extension strArgs:");if(null==strArgs){that.closeAllSubmenuWindows();return;};var intFunctionIndex=that.wndMenu.mnuExtensions.intMenuHighlight-5;that.closeAllSubmenuWindows();that.lstExtensionFunctions[intFunctionIndex](that,strArgs)});
+		if(-1==this.lstExtensionFunctionNames.indexOf(strFunctionName)){
+			this.lstExtensionFunctionNames.push(strFunctionName);
+			strFunctionNewName="Program_TextEditor_extension"+intExtensionCounter;
+			funExtension=eval(strFunctionNewName+"=function(that,strArgs){"+strFunctionCode+"}");
+			this.lstExtensionFunctions.push(funExtension);
+			intExtensionCounter++;
+			if(null!=this.wndMenu){
+				this.wndMenu.mnuExtensions.lstFunctions.push(function(){if(-1==that.wndMenu.mnuExtensions.intMenuHighlight){that.closeAllSubmenuWindows();return;}var strArgs=prompt("Extension strArgs:");if(null==strArgs){that.closeAllSubmenuWindows();return;};var intFunctionIndex=that.wndMenu.mnuExtensions.intMenuHighlight-5;that.closeAllSubmenuWindows();that.lstExtensionFunctions[intFunctionIndex](that,strArgs)});
 
-		intJ=this.wndMenu.mnuExtensions.lstTextBuffer.length;
-		this.wndMenu.mnuExtensions.insertNewline_noUndo(intJ,strFunctionName);
-		this.wndMenu.mnuExtensions.updateWndEditing(true);
+				intJ=this.wndMenu.mnuExtensions.lstTextBuffer.length;
+				this.wndMenu.mnuExtensions.insertNewline_noUndo(intJ,strFunctionName);
+				this.wndMenu.mnuExtensions.updateWndEditing(true);
+			}
+		}else{
+			strFunctionAlreadyLoaded="Function "+strFunctionName+" already loaded.";	
+			alert(strFunctionAlreadyLoaded);
+			console.log(strFunctionAlreadyLoaded);
+		}
+		strRest=strRest.substring(intBracket125+1);
 	}
 };
 Program_TextEditor.prototype.getExtensionsFileContent=function(){
