@@ -1,5 +1,14 @@
 function insertDay(that,strArgs){
-	/*functions from the global namespace have to be rewritten*/
+	/**
+	* Insert hours of the day. Part of the calendar extension.
+	* Default commandline call:
+	*	:=>insertDay
+	* inserts hours from 00:00 to 23:00.
+	* With optional arguments:
+	*	:=>insertDay intMinH intMaxH
+	* it inserts hours from intMinH to intMaxH, also if intMinH>intMaxH - then the next day hours are inserted.
+	*/
+	/*functions from the global TheNetspaces namespace have to be rewritten*/
 	var flush=function(strInput,intMax){
         	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;
 	};
@@ -36,7 +45,20 @@ function insertDay(that,strArgs){
 	}
 }
 function insertMonth(that,strArgs){
-	/*functions from the global namespace have to be rewritten*/
+	/**
+	* Insert calendar month in the month weekdays view. Part of the calendar extension.
+	* Default commandline call:
+	*	:=>insertMonth
+	* inserts actual month.
+	* With optional arguments:
+	*	:=>insertMonth intMonth intYear
+	* it inserts the intMonth/intYear month. Arguments provided in most popular
+	* calendar convention, not in diverse computer science conventions,
+	* so e.x. months are numbered from 1 instead of 0 etc.
+	* You can also quickly set the formatting of the month by setting the internal strInchySpaces variable, by default set to:
+	* var strInchySpaces="   ";
+	*/
+	/*functions from the global TheNetspaces namespace have to be rewritten*/
 	var flush=function(strInput,intMax){
         	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;
 	};
@@ -67,7 +89,7 @@ function insertMonth(that,strArgs){
 	};
 	var lstDate=strArgs.split(" ");
 	var intMonth;
-	var intYear
+	var intYear;
 	var nowDate=new Date();
 	intMonth=nowDate.getMonth();
 	intYear=nowDate.getFullYear();
@@ -80,7 +102,7 @@ function insertMonth(that,strArgs){
 	var theDate=new Date(intYear,intMonth,1,0,0,0,0);
 	var intWeeks=5;
 	if(1==intMonth&&0==theDate.getDay())intWeeks=4;
-	var strInchySpaces="   "
+	var strInchySpaces="   ";
 	/*var strLine=strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces+"Sun"+strInchySpaces;*/
 	var strLine=strInchySpaces+"Sun"+strInchySpaces+"Mon"+strInchySpaces+"Tue"+strInchySpaces+"Wen"+strInchySpaces+"Thu"+strInchySpaces+"Fri"+strInchySpaces+"Sat"+strInchySpaces;
 	that.wndEditing.setLstTextBuffer(that.wndEditing.lstCursor_buffer[1],strLine);

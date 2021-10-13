@@ -1,0 +1,276 @@
+function noWhitespaces(that,strArgs){
+	/**
+	* Remove C-style programs redundant whitespaces.
+	* Default commandline call:
+	*	:=>whitespacesMM
+	* With optional arguments in arbitrary sequence:
+	*	:=>whitespacesMM emptylines-- withQuotes noComments
+	* emptylines--: remove also the empty lines or lines with the whitespaces only
+	* withQuotes: remove whitespaces also from content inside the 'quotes' and "double quotes"
+	* noComments: don't remove whitespaces from the comments 
+	*
+	* Portable version of the algorithm on the strToModify string.
+	* Not fully tested yet, naturally previous backup of the code as always highly suggested.
+	*/
+	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;
+	var blnRemoveEmptyLines=false;
+	var blnLeaveComments=false;
+	var blnLeaveQuotes=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;
+	var isAlphanumeric=function(chrActual){
+		if(undefined==chrActual)return false;
+		intActual=chrActual.charCodeAt(0);
+		if(intActual>=48&&intActual<=57)return true;
+		if(intActual>=65&&intActual<=90)return true;
+		if(intActual>=97&&intActual<=122)return true;
+		return false;
+	};
+	var isWhitespace=function(chrActual){
+		if(undefined==chrActual)return false;
+		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;
+		return false;
+	};
+	var isEnter=function(chrActual){
+		if(undefined==chrActual)return false;
+		if(chrActual==String.fromCharCode(10)||chrActual==String.fromCharCode(13))return true;
+		return false;
+	};
+	var isQuote=function(chrActual){
+		if(undefined==chrActual)return false;
+		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;
+		return false;
+	};
+	var isIndent=function(ii,strToModify){
+		for(var jj=ii;jj>=0;jj--){
+			if(true==isEnter(strToModify[jj]))return true;
+			if(false==isWhitespace(strToModify[jj]))return false;
+		}
+		return true;
+	};
+	var isEmptyLine=function(ii,strToModify){
+		var lstEmptyLine=[ii,ii];
+		
+		for(var jj=ii;jj>=0;jj--){
+			if(true==isEnter(strToModify[jj]))break;
+			if(false==isWhitespace(strToModify[jj]))break;
+			lstEmptyLine[0]=jj;
+		}
+		for(var jj=ii;jj<strToModify.length;jj++){
+			if(true==isEnter(strToModify[jj]))break;
+			if(false==isWhitespace(strToModify[jj]))break;
+			lstEmptyLine[1]=jj;
+		}
+		if(ii==lstEmptyLine[0]&&ii==lstEmptyLine[1]&&false==isEnter(strToModify[lstEmptyLine[0]-1])){
+			return null;
+		}
+		if(true==isEnter(strToModify[lstEmptyLine[1]])){
+			return lstEmptyLine;
+		}
+		return null;
+	};
+	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strToModify){
+		/*true==isWhitespace(chrActual)*/
+		if(true==blnLeaveQuotes)
+			if(0!=intDoublequote||0!=intQuote)return true;
+		if(true==blnLeaveComments)
+			if(0!=intComment||true==blnDoubleComment)return true;
+		if(true==isIndent(ii,strToModify))return true;
+		if(true==isWhitespace(chrNext))return false;
+		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;
+		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;
+		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;
+		return false;
+	};
+	var removeWhitespaces=function(strToModify){
+		var chrPrev,chrII,chrNext;
+		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;
+		for(var ii=1;ii<strToModify.length;ii++){
+			blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;
+			chrPrev=strToModify[ii-1];
+			chrII=strToModify[ii];
+			chrNext=strToModify[ii+1];
+			if(undefined==chrII)break;
+			/*if(true==isEnter(chrII))continue;*/
+			if(0==intQuote&&String.fromCharCode(34)==chrII){
+				intDoublequote=(intDoublequote+1)%2;
+				blnDoublequoteChanged=true;
+			}
+			if(0==intDoublequote&&String.fromCharCode(39)==chrII){
+				intQuote=(intQuote+1)%2;
+				blnQuoteChanged=true;
+			}
+			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;
+			if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){
+				intComment=(intComment+1)%2;
+				blnCommentChanged=true;
+			}
+			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;
+			if(true==isEnter(chrII))blnDoubleComment=false;
+			if(true==isWhitespace(chrII)){
+				if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strToModify)){
+					strToModify=strToModify.substring(0,ii)+strToModify.substring(ii+1);
+					ii--;
+					if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;
+					if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;
+					if(true==blnCommentChanged)intComment=(intComment+1)%2;
+				}
+			}
+		}
+
+		if(true==blnRemoveEmptyLines){
+			var lstEmptyLine=null;
+			for(var ii=1;ii<strToModify.length;ii++){
+				chrPrev=strToModify[ii-1];
+				chrII=strToModify[ii];
+				if(undefined==chrII)break;
+				if(undefined!=chrPrev){
+					lstEmptyLine=isEmptyLine(ii,strToModify);
+					if(null!=lstEmptyLine){
+						strToModify=strToModify.substring(0,lstEmptyLine[0])+strToModify.substring(lstEmptyLine[1]+1);
+						ii=lstEmptyLine[0]-1;
+					}
+				}
+			}
+		}
+		if(true==isWhitespace(strToModify[0]))strToModify=strToModify.substring(1);
+		return strToModify;
+	};
+	var strToModify="";
+	strToModify=that.wndEditing.getStrContents();
+	strToModify=removeWhitespaces(strToModify);
+	that.wndEditing.loadEditingText(strToModify,"noWhitespaces");
+}
+function whitespacesMM(that,strArgs){
+	/**
+	* Remove C-style programs redundant whitespaces.
+	* By default
+	*	:=>whitespacesMM
+	* With optional arguments in arbitrary sequence:
+	*	:=>whitespacesMM emptylines-- withQuotes noComments
+	* emptylines--: remove also the empty lines or lines with the whitespaces only
+	* withQuotes: remove whitespaces also from content inside the 'quotes' and "double quotes"
+	* noComments: don't remove whitespaces from the comments 
+	*
+	* Version of the algorithm on the texteditor fastCruncher.
+	* Not fully tested yet, naturally previous backup of the code as always highly suggested.
+	*/
+	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;
+	var blnRemoveEmptyLines=false;
+	var blnLeaveComments=false;
+	var blnLeaveQuotes=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;
+	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;
+	var isAlphanumeric=function(chrActual){
+		if(undefined==chrActual)return false;
+		intActual=chrActual.charCodeAt(0);
+		if(intActual>=48&&intActual<=57)return true;
+		if(intActual>=65&&intActual<=90)return true;
+		if(intActual>=97&&intActual<=122)return true;
+		return false;
+	};
+	var isWhitespace=function(chrActual){
+		if(undefined==chrActual)return false;
+		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;
+		return false;
+	};
+	var isQuote=function(chrActual){
+		if(undefined==chrActual)return false;
+		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;
+		return false;
+	};
+	var isIndent=function(ii,strLine){
+		for(var intii=ii;intii>=0;intii--){
+			if(false==isWhitespace(strLine[intii]))return false;
+		}
+		return true;
+	};
+	var isEmptyLine=function(strLine){
+		var intii=0;
+		if(0==strLine.length)return true;
+		for(var ii=0;ii<strLine.length;ii++){
+			if(false==isWhitespace(strLine[ii]))break;
+			intii=ii;
+		}
+		if(intii<strLine.length-1)return false;
+		return true;
+	};
+	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strLine){
+		/*true==isWhitespace(chrActual)*/
+		if(true==blnLeaveQuotes)
+			if(0!=intDoublequote||0!=intQuote)return true;
+		if(true==blnLeaveComments)
+			if(0!=intComment||true==blnDoubleComment)return true;
+		if(true==isIndent(ii,strLine))return true;
+		if(true==isWhitespace(chrNext))return false;
+		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;
+		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;
+		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;
+		return false;
+	};
+	var removeWhitespaces=function(){
+		var chrPrev,chrII,chrNext;
+		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;
+		var strLine;
+		for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){
+			strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];
+			blnDoubleComment=false;
+			for(var ii=0;ii<strLine.length;ii++){
+				blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;
+				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];
+				chrPrev=strLine[ii-1];
+				chrII=strLine[ii];
+				chrNext=strLine[ii+1];
+				if(undefined==chrII)break;
+				if(0==intQuote&&String.fromCharCode(34)==chrII){
+					intDoublequote=(intDoublequote+1)%2;
+					blnDoublequoteChanged=true;
+				}
+				if(0==intDoublequote&&String.fromCharCode(39)==chrII){
+					intQuote=(intQuote+1)%2;
+					blnQuoteChanged=true;
+				}
+				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;
+				if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){
+					intComment=(intComment+1)%2;
+					blnCommentChanged=true;
+				}
+				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;
+				if(true==isWhitespace(chrII)){
+					if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strLine)){
+						that.wndEditing.setLstCursor_buffer_fastCruncher(ii+1,jj);
+						that.wndEditing.insertEditingBackspace_fastCruncher();
+						ii--;
+						if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;
+						if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;
+						if(true==blnCommentChanged)intComment=(intComment+1)%2;
+					}
+				}
+			}
+		}
+		if(true==blnRemoveEmptyLines){
+			for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){
+				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];
+				if(true==isEmptyLine(strLine)){
+					that.wndEditing.setLstCursor_buffer_fastCruncher(strLine.length,jj);
+					for(var ii=0;ii<=strLine.length;ii++)
+						that.wndEditing.insertEditingBackspace_fastCruncher();
+					jj--;
+					
+				}
+			}
+		}
+		if(true==isWhitespace(that.wndEditing.lstTextBuffer_fastCruncher[0][0]))
+		{
+			that.wndEditing.setLstCursor_buffer_fastCruncher(0,1);
+			that.wndEditing.insertEditingBackspace_fastCruncher();
+		}
+	};
+	that.wndEditing.initFastCruncher(false);
+	removeWhitespaces();
+	that.wndEditing.loadEditingText_fastCruncher();
+	that.wndEditing.updateWndEditing(true);
+	that.wndEditing.freeFastCruncher();
+}
