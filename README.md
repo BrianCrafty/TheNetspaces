@@ -6,6 +6,8 @@ The Netspaces is an interactive game where you can do the number crunching in th
 
 The main webpage TheNetspaces.html and TheNetspaces_oneliner.html should be equally functional. TheNetspaces.html is a code with newlines and TheNetspaces_oneliner.html is the same code without newlines. That text file has only one line. Often it is extremely functional and additional effort and programming practices must be often put, so that the many line code version can be also formulated in form of a code oneliner.
 
+Default webbrowser key actions are blocked in The Netspaces in order not to disturb (like the F12 console stuff, F11 fullscreen, etc.) - if you want to press them click somewhere beyond the webpage surface first e.x. on the address bar.
+
 Other files in the directory:
 -dictionaryEditor.html and dictionaryEditor_oneliner.html - to edit the languageDictionary and the keyboardDictionary used by the texteditor Computer program.
 -extensions directory - directory for the texteditor extensions - scripts to run on the text and dictionaries e.x. bothDictionaries.txt to use by dictionaryEditor and TheNetspaces texteditor program.
