@@ -1,3 +1,12 @@
+/**
+* Insert hours of the day. Part of the calendar extension.
+* Default commandline call:
+*	insertDay
+* inserts hours from 00:00 to 23:00.
+* With optional arguments:
+*	insertDay intMinH intMaxH
+* it inserts hours from intMinH to intMaxH, also if intMinH>intMaxH - then the next day hours are inserted.
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

@@ -1,3 +1,16 @@
+/**
+* Insert calendar month in the month weekdays view. Part of the calendar extension.
+* Default commandline call:
+*	:=>insertMonth
+* inserts actual month.
+* With optional arguments:
+*	:=>insertMonth intMonth intYear
+* it inserts the intMonth/intYear month. Arguments provided in most popular
+* calendar convention, not in diverse computer science conventions,
+* so e.x. months are numbered from 1 instead of 0 etc.
+* You can also quickly set the formatting of the month by setting the internal strInchySpaces variable, by default set to:
+* var strInchySpaces="   ";
+*/
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
