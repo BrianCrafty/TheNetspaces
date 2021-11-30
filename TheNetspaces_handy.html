@@ -45,6 +45,9 @@ var estimateColorNumber=function(theColor){
 			if((Math.abs(intG/intR-i/(1.*j))<precision)&&(approximateEqual(0,intB)))return 8;
 	return -1;
 };
+var flush=function(strInput,intMax){
+	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;
+};
 /*var epsilon=10*(-10);*/
 var epsilon=Math.pow(10,-10);
 /*mov ax,bx*/
@@ -190,6 +193,53 @@ var parseList=function(strList){
 	}
 	return lstList;
 };
+var copyList=function(lstBufferSrc){
+	var lstBufferDst=[];	
+	for(var ii=0;ii<lstBufferSrc.length;ii++){
+		lstBufferDst.push(lstBufferSrc[ii]);
+	}
+	return lstBufferDst;
+};
+var isList=function(lstBufferSrc){
+	if("object"!=typeof(lstBufferSrc))return false;
+	if(lstBufferSrc.constructor==[].constructor)return true;
+	return false;
+};
+var copyListRecursive=function(lstBufferSrc){
+	var lstBufferDst=[];	
+	for(var ii=0;ii<lstBufferSrc.length;ii++){
+		if(true==isList(lstBufferSrc[ii]))
+			lstBufferDst.push(copyListRecursive(lstBufferSrc[ii]));
+		else
+		lstBufferDst.push(lstBufferSrc[ii]);
+	}
+	return lstBufferDst;
+};
+var copyString=function(strSrc){
+	return strSrc.split("").join("");
+};
+var copyStringList=function(lstBufferSrc){
+	var lstBufferDst=[];	
+	for(var ii=0;ii<lstBufferSrc.length;ii++){
+		lstBufferDst.push(copyString(lstBufferSrc[ii]));
+	}
+	return lstBufferDst;
+};
+var copyDictionary=function(dctSrc){
+	var dctDst={};
+	for(x in dctSrc){
+		dctDst[x]=dctSrc[x];
+	}
+	return dctDst;
+};
+var concatenateLists=function(list1,list2){
+	var list3=[];	
+	for(var ii=0;ii<list1.length;ii++)
+		list3.push(list1[ii]);
+	for(var ii=0;ii<list2.length;ii++)
+		list3.push(list2[ii]);
+	return list3;
+};
 var emptyUint8Array=function(size){
 	return new Uint8Array(size);
 };
@@ -228,6 +278,7 @@ var VarietyManifold3Dconstructor=function(that,gl,name,arrVertices,arrIndices,ar
 	that.vec4spectacularColor=vec4spectacularColor;
 	that.fltSpectacularWeight=fltSpectacularWeight;
 	that.fltMaterialShiness=fltMaterialShiness;
+	that.blnShow=true;
 	if(intTextures>0)
 		if(null!=arrTextureUVs){
 				that.arrTextureUVs=new Float32Array(arrTextureUVs);
@@ -270,7 +321,6 @@ var VarietyManifold3Dconstructor=function(that,gl,name,arrVertices,arrIndices,ar
 		that.textureUVbuffer=null;
 		that.texture=null;
 	}
-
 };
 var VarietyManifold3Dconstructor_strF=function(that,gl,name,arrVertices,arrIndices,arrNormals,vec4color,vec4ambientColor,fltAmbientWeight,vec4diffuseColor,fltDiffuseWeight,vec4spectacularColor,fltSpectacularWeight,fltMaterialShiness,textureCanvas,mat4transformation,intTextures,arrTextureUVs,objStrFargs){
 	this.objStrFargs=objStrFargs;
@@ -960,6 +1010,7 @@ The_Netspace.prototype.exactRender=function(){
 		varietyManifolds3D=this.pointLightIslands[jj].varietyManifolds3D;
 		this.gl.uniform3fv(this.exactProgram.uniforms.vec3lightPosition,this.pointLightIslands[jj].vec3positionLight);
 		for(var ii=0;ii<varietyManifolds3D.length;ii++){
+			if(false==varietyManifolds3D[ii].blnShow)continue;
 			this.gl.uniform1i(this.exactProgram.uniforms.intTextures,varietyManifolds3D[ii].intTextures);
 			this.gl.uniform1i(this.exactProgram.uniforms.intTexturesF,varietyManifolds3D[ii].intTextures);
 			this.gl.uniform1i(this.exactProgram.uniforms.intBlnTextureUVmapping,varietyManifolds3D[ii].intBlnTextureUVmapping);
@@ -1171,6 +1222,10 @@ The_Netspace.prototype.onKeyDown=function(evtEvent){
 			netspace.camera.vec3position=vec3.create(netspace.vec3homePosition);
 			netspace.camera.updateMouse();
 			break;
+		case "Insert":
+			var chkSubstituteClick=document.getElementById("chkSubstituteClick");
+			chkSubstituteClick.checked=!chkSubstituteClick.checked;
+			break;
 	}
 	try{
 		if(true==netspace.chkPreventDefaultKeyactions.checked)
@@ -1178,6 +1233,11 @@ The_Netspace.prototype.onKeyDown=function(evtEvent){
 	}catch(xcp){}
 };
 The_Netspace.prototype.mouseClickLeft=function(){
+	if(null!=netspace.chengfaChengseMatrix&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkMode.checked&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkNonModifyingMouseclicks.checked){
+		netspace.chengfaChengseMatrix.pushCubit();
+		return;
+	}
+	var intBlock=netspace.intBlock;
 	if(false==netspace.chkSubstituteClick.checked){
 	if(netspace.intBlockFaces.indexOf("up")==netspace.intBlockFace)netspace.lookatY++;
 	if(netspace.intBlockFaces.indexOf("right")==netspace.intBlockFace)netspace.lookatX++;
@@ -1185,14 +1245,38 @@ The_Netspace.prototype.mouseClickLeft=function(){
 	if(netspace.intBlockFaces.indexOf("left")==netspace.intBlockFace)netspace.lookatX--;
 	if(netspace.intBlockFaces.indexOf("front")==netspace.intBlockFace)netspace.lookatZ++;
 	if(netspace.intBlockFaces.indexOf("back")==netspace.intBlockFace)netspace.lookatZ--;
-	if(null!=netspace.lookatX&&null!=netspace.lookatY&&null!=netspace.lookatZ)
-		netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,netspace.intBlock);
-	}else netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,netspace.intBlock);
-	
+	if(null!=netspace.lookatX&&null!=netspace.lookatY&&null!=netspace.lookatZ){
+		if(netspace.quickNetspacesObjectTypes.length<=netspace.intBlock&&true==document.getElementById("chkAutoincrementExternalTextureNumber").checked){
+			intBlock=1.*netspace.intExternalQuickTextureNumber;
+			netspace.tryToIncrementIntExternalQuickTextureNumber();
+		}
+		netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,intBlock);
+		if(null!=netspace.chengfaChengseMatrix&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkMode.checked){
+			netspace.chengfaChengseMatrix.pushCubit();
+		}
+	}
+	}else{
+		if(netspace.quickNetspacesObjectTypes.length<=netspace.intBlock&&true==document.getElementById("chkAutoincrementExternalTextureNumber").checked){
+			intBlock=1.*netspace.intExternalQuickTextureNumber;
+			netspace.tryToIncrementIntExternalQuickTextureNumber();
+		}
+		netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,intBlock);
+		if(null!=netspace.chengfaChengseMatrix&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkMode.checked){
+			netspace.chengfaChengseMatrix.pushCubit();
+		}
+	}
 };
 The_Netspace.prototype.mouseClickRight=function(){
-		if(null!=netspace.lookatX&&null!=netspace.lookatY&&null!=netspace.lookatZ)
-			netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,0);
+	if(null!=netspace.chengfaChengseMatrix&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkMode.checked&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkNonModifyingMouseclicks.checked){
+		netspace.chengfaChengseMatrix.popLookatCubit();
+		return;
+	}
+	if(null!=netspace.lookatX&&null!=netspace.lookatY&&null!=netspace.lookatZ){
+		netspace.put3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ,0);
+		if(null!=netspace.chengfaChengseMatrix&&true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkMode.checked){
+			netspace.chengfaChengseMatrix.popLookatCubit();
+		}
+	}
 };
 The_Netspace.prototype.onMouseUp=function(evtEvent){
 	if(null==netspace)return;
@@ -2211,8 +2295,8 @@ Region.prototype.put3dpixel=function(intX,intY,intZ,intBlock){
 	if(intZ>=intRegionDZ)return this.regionBack?this.regionBack.put3dpixel(intX,intY,intZ-intRegionDZ,intBlock):0;
 	this.setModiff(true);
 	if(netspace.quickNetspacesObjectTypes.length<=intBlock){
-		intBlock=1.*netspace.intExternalQuickTextureNumber;
-		netspace.tryToIncrementIntExternalQuickTextureNumber();
+		/*intBlock=1.*netspace.intExternalQuickTextureNumber;*/
+		/*netspace.tryToIncrementIntExternalQuickTextureNumber();*/
 	}
 	this.blocks[ijk(intX,intY,intZ,intRegionDX,intRegionDY,intRegionDZ)]=intBlock;
 	if(0==intX)if(this.regionLeft)this.regionLeft.setModiff(true);
@@ -4027,8 +4111,8 @@ The_Netspace.prototype.put3dpixel_region=function(I,J,K,i,j,k,intValue){
 	theRegion=this.quickNetspaceRooms[this.intActualQuickNetspaceRoom].regions[ijk(I,J,K,intRegionsDX,intRegionsDY,intRegionsDZ)];
 	theRegion.setModiff(true);
 	if(netspace.quickNetspacesObjectTypes.length<=intValue){
-		intValue=1.*netspace.intExternalQuickTextureNumber;
-		netspace.tryToIncrementIntExternalQuickTextureNumber();
+		/*intValue=1.*netspace.intExternalQuickTextureNumber;*/
+		/*netspace.tryToIncrementIntExternalQuickTextureNumber();*/
 	}
 	theRegion.blocks[ijk(i,j,k,intRegionDX,intRegionDY,intRegionDZ)]=intValue;
 	if(0==i)if(theRegion.regionLeft)theRegion.regionLeft.setModiff(true);
@@ -4053,12 +4137,10 @@ The_Netspace.prototype.put3dpixel=function(i0,j0,k0,intValue){
 		return 0;
 	theRegion=this.quickNetspaceRooms[this.intActualQuickNetspaceRoom].regions[ijk(I,J,K,intRegionsDX,intRegionsDY,intRegionsDZ)];
 	theRegion.setModiff(true);
-	/*
 	if(netspace.quickNetspacesObjectTypes.length<=intValue){
-		intValue=1.*netspace.intExternalQuickTextureNumber;
-		netspace.tryToIncrementIntExternalQuickTextureNumber();
+		/*intValue=1.*netspace.intExternalQuickTextureNumber;*/
+		/*netspace.tryToIncrementIntExternalQuickTextureNumber();*/
 	}
-	*/
 	theRegion.blocks[ijk(i,j,k,intRegionDX,intRegionDY,intRegionDZ)]=intValue;
 	if(0==i)if(theRegion.regionLeft)theRegion.regionLeft.setModiff(true);
 	if(intRegionDX-1==i)if(theRegion.regionRight)theRegion.regionRight.setModiff(true);
@@ -9224,6 +9306,32 @@ var loadLaptop=function(){
 		divTxtFunFunFunFileSection.appendChild(chkTouchscreenKeyboard);
 		divTxtFunFunFunFileSection.appendChild(chkTouchscreenKeyboardTitle);
 	}
+	var chkComputerKeyboardOff=document.createElement("input");
+	chkComputerKeyboardOff.type="checkbox";
+	chkComputerKeyboardOff.id="chkComputerKeyboardOff";
+	that.chkComputerKeyboardOff=chkComputerKeyboardOff;
+	var chkComputerKeyboardOffTitle=document.createTextNode("Computer keyboard off");
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ComputerExtension",chkComputerKeyboardOff);
+		netspace.extensionManager.appendChild("ComputerExtension",chkComputerKeyboardOffTitle);
+	}else{
+		divTxtFunFunFunFileSection.appendChild(chkComputerKeyboardOff);
+		divTxtFunFunFunFileSection.appendChild(chkComputerKeyboardOffTitle);
+	}
+	var chkComputerMouseOff=document.createElement("input");
+	chkComputerMouseOff.type="checkbox";
+	chkComputerMouseOff.id="chkComputerMouseOff";
+	that.chkComputerMouseOff=chkComputerMouseOff;
+	var chkComputerMouseOffTitle=document.createTextNode("Computer mouse off");
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ComputerExtension",chkComputerMouseOff);
+		netspace.extensionManager.appendChild("ComputerExtension",chkComputerMouseOffTitle);
+	}else{
+		divTxtFunFunFunFileSection.appendChild(chkComputerMouseOff);
+		divTxtFunFunFunFileSection.appendChild(chkComputerMouseOffTitle);
+	}
+
+
 	var btnLockFullscreenMode=document.createElement("button");
 	btnLockFullscreenMode.innerText="Set camera to screen";
 	btnLockFullscreenMode.id="btnLockFullscreenMode";
@@ -12293,6 +12401,7 @@ Computer.prototype.inits=function(){
 	this.installProgram(["startx",Program_startx]);
 	this.installProgram(["txtFunFunFun",Program_txtFunFunFun]);
 	this.installProgram(["binarysnake",Program_BinarySnakeGame]);
+	this.installProgram(["dictionarytraining",Program_DictionaryTraining]);
 	this.installProgram(["texteditor",Program_TextEditor]);
 };
 Computer.prototype.loopFunction=function(currentFrameTime){
@@ -12304,6 +12413,7 @@ Computer.prototype.loopFunction=function(currentFrameTime){
 	}
 };
 Computer.prototype.onKeyDown=function(evtEvent){
+	if(true==this.chkComputerKeyboardOff.checked)return;
 	if("F10"==evtEvent.key){
 		netspace.shaderThinkpad.shaderThinkpadManager.blnShowComputerTextScreenText=(true==netspace.shaderThinkpad.shaderThinkpadManager.blnShowComputerTextScreenText)?false:true;
 		var ShaderThinkpadManager_chkShowComputerTextScreenText=document.getElementById("ShaderThinkpadManager_chkShowComputerTextScreenText");
@@ -12318,6 +12428,7 @@ Computer.prototype.onKeyDown=function(evtEvent){
 	}
 };
 Computer.prototype.onKeyUp=function(evtEvent){
+	if(true==this.chkComputerKeyboardOff.checked)return;
 	if(null!=this.theActualProgram){
 		this.theActualProgram.onKeyUp(evtEvent);
 		try{
@@ -12327,18 +12438,22 @@ Computer.prototype.onKeyUp=function(evtEvent){
 	}
 };
 Computer.prototype.onMouseDown=function(evtEvent){
+	if(true==this.chkComputerMouseOff.checked)return;
 	if(null!=this.theActualProgram)
 		this.theActualProgram.onMouseDown(evtEvent);
 };
 Computer.prototype.onMouseUp=function(evtEvent){
+	if(true==this.chkComputerMouseOff.checked)return;
 	if(null!=this.theActualProgram)
 		this.theActualProgram.onMouseUp(evtEvent);
 };
 Computer.prototype.onMouseWheel=function(evtEvent){
+	if(true==this.chkComputerMouseOff.checked)return;
 	if(null!=this.theActualProgram)
 		this.theActualProgram.onMouseWheel(evtEvent);
 };
 Computer.prototype.onMouseMove=function(evtEvent){
+	if(true==this.chkComputerMouseOff.checked)return;
 	if(null!=this.theActualProgram)
 		this.theActualProgram.onMouseMove(evtEvent);
 };
@@ -13427,7 +13542,7 @@ Program_BinarySnakeGame.prototype.gameModePause=function(){
 Program_BinarySnakeGame.prototype.roundRand=function(min,max){
 	return min+Math.round(Math.abs(max-min)*Math.random());
 };
-var flattenConcat=function(mat){
+flattenConcat=function(mat){
 	return [].concat.apply([],mat);
 };
 function roundRand(min,max){return min+Math.round(Math.abs(max-min)*Math.random());}
@@ -14030,6 +14145,771 @@ Program_BinarySnakeGame.prototype.reloadStrArgs=function(){
 	openFile(function(strContent){that.reloadStrArgsCallback(strContent);},objArgs);
 };
 Program_BinarySnakeGame.prototype.loopFunction=function(currentFrameTime){
+	switch(this.intGameMode){
+		case 0:this.gameModeGame(currentFrameTime);break;
+		case 1:this.gameModePause(currentFrameTime);break;
+		case 4:this.gameModeGameOver(currentFrameTime);break;
+	}
+};
+Program_DictionaryTrainingConstructor=function(that,computer,base){
+	that.computer=computer;
+	that.base=base;
+	that.computer.clearScreen_text();
+	that.intPoints=0;
+	this.intAppleEaten=0;
+	that.intGameMode=4;
+	that.fltMouseSpeed=0.5;
+	that.intGameSpeed_ms=250;
+	that.prevMouseX=null;
+	that.prevMouseY=null;
+	that.fltMouseX=0;
+	that.fltMouseY=0;
+	that.blnMouseBlocked=false;
+	that.intMinApple=1;
+	that.intMaxApple=2350;
+	that.blnScreensaverPlay=false;
+	that.blnCancelScreensaverPlay=true;
+	that.prevStrArgs=null;
+	that.strArgs="";
+	/*that.strGameMode="normal";*/
+	/*that.strGameMode="inches";*/
+	that.strGameMode="dictionary";
+	that.gameModeGameOver();
+};
+Program_DictionaryTrainingConstructor_strF=function(that,computer,base){
+};
+Program_DictionaryTraining=function(computer,base){
+	Program_DictionaryTrainingConstructor(this,computer,base);
+	Program_DictionaryTrainingConstructor_strF(this,computer,base);
+};
+Program_DictionaryTraining.prototype.gameModeGameOver=function(){
+	this.base.clearScreen_text();
+	var strGameOver="Points: "+this.intPoints+" Game over - press p to play";
+	for(var ii=0;ii<strGameOver.length;ii++)
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.floor((this.base.intScreenWidth_text-1)/2.-strGameOver.length/2.+ii),Math.floor((this.base.intScreenHeight_text-1)/2.))]=strGameOver[ii];
+	this.drawMouse();
+};
+Program_DictionaryTraining.prototype.gameModePause=function(){
+	this.base.clearScreen_text();
+	var strGamePause="Pause - press p to play";
+	for(var ii=0;ii<strGamePause.length;ii++)
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.floor((this.base.intScreenWidth_text-1)/2.-strGamePause.length/2.+ii),Math.floor((this.base.intScreenHeight_text-1)/2.))]=strGamePause[ii];
+	this.drawMouse();
+};
+Program_DictionaryTraining.prototype.roundRand=function(min,max){
+	return min+Math.round(Math.abs(max-min)*Math.random());
+};
+Program_DictionaryTraining.prototype.addRandomApple=function(){
+	var x,y;
+	var blnGoodApple=false;
+	while(false==blnGoodApple){
+		x=this.roundRand(1,this.base.intScreenWidth_text-2);
+		y=this.roundRand(1,this.base.intScreenHeight_text-2);
+		blnGoodApple=true;
+		for(var ii=0;ii<this.theSnake.length;ii++)
+			if(this.theSnake[ii][0]==x&&this.theSnake[ii][1]==y)
+				blnGoodApple=false;
+	}
+	if("normal"==this.strGameMode){
+		var value=this.roundRand(this.intMinApple,this.intMaxApple);
+		/*var value=roundRand(1,255);*/
+		/*var value=roundRand(0,65535);*/
+		this.theApples.push([x,y,value]);
+	}
+	if("inches"==this.strGameMode||"dictionary"==this.strGameMode){
+		var intLength=this.lstDictionary.length;
+		var intDictionary=roundRand(0,intLength);
+		if(intDictionary>=intLength)intDictionary=intLength-1;
+		this.theApples.push([x,y,intDictionary]);
+	}
+};
+Program_DictionaryTraining.prototype.eatApple=function(intAppleNumber){
+	var x,y,intValue;
+	var lstReturn=this.theApples[intAppleNumber];
+	x=lstReturn[0];
+	y=lstReturn[1];
+	intValue=lstReturn[2];
+	this.theApples.splice(intAppleNumber,1);
+	var newSnake=[];
+	switch(this.intMoveDirection){
+		case 0:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]-1]);break;
+		case 1:newSnake.push([this.theSnake[0][0]+1,this.theSnake[0][1]]);break;
+		case 2:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]+1]);break;
+		case 3:newSnake.push([this.theSnake[0][0]-1,this.theSnake[0][1]]);break;
+	}
+	for(var ii=0;ii<this.theSnake.length;ii++)
+		newSnake.push(this.theSnake[ii]);
+	this.theSnake=newSnake;
+	if(true==this.blnScreensaverPlay){
+		var newSnakeMoveDirections=[];
+		newSnakeMoveDirections.push(this.intMoveDirection);
+		for(var ii=0;ii<this.theSnake.length;ii++)
+			newSnakeMoveDirections.push(this.theSnakeMoveDirections[ii]);
+		this.theSnakeMoveDirections=newSnakeMoveDirections;
+	}
+	this.intPoints++;
+	this.intAppleEaten=intValue;
+
+     	/*console.log(this.lstDictionary[this.intAppleEaten]);*/
+     	var strAppleEaten="";
+	if("normal"==this.strGameMode)
+		strAppleEaten=String.fromCharCode(this.intAppleEaten)+" "+this.intAppleEaten+String.fromCharCode(10);
+	if("inches"==this.strGameMode)
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+String.fromCharCode(10);
+	if("dictionary"==this.strGameMode){
+		var strMeanings,strMeanings0,strMeanings1,strMeanings2;
+		strMeanings0=this.lstDictionary[this.intAppleEaten][2][0];
+		strMeanings1=this.lstDictionary[this.intAppleEaten][3][0];
+		strMeanings2=this.lstDictionary[this.intAppleEaten][4][0];
+		strMeanings="";
+		if(undefined!=strMeanings0)strMeanings+=strMeanings0+" ";
+		if(undefined!=strMeanings1)strMeanings+=strMeanings1+" ";
+		if(undefined!=strMeanings2)strMeanings+=strMeanings2+" ";
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+" "+strMeanings+String.fromCharCode(10);
+	}
+	var txtFunFunFun=document.getElementById("txtFunFunFun");
+	txtFunFunFun.value+=strAppleEaten;
+	/*console.log(txtFunFunFun.value);*/
+};
+Program_DictionaryTraining.prototype.checkAppleEaten=function(){
+	for(var ii=0;ii<this.theApples.length;ii++)
+		if(this.theApples[ii][0]==this.theSnake[0][0]&&this.theApples[ii][1]==this.theSnake[0][1])
+			return ii;
+	return -1;
+};
+Program_DictionaryTraining.prototype.checkCollisions=function(){
+	for(var ii=0;ii<this.theSnake.length;ii++){
+		for(var jj=0;jj<this.theSnake.length;jj++){
+			if(ii!=jj&&this.theSnake[ii][0]==this.theSnake[jj][0]&&this.theSnake[ii][1]==this.theSnake[jj][1])
+			return true;
+		}
+	}
+	if(0==this.theSnake[0][0])
+		return true;
+	if(0==this.theSnake[0][1])
+		return true;
+	if(this.base.intScreenWidth_text-1==this.theSnake[0][0])
+		return true;
+	if(this.base.intScreenHeight_text-1==this.theSnake[0][1])
+		return true;
+	return false;
+};
+Program_DictionaryTraining.prototype.checkPotentialCollisions=function(intMoveDirection){
+	var newSnake=[];
+	var newSnakeMoveDirections=[];
+	switch(intMoveDirection){
+		case 0:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]-1]);break;
+		case 1:newSnake.push([this.theSnake[0][0]+1,this.theSnake[0][1]]);break;
+		case 2:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]+1]);break;
+		case 3:newSnake.push([this.theSnake[0][0]-1,this.theSnake[0][1]]);break;
+	}
+	newSnakeMoveDirections.push(intMoveDirection);
+	for(var ii=0;ii<this.theSnake.length;ii++){
+		newSnake.push(this.theSnake[ii]);
+		newSnakeMoveDirections.push(this.theSnakeMoveDirections[ii]);
+	}
+	for(var ii=0;ii<newSnake.length;ii++){
+		for(var jj=0;jj<newSnake.length;jj++){
+			if(ii!=jj&&newSnake[ii][0]==newSnake[jj][0]&&newSnake[ii][1]==newSnake[jj][1])
+			return true;
+		}
+	}
+	if(0==newSnake[0][0])
+		return true;
+	if(0==newSnake[0][1])
+		return true;
+	if(this.base.intScreenWidth_text-1==newSnake[0][0])
+		return true;
+	if(this.base.intScreenHeight_text-1==newSnake[0][1])
+		return true;
+	for(var ii=2;ii<newSnake.length;ii++){
+		if(newSnake[ii][0]==newSnake[0][0]-1&&newSnake[ii][1]==newSnake[0][1]&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]+1&&newSnake[ii][1]==newSnake[0][1]&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]&&newSnake[ii][1]==newSnake[0][1]-1&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]&&newSnake[ii][1]==newSnake[0][1]+1&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+	}
+	return false;
+};
+Program_DictionaryTraining.prototype.screensaverMovement=function(){
+	if(true==this.blnCancelScreensaverPlay){
+		this.blnCancelScreensaverPlay=false;
+		return;
+	}
+	if(false==this.checkPotentialCollisions(this.intMoveDirection)){
+		if(this.theSnake[0][0]==this.theApples[0][0]&&this.theSnake[0][1]==this.theApples[0][1])
+			return;
+	}else{
+
+			if(0==this.intMoveDirection)
+				if(this.theSnake[0][0]>=this.theApples[0][0]){
+					if(false==this.checkPotentialCollisions(3)){
+						this.intMoveDirection=3;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(1)){
+							this.intMoveDirection=1;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(1)){
+						this.intMoveDirection=1;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(3)){
+							this.intMoveDirection=3;
+							return;
+						}
+
+					}
+				}
+			if(3==this.intMoveDirection)
+				if(this.theSnake[0][1]>=this.theApples[0][1]){
+					if(false==this.checkPotentialCollisions(0)){
+						this.intMoveDirection=0;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(2)){
+							this.intMoveDirection=2;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(2)){
+						this.intMoveDirection=2;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(0)){
+							this.intMoveDirection=0;
+							return;
+						}
+					}
+				}
+			if(2==this.intMoveDirection)
+				if(this.theSnake[0][0]>=this.theApples[0][0]){
+					if(false==this.checkPotentialCollisions(3)){
+						this.intMoveDirection=3;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(1)){
+							this.intMoveDirection=1;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(1)){
+						this.intMoveDirection=1;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(3)){
+							this.intMoveDirection=3;
+							return;
+						}
+					}
+				}
+			if(1==this.intMoveDirection)
+				if(this.theSnake[0][1]>=this.theApples[0][1]){
+					if(false==this.checkPotentialCollisions(0)){
+						this.intMoveDirection=0;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(2)){
+							this.intMoveDirection=2;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(2)){
+						this.intMoveDirection=2;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(0)){
+							this.intMoveDirection=0;
+							return;
+						}
+					}
+				}
+
+
+
+	}
+
+	if(0==this.intMoveDirection&&this.theSnake[0][1]-1<this.theApples[0][1])
+		if(this.theSnake[0][0]>=this.theApples[0][0]){
+			if(false==this.checkPotentialCollisions(3)){
+				this.intMoveDirection=3;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(1)){
+					this.intMoveDirection=1;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(1)){
+				this.intMoveDirection=1;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(3)){
+					this.intMoveDirection=3;
+					return;
+				}
+
+			}
+		}
+	if(3==this.intMoveDirection&&this.theSnake[0][0]-1<this.theApples[0][0])
+		if(this.theSnake[0][1]>=this.theApples[0][1]){
+			if(false==this.checkPotentialCollisions(0)){
+				this.intMoveDirection=0;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(2)){
+					this.intMoveDirection=2;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(2)){
+				this.intMoveDirection=2;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(0)){
+					this.intMoveDirection=0;
+					return;
+				}
+			}
+		}
+	if(2==this.intMoveDirection&&this.theSnake[0][1]+1>this.theApples[0][1])
+		if(this.theSnake[0][0]>=this.theApples[0][0]){
+			if(false==this.checkPotentialCollisions(3)){
+				this.intMoveDirection=3;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(1)){
+					this.intMoveDirection=1;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(1)){
+				this.intMoveDirection=1;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(3)){
+					this.intMoveDirection=3;
+					return;
+				}
+			}
+		}
+	if(1==this.intMoveDirection&&this.theSnake[0][0]+1>this.theApples[0][0])
+		if(this.theSnake[0][1]>=this.theApples[0][1]){
+			if(false==this.checkPotentialCollisions(0)){
+				this.intMoveDirection=0;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(2)){
+					this.intMoveDirection=2;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(2)){
+				this.intMoveDirection=2;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(0)){
+					this.intMoveDirection=0;
+					return;
+				}
+			}
+		}
+};
+Program_DictionaryTraining.prototype.updateGame=function(){
+	if(true==this.checkCollisions()){
+		this.intGameMode=4;
+		return;
+	}
+	if(true==this.blnScreensaverPlay){
+		this.screensaverMovement();
+	}
+	var intAppleNumber=this.checkAppleEaten();
+	if(-1!=intAppleNumber){
+		this.eatApple(intAppleNumber);
+		this.addRandomApple();
+	}else this.moveSnake();
+};
+Program_DictionaryTraining.prototype.moveSnake=function(){
+	for(var ii=this.theSnake.length-2;ii>=0;ii--){
+		this.theSnake[ii+1][0]=this.theSnake[ii][0];
+		this.theSnake[ii+1][1]=this.theSnake[ii][1];
+	}
+	switch(this.intMoveDirection){
+		case 0:this.theSnake[0][1]--;break;
+		case 1:this.theSnake[0][0]++;break;
+		case 2:this.theSnake[0][1]++;break;
+		case 3:this.theSnake[0][0]--;break;
+	}
+	if(true==this.blnScreensaverPlay){
+		for(var ii=this.theSnakeMoveDirections.length-2;ii>=0;ii--){
+			this.theSnakeMoveDirections[ii+1]=this.theSnakeMoveDirections[ii];
+		}
+		this.theSnakeMoveDirections[0]=this.intMoveDirection;
+	}
+};
+Program_DictionaryTraining.prototype.drawWalls=function(){
+	for(var i=0;i<=this.base.intScreenWidth_text-1;i++){
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,0)]="=";
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,this.base.intScreenHeight_text-1)]="=";
+	}
+	for(var j=1;j<=this.base.intScreenHeight_text;j++){
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(0,j)]="|";
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(this.base.intScreenWidth_text-1,j)]="|";
+	}
+};
+Program_DictionaryTraining.prototype.drawSnake=function(){
+	var i,j;
+	var lstReturn=this.theSnake[0];
+	i=lstReturn[0];
+	j=lstReturn[1];
+	this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,j)]="@";
+	for(var ii=1;ii<this.theSnake.length;ii++){
+		lstReturn=this.theSnake[ii];
+		i=lstReturn[0];
+		j=lstReturn[1];
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,j)]="#";
+	}
+};
+Program_DictionaryTraining.prototype.intAppleOnList=function(lstExceptions,intAppleNumber){
+	var intNumber=-1;
+	for(var ii=0;ii<lstExceptions.length;ii++)
+		if(lstExceptions[ii][0]==intAppleNumber)
+			intNumber=ii;
+	return intNumber;
+};
+Program_DictionaryTraining.prototype.emptyByteChar=function(intAppleNumber){
+	if(intAppleNumber<=31)return true;	
+	if(intAppleNumber>=127&&intAppleNumber<=160)return true;	
+	return false;
+};
+Program_DictionaryTraining.prototype.drawApples=function(){
+	var i,j,intValue;
+	var lstExceptions=[[0,"zero"],[173,"173"],[32,"space"],[27,"esc"],[127,"del"]];
+	var intException=-1;
+	var lstReturn;
+	lstReturn=this.computer.lstVeryOrange;
+	var intR,intG,intB,intA;
+	intR=lstReturn[0];
+	intG=lstReturn[1];
+	intB=lstReturn[2];
+	intA=lstReturn[3];
+	for(var ii=0;ii<this.theApples.length;ii++){
+		lstReturn=this.theApples[ii];
+		i=lstReturn[0];
+		j=lstReturn[1];
+		intValue=lstReturn[2];
+		if("normal"==this.strGameMode){
+			intException=this.intAppleOnList(lstExceptions,intValue);	
+			if(-1==intException)
+				if(false==this.emptyByteChar(intValue))
+					strValue=String.fromCharCode(intValue);
+				else strValue=""+intValue;
+			else strValue=""+lstExceptions[intException][1];
+			for(var jj=0;jj<strValue.length;jj++)
+					this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i+jj,j)]=strValue[jj];
+
+		}
+		if("inches"==this.strGameMode||"dictionary"==this.strGameMode){
+			strValue=this.lstDictionary[intValue][0];
+			for(var jj=0;jj<strValue.length;jj++)
+				this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i+jj,j)]=strValue[jj];
+			}
+	};
+};
+Program_DictionaryTraining.prototype.drawPoints=function(){
+	var strPoints,strPoints0,strPoints1;
+	if("normal"==this.strGameMode)
+		strPoints="Snake: "+this.intPoints+" : "+this.intAppleEaten;
+	if("inches"==this.strGameMode)
+		strPoints=""+this.intPoints+" : "+this.lstDictionary[this.intAppleEaten]+" "+this.lstDictionary[this.intAppleEaten][0].charCodeAt(0);
+	if("dictionary"==this.strGameMode){
+		strPoints0=""+this.intPoints+" : "+this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1];
+		var strMeanings0,strMeanings1,strMeanings2;
+		strMeanings0=this.lstDictionary[this.intAppleEaten][2][0];
+		strMeanings1=this.lstDictionary[this.intAppleEaten][3][0];
+		strMeanings2=this.lstDictionary[this.intAppleEaten][4][0];
+		strPoints1="";
+		if(undefined!=strMeanings0)strPoints1+=strMeanings0+" ";
+		if(undefined!=strMeanings1)strPoints1+=strMeanings1+" ";
+		if(undefined!=strMeanings2)strPoints1+=strMeanings2+" ";
+	}
+	if("normal"==this.strGameMode||"inches"==this.strGameMode){
+		document.title=strPoints;
+		var x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints.length/2.);
+		for(var ii=0;ii<strPoints.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,0)]=strPoints[ii];
+	}
+	if("dictionary"==this.strGameMode){
+		document.title=strPoints0;
+		var x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints0.length/2.);
+		for(var ii=0;ii<strPoints0.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,0)]=strPoints0[ii];
+		x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints1.length/2.);
+		for(var ii=0;ii<strPoints1.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,this.base.intScreenHeight_text-1)]=strPoints1[ii];
+
+	}
+};
+Program_DictionaryTraining.prototype.drawMouse=function(){
+	this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.round(this.fltMouseX),Math.round(this.fltMouseY))]=String.fromCharCode(73);
+};
+Program_DictionaryTraining.prototype.updateDimensions=function(){
+};
+Program_DictionaryTraining.prototype.inits=function(){
+	var txtFunFunFun=document.getElementById("txtFunFunFun");
+	txtFunFunFun.value="";
+	this.base.blnTextMode=true;
+	if(this.strArgs!=this.prevStrArgs)
+		this.reloadStrArgs();
+
+	var objArgs={};
+	objArgs.varCols=null;
+	objArgs.varRows=null;
+     	/*
+     	if(null==netspace.computer.inchesKeyboard||null==netspace.computer.inchesKeyboard.varDictionary)
+		openFile(function(content){netspace.computer.theActualProgram.inits2(content);},objArgs);
+     	this.inits2(0);
+     	*/
+	if("inches"==this.strGameMode||"dictionary"==this.strGameMode)
+     		if(undefined==this.lstDictionary)
+			if("inches"==this.strGameMode)
+				openFile(function(content){netspace.computer.theActualProgram.inits2_inches(content);},objArgs);
+			if("dictionary"==this.strGameMode)
+				openFile(function(content){netspace.computer.theActualProgram.inits2_dictionary(content);},objArgs);
+};
+Program_DictionaryTraining.prototype.inits2_inches=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+     	var inchesKeyboard=null;
+	var objDictionary=null;
+     	if(0!=strContent){
+     		inchesKeyboard=new InchesKeyboard();
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intFirst123,intSecond123);
+		objDictionary=inchesKeyboard.parseContents(strContent);
+     	}else{
+     		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varDictionary;
+     	}
+	/*console.log(objDictionary);*/
+	this.objDictionary=objDictionary;
+	this.lstDictionary=[];
+	for(x in this.objDictionary)
+		this.lstDictionary.push(this.objDictionary[x]);
+	this.lstDictionary=flattenConcat(this.lstDictionary);
+	/*console.log(this.lstDictionary);*/
+};
+Program_DictionaryTraining.prototype.inits2_dictionary=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+     	var inchesKeyboard=null;
+	var objDictionary=null;
+     	if(0!=strContent){
+     		inchesKeyboard=new InchesKeyboard();
+		/*objDictionary=inchesKeyboard.parseSlownikContents(strContent);*/
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intSecond123);
+		objDictionary=JSON.parse(strContent);
+     	}else{
+     		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varSlownik;
+     	}
+	/*console.log(objDictionary);*/
+	this.objDictionary=objDictionary;
+	this.lstDictionary=[];
+	var lstEntry=[];
+	for(x in this.objDictionary){
+		lstEntry=[];
+		lstEntry.push(x);
+		for(var i=0;i<this.objDictionary[x].length;i++)
+			lstEntry.push(this.objDictionary[x][i]);
+		this.lstDictionary.push([lstEntry]);
+	}
+	this.lstDictionary=flattenConcat(this.lstDictionary);
+	/*console.log(this.lstDictionary);*/
+};
+Program_DictionaryTraining.prototype.stopFinalizations=function(strString){
+	this.prevStrArgs=this.strArgs;
+};
+Program_DictionaryTraining.prototype.exitFinalizations=function(strString){
+	this.prevStrArgs=this.strArgs;
+};
+Program_DictionaryTraining.prototype.onKeyDown=function(evtEvent){
+	switch(evtEvent.key){
+		case "F4":/*Alt+F4 would close the browser*/this.base.exitProgram(this,"Snake program exited.");break;
+		case "o":/*small keyboards without necessity to press ctrl*/this.base.exitProgram(this,"Snake program exited.");break;
+		case "c":
+			if(true==evtEvent.ctrlKey)this.base.exitProgram(this,"Snake program exited.");
+			else if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "z":
+			if(true==evtEvent.ctrlKey) this.base.stopProgram(this,"Snake program stopped. If you run it again with the same arguments, previous game state will be reloaded."+String.fromCharCode(10)+"Program call: snake intMinApple intMaxApple intGameSpeed_ms"+String.fromCharCode(10)+"snake==snake 1 2359 250");
+			else if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};
+			break;
+		/*for not precise tiny onscreen keyboards*/
+		case "W":
+		case "w":
+		case "Q":
+		case "q":
+		case "E":
+		case "e":
+		case "R":
+		case "r":
+		case "ArrowUp":if(0==this.intMoveDirection)this.prevGameTime=null;if(2!=this.intMoveDirection){this.intMoveDirection=0;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "D":
+		case "d":
+		case "F":
+		case "f":
+		case "G":
+		case "g":
+		case "ArrowRight":if(1==this.intMoveDirection)this.prevGameTime=null;if(3!=this.intMoveDirection){this.intMoveDirection=1;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "S":
+		case "s":
+		case "Z":
+		case "z":
+		case "X":
+		case "x":
+		case "C":
+		case "c":
+		case "ArrowDown":if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "A":
+		case "a":
+		case "ArrowLeft":if(3==this.intMoveDirection)this.prevGameTime=null;if(1!=this.intMoveDirection){this.intMoveDirection=3;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "p":
+			if(4==this.intGameMode){this.newGameModeGame();break;}if(0==this.intGameMode){this.intGameMode=1;break;}if(1==this.intGameMode){this.intGameMode=0;break;};break;
+		case "Alt":if(1==evtEvent.location){if(false==this.blnMouseBlocked){this.blnMouseBlocked=true;this.prevMouseX=null;this.prevMouseY=null;}else this.blnMouseBlocked=false;}break;
+	}
+};
+Program_DictionaryTraining.prototype.onKeyUp=function(evtEvent){
+};
+Program_DictionaryTraining.prototype.onMouseDown=function(evtEvent){
+};
+Program_DictionaryTraining.prototype.onMouseUp=function(evtEvent){
+};
+Program_DictionaryTraining.prototype.onMouseWheel=function(evtEvent){
+};
+Program_DictionaryTraining.prototype.onMouseMove=function(evtEvent){
+	this.base.onMouseMove_text(evtEvent,this);
+	return;
+	if(true==this.blnMouseBlocked)return;
+	var diffX,diffY;
+	if(null==this.prevMouseX||null==this.prevMouseY){
+		this.prevMouseX=evtEvent.offsetX;
+		this.prevMouseY=evtEvent.offsetY;
+		return;
+	}
+	diffX=evtEvent.offsetX-this.prevMouseX;
+	diffY=evtEvent.offsetY-this.prevMouseY;
+	this.prevMouseX=evtEvent.offsetX;
+	this.fltMouseX+=this.fltMouseSpeed*diffX;
+	this.prevMouseY=evtEvent.offsetY;
+	this.fltMouseY+=this.fltMouseSpeed*diffY;
+	if(this.fltMouseX<0)this.fltMouseX=0;
+	if(this.fltMouseX>this.base.intScreenWidth_text-1)this.fltMouseX=this.base.intScreenWidth_text-1;
+	if(this.fltMouseY<0)this.fltMouseY=0;
+	if(this.fltMouseY>this.base.intScreenHeight_text-1)this.fltMouseY=this.base.intScreenHeight_text-1;
+};
+Program_DictionaryTraining.prototype.newGameModeGame=function(){
+	this.fltMouseX=Math.round((this.base.intScreenWidth_text-1)/2.);
+	this.fltMouseY=Math.round((this.base.intScreenHeight_text-1)/2.);
+	this.intMoveDirection=0;/*[up,right,down,left]*/
+	this.gameSpeed=0.001*this.intGameSpeed_ms;
+	this.prevGameTime=null;
+	var i,j;
+	i=Math.round(this.base.intScreenWidth_text/2.);
+	j=Math.round(this.base.intScreenHeight_text/2.);
+	this.theSnake=[[i,j],[i+1,j]];
+	this.theSnakeMoveDirections=[0,0];
+	this.intGameMode=0;
+	this.base.clearScreen_text();
+	this.theApples=[];
+	this.addRandomApple();
+	this.intPoints=0;
+	this.intAppleEaten=0;
+};
+Program_DictionaryTraining.prototype.gameModeGame=function(currentFrameTime){
+	var now=performance.now();
+	this.base.clearScreen_text();
+	this.drawWalls();
+	this.drawSnake();
+	this.drawApples();
+	this.drawPoints();
+	this.drawMouse();
+	if(null==this.prevGameTime){
+		this.prevGameTime=now;
+		this.updateGame();
+	}
+	if(Math.abs(this.prevGameTime-currentFrameTime)>this.gameSpeed*1000){
+		this.updateGame();
+		this.prevGameTime=now;
+	}
+};
+Program_DictionaryTraining.prototype.reloadStrArgs=function(){
+	var lstArgs=this.strArgs.split(" ");
+	this.intMinApple=1;
+	this.intMaxApple=2359;
+	this.intGameSpeed_ms=250;
+	this.strMode="normal";
+	var strScreensaverPlay;
+	this.blnScreensaverPlay=true;
+	var intArg=null,intNumericArg=0;
+	for(var ii=0;ii<lstArgs.length;ii++){
+		if("scrsvr"==lstArgs[ii].substring(0,6)){
+			this.blnScreensaverPlay=true;
+		}
+		if("game"==lstArgs[ii].substring(0,4)){
+			this.blnScreensaverPlay=false;
+		}
+		if("normal"==lstArgs[ii]){
+			this.strGameMode="normal";
+		}
+		if("inches"==lstArgs[ii]){
+			this.strGameMode="inches";
+		}
+		if("dictionary"==lstArgs[ii]){
+			this.strGameMode="dictionary";
+		}
+		intArg=parseInt(lstArgs[ii]);
+		if(false==nonNumber(intArg)){
+			switch(intNumericArg){
+				case 0:
+					this.intMinApple=intArg;
+					intNumericArg++;
+					break;
+				case 1:
+					this.intMaxApple=intArg;
+					intNumericArg++;
+					break;
+				case 2:
+					this.intGameSpeed_ms=intArg;
+					intNumericArg++;
+					break;
+
+			}
+		}
+		
+	}
+	this.prevStrArgs=this.strArgs;
+	this.intGameMode=4;
+};
+Program_DictionaryTraining.prototype.loopFunction=function(currentFrameTime){
 	switch(this.intGameMode){
 		case 0:this.gameModeGame(currentFrameTime);break;
 		case 1:this.gameModePause(currentFrameTime);break;
@@ -15244,6 +16124,7 @@ TextWindowConstructor=function(that,computer,base,theSuper,intRootX,intRootY,int
 	that.lstHighlightForegroundColor=[0,0,0,255];
 	that.lstUndoHistory=[];
 	that.lstRedoHistory=[];
+	that.lstDotHistory=[];
 	that.lstCursorUndoHistory=[];
 	that.lstCursorRedoHistory=[];
 	that.intUndoRedoLimit=1000;
@@ -17250,48 +18131,56 @@ TextWindow.prototype.optimizeUndoItem=function(lstEntry){
 	if(1==lstEntry[2][0]&&1==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][2]==lstPrevUndoItem[2][2]&&lstPrevUndoItem[2][1]+lstPrevUndoItem[2][3].length==lstEntry[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[1,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[1,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3]]];
 			return true;
 		}
 	}
 	if(2==lstEntry[2][0]&&2==lstPrevUndoItem[2][0]){
 		if(undefined!=lstEntry[2][3]&&lstEntry[2][2]==lstPrevUndoItem[2][2]&&lstPrevUndoItem[2][1]+lstPrevUndoItem[2][4].length==lstEntry[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[2,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3],lstPrevUndoItem[2][4]+lstEntry[2][4]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[2,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3],lstPrevUndoItem[2][4]+lstEntry[2][4]]];
 			return true;
 		}
 	}
 	if(8.1==lstEntry[2][0]&&8.1==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][2]==lstPrevUndoItem[2][2]&&lstPrevUndoItem[2][1]-1==lstEntry[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[8.1,lstEntry[2][1],lstEntry[2][2],lstEntry[2][3]+lstPrevUndoItem[2][3]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[8.1,lstEntry[2][1],lstEntry[2][2],lstEntry[2][3]+lstPrevUndoItem[2][3]]];
 			return true;
 		}
 	}
 	if(127.1==lstEntry[2][0]&&127.1==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][2]==lstPrevUndoItem[2][2]&&lstPrevUndoItem[2][1]==lstEntry[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[127.1,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[127.1,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],lstPrevUndoItem[2][3]+lstEntry[2][3]]];
 			return true;
 		}
 	}
 	if(16.1==lstEntry[2][0]&&16.1==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][1]==lstPrevUndoItem[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.1,lstPrevUndoItem[2][1],this.concatenateLists(lstEntry[2][2],lstPrevUndoItem[2][2])]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.1,lstPrevUndoItem[2][1],this.concatenateLists(lstEntry[2][2],lstPrevUndoItem[2][2])]];
 			return true;	
 		}
 	}
 	if(16.2==lstEntry[2][0]&&16.2==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][1]==lstPrevUndoItem[2][1]+lstPrevUndoItem[2][2].length){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.2,lstPrevUndoItem[2][1],this.concatenateLists(lstPrevUndoItem[2][2],lstEntry[2][2])]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.2,lstPrevUndoItem[2][1],this.concatenateLists(lstPrevUndoItem[2][2],lstEntry[2][2])]];
 			return true;	
 		}
 	}
 	if(16.3==lstEntry[2][0]&&16.3==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][1]==lstPrevUndoItem[2][1]){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.3,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],[lstEntry[2][3][0]+lstPrevUndoItem[2][3][0]]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.3,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],[lstEntry[2][3][0]+lstPrevUndoItem[2][3][0]]]];
 			return true;	
 		}
 	}
 	if(16.4==lstEntry[2][0]&&16.4==lstPrevUndoItem[2][0]){
 		if(lstEntry[2][1]==lstPrevUndoItem[2][1]+lstPrevUndoItem[2][3][0].length){
 			this.lstUndoHistory[this.lstUndoHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.4,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],[lstPrevUndoItem[2][3][0]+lstEntry[2][3][0]]]];
+			this.lstDotHistory[this.lstDotHistory.length-1]=[lstPrevUndoItem[0],lstEntry[1],[16.4,lstPrevUndoItem[2][1],lstPrevUndoItem[2][2],[lstPrevUndoItem[2][3][0]+lstEntry[2][3][0]]]];
 			return true;	
 		}
 	}
@@ -17385,11 +18274,27 @@ TextWindow.prototype.addCursorHistoryUndoItem_dontClearRedo=function(lstEntry){
 			this.lstCursorUndoHistory.splice(0,(this.lstCursorUndoHistory.length-this.intUndoRedoLimit));
 	}	
 };
+TextWindow.prototype.addDotItem=function(lstEntry){
+	this.lstDotHistory=[];
+	if(false==this.optimizeUndoItem(lstEntry))
+		this.lstDotHistory.push(lstEntry);
+};
 TextWindow.prototype.addUndoItem=function(lstEntry){
 	if(-1==this.intUndoRedoLimit)return;
 	this.lstRedoHistory=[];
-	if(false==this.optimizeUndoItem(lstEntry))
+	if(false==this.optimizeUndoItem(lstEntry)){
 		this.lstUndoHistory.push(lstEntry);
+		this.addDotItem(lstEntry);
+	}
+	if(this.intUndoRedoLimit>0){
+		if(this.lstUndoHistory.length>this.intUndoRedoLimit)
+			this.lstUndoHistory.splice(0,(this.lstUndoHistory.length-this.intUndoRedoLimit));
+	}	
+};
+TextWindow.prototype.addUndoItem_fromRedo=function(lstEntry){
+	if(-1==this.intUndoRedoLimit)return;
+	this.lstRedoHistory=[];
+	this.lstUndoHistory.push(lstEntry);
 	if(this.intUndoRedoLimit>0){
 		if(this.lstUndoHistory.length>this.intUndoRedoLimit)
 			this.lstUndoHistory.splice(0,(this.lstUndoHistory.length-this.intUndoRedoLimit));
@@ -17647,6 +18552,260 @@ TextWindow.prototype.undoLast=function(){
 	this.setLstCursor_buffer1(lstCursorAfterUndo[1]);
 	this.addCursorHistoryUndoItem(false);
 	this.updateWndEditing(true);
+};
+TextWindow.prototype.dotLast_=function(ii){
+	var lstEntry=this.copyList(this.lstDotHistory[ii]);
+	var lstCursorAfterUndo,lstCursorAfterRedo,lstRedoOperation;
+	var lstReturn=lstEntry;
+	var lstUndoEntry=this.copyListRecursive(lstEntry);
+	lstCursorAfterUndo=this.copyList(lstReturn[0]);
+	lstCursorAfterRedo=this.copyList(lstReturn[1]);
+	var diffJ=this.lstCursor_buffer[1]-lstCursorAfterUndo[1];
+	lstRedoOperation=this.copyList(lstReturn[2]);
+	lstCursorAfterUndo[1]+=diffJ;	
+	lstCursorAfterRedo[1]+=diffJ;	
+	lstUndoEntry[0][1]+=diffJ;
+	lstUndoEntry[1][1]+=diffJ;
+	switch(lstRedoOperation[0]){
+		case 1:/*insertEditingChar_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strKeys=lstRedoOperation[3];
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+strKeys+strLine.substring(intI));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI+strKeys.length);
+			break;
+		case 2:/*replaceEditingChar_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strPrevKeys=lstRedoOperation[3];
+			var strNextKeys=lstRedoOperation[4];
+			var intLength=strNextKeys.length;
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI+strPrevKeys.length);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+strNextKeys+strLine.substring(intI+intLength));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI+strNextKeys.length);
+
+			break;
+		case 3:/*replaceCharacter*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var chrPrevKey=lstRedoOperation[3];
+			var chrNextKey=lstRedoOperation[4];
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI+chrPrevKey.length);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+chrNextKey+strLine.substring(intI+1));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI+chrNextKey.length);
+			break;
+		case 9:/*cursorPreserveIndent*/;
+			var intJFrom=lstRedoOperation[1]+diffJ;	
+			var intJTo=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			lstUndoEntry[2][2]+=diffJ;
+			var intIndentSize=lstRedoOperation[3];	
+			this.cursorPreserveIndent_noUndo(intJFrom,intJTo);
+			break;
+		case 13:/*insertNewline*/;
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			var strPrevLine=lstRedoOperation[2];	
+			var strNewline=lstRedoOperation[3];	
+			if(intJ>0){
+				var beforeKeywords=this.keywordsBeforeStage_sublineModiff(this.lstTextBuffer[intJ-1]);
+				this.setLstTextBuffer(intJ-1,strPrevLine);
+				this.keywordsAfterStage_sublineModiff(strPrevLine,beforeKeywords);
+			}
+			this.insertNewline_noUndo(intJ,strNewline);
+			this.keywordsAfterStage_insertNewline(strNewline);
+			break;
+		case 13.1:/*prependNewline*/;
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			var strPrevLine=lstRedoOperation[2];	
+			var strNewline=lstRedoOperation[3];	
+			if(intJ>0){
+				var beforeKeywords=this.keywordsBeforeStage_sublineModiff(this.lstTextBuffer[intJ]);
+				this.setLstTextBuffer(intJ,strPrevLine);
+				this.keywordsAfterStage_sublineModiff(this.lstTextBuffer[intJ],beforeKeywords);
+			}
+			this.insertNewline_noUndo(intJ,strNewline);
+			this.keywordsAfterStage_insertNewline(strNewline);
+			break;
+		case 13.2:/*insertNewlines*/;
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			var strPrevLine=lstRedoOperation[2];	
+			var lstNewlines=lstRedoOperation[3];	
+			this.insertNewlines_noUndo(intJ,lstNewlines);
+			this.keywordsAfterStage_insertNewlines(lstNewlines);
+			break;
+		case 16.1:
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			var lstBuffer=lstRedoOperation[2];
+			var intLines=lstBuffer.length;	
+			var strLine;
+			for(var ii=0;ii<intLines;ii++){
+				strLine=lstBuffer[lstBuffer.length-1-ii][0];
+				if(undefined!=strLine){
+					this.insertNewline_noUndo(intJ,strLine);
+					this.keywordsAfterStage_insertNewline(strLine);
+				}
+			}
+			break;
+		case 16.2:
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			var lstBuffer=lstRedoOperation[2];
+			var intLines=lstBuffer.length;	
+			var strLine;
+			for(var ii=0;ii<intLines;ii++){
+				strLine=lstBuffer[ii][0];
+				if(undefined!=strLine){
+					this.insertNewline_noUndo(intJ+ii,strLine);
+					this.keywordsAfterStage_insertNewline(strLine);
+				}
+			}
+			break;
+		case 16.3:/*paste chars before*/;
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strBuffer=lstRedoOperation[3][0];
+			var intChars=strBuffer.length;	
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+strBuffer+strLine.substring(intI));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI+strBuffer.length);
+			break;
+		case 16.4:/*paste chars after*/;
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strBuffer=lstRedoOperation[3][0];
+			var intChars=strBuffer.length;	
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI+1)+strBuffer+strLine.substring(intI+1));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI+1,intI+strBuffer.length);
+			break;
+		case 8.1:/*insertEditingBackspace_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var chrBackspaced=lstRedoOperation[3];	
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI-1,intI+chrBackspaced.length-1);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI-1)+strLine.substring(intI+chrBackspaced.length-1));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI-1,intI-1);
+			break;
+		case 8.2:/*insertEditingBackspace_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strLine=this.lstTextBuffer[intJ];
+			var strPrevLine1=lstRedoOperation[4];
+
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiff(this.lstTextBuffer[intJ-1]);
+			this.setLstTextBuffer(intJ-1,this.lstTextBuffer[intJ-1]+""+strPrevLine1);
+			this.keywordsAfterStage_sublineModiff(this.lstTextBuffer[intJ-1],beforeKeywords);
+			this.keywordsAfterStage_linesRemoval([this.lstTextBuffer[intJ]]);
+			this.removeLine_noUndo(intJ);
+			break;
+		case 88:/*removeCharacterUnderCursor*/
+			var intI=lstRedoOperation[1];
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var chrBackspaced=lstRedoOperation[3];	
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI+chrBackspaced.length);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+strLine.substring(intI+1));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI);
+			break;
+		case 127.1:/*insertEditingDelete_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strDeleted=lstRedoOperation[3];	
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intI,intI+strDeleted.length);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intI)+strLine.substring(intI+strDeleted.length));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intI,intI);
+	
+			break;
+		case 127.2:/*insertEditingDelete_*/
+			var intI=lstRedoOperation[1];	
+			var intJ=lstRedoOperation[2]+diffJ;	
+			lstUndoEntry[2][2]+=diffJ;
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiff(this.lstTextBuffer[intJ]);
+			this.setLstTextBuffer(intJ,strLine+this.lstTextBuffer[intJ+1]);
+			this.keywordsAfterStage_sublineModiff(this.lstTextBuffer[intJ],beforeKeywords);
+			this.keywordsAfterStage_linesRemoval([this.lstTextBuffer[intJ+1]]);
+			this.removeLine_noUndo(intJ+1);
+			break;
+		case 128:/*removeLine*/
+			var intJ=lstRedoOperation[1]+diffJ;	
+			lstUndoEntry[2][1]+=diffJ;
+			this.keywordsAfterStage_linesRemoval([this.lstTextBuffer[intJ]]);
+			this.removeLine_noUndo(intJ);
+			break;
+		case 128.1:/*RemoveLines*/
+			var intFrom=lstRedoOperation[1]+diffJ;	
+			var intTo=lstRedoOperation[2]+diffJ;
+			lstUndoEntry[2][1]+=diffJ;
+			lstUndoEntry[2][2]+=diffJ;
+			for(var j=0;j<=intTo-intFrom;j++){
+				this.keywordsAfterStage_linesRemoval([this.lstTextBuffer[intFrom]]);
+				this.removeLine_noUndo(intFrom);
+			}
+			break;
+		case 128.2:/*RemoveSubline*/
+		case 128.3:/*RemoveSelectedText one line selection*/
+			var intJ=lstRedoOperation[1]+diffJ;
+			lstUndoEntry[2][1]+=diffJ;
+			var intFrom=lstRedoOperation[2];	
+			var intTo=lstRedoOperation[3];
+			var strRemovedSubline=lstRedoOperation[4];
+			var strLine=this.lstTextBuffer[intJ];
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiffPro(this.lstTextBuffer[intJ],intFrom,intTo);
+			this.setLstTextBuffer(intJ,strLine.substring(0,intFrom)+""+strLine.substring(intTo+1));
+			this.keywordsAfterStage_sublineModiffPro(this.lstTextBuffer[intJ],beforeKeywords,intFrom,intFrom);
+			break;
+		case 128.4:/*RemoveSelectedText many lines selection*/
+			var intMinJ=lstRedoOperation[1]+diffJ;
+			var intMaxJ=lstRedoOperation[2]+diffJ;
+			lstUndoEntry[2][1]+=diffJ;
+			lstUndoEntry[2][2]+=diffJ;
+			var strLineAfter=lstRedoOperation[6];	
+			var beforeKeywords=this.keywordsBeforeStage_sublineModiff(this.lstTextBuffer[intMinJ]);
+			this.setLstTextBuffer(intMinJ,strLineAfter);
+			this.keywordsAfterStage_sublineModiff(strLineAfter,beforeKeywords);
+			for(var j=1;j<=intMaxJ-intMinJ;j++){
+				this.keywordsAfterStage_linesRemoval([this.lstTextBuffer[intMinJ+1]]);
+				this.removeLine_noUndo(intMinJ+1);
+			}
+			break;
+	}
+	this.setLstCursor_buffer0(lstCursorAfterRedo[0]);
+	this.setLstCursor_buffer1(lstCursorAfterRedo[1]);
+	this.addCursorHistoryUndoItem(false);
+	this.addUndoItem_fromRedo(lstUndoEntry);
+	this.updateWndEditing(true);
+};
+TextWindow.prototype.dotLast=function(){
+	if(-1==this.intUndoRedoLimit){
+		this.theSuper.setStatus("-1==intUndoRedoLimit e.x. :set intUndoRedoLimit=1000");
+		return;
+	}
+	if(0==this.lstDotHistory.length)return;
+	for(var ii=this.lstDotHistory.length-1;ii>=0;ii--){
+		this.dotLast_(ii);
+	};
 };
 TextWindow.prototype.redoLast=function(){
 	if(-1==this.intUndoRedoLimit){
@@ -18512,6 +19671,21 @@ TextWindow.prototype.removeWordsAfter=function(intWords){
 TextWindow.prototype.copyList=function(lstBufferSrc){
 	var lstBufferDst=[];	
 	for(var ii=0;ii<lstBufferSrc.length;ii++){
+		lstBufferDst.push(lstBufferSrc[ii]);
+	}
+	return lstBufferDst;
+};
+TextWindow.prototype.isList=function(lstBufferSrc){
+	if("object"!=typeof(lstBufferSrc))return false;
+	if(lstBufferSrc.constructor==[].constructor)return true;
+	return false;
+};
+TextWindow.prototype.copyListRecursive=function(lstBufferSrc){
+	var lstBufferDst=[];	
+	for(var ii=0;ii<lstBufferSrc.length;ii++){
+		if(true==this.isList(lstBufferSrc[ii]))
+			lstBufferDst.push(this.copyListRecursive(lstBufferSrc[ii]));
+		else
 		lstBufferDst.push(lstBufferSrc[ii]);
 	}
 	return lstBufferDst;
@@ -19951,7 +21125,7 @@ TextWindow.prototype.gotoDefinition=function(){
 	this.strSearchString=strWord;
 	this.gotoNextString_(0,1);
 };
-var InchesKeyboard=function(textEditor){
+InchesKeyboard=function(textEditor){
 	this.textEditor=textEditor;
 	this.blnWordChoiceMode=false;
 	this.strReplaceEntry=null;
@@ -20084,6 +21258,7 @@ InchesKeyboard.prototype.loadDictionaryFile=function(contents) {
 	var intFirst123=contents.indexOf("{");
 	var intSecond123=contents.substring(intFirst123+1).indexOf("{");
 	if(-1!=intSecond123)strContent=contents.substring(intFirst123,intSecond123);
+	else strContent=contents.substring(intFirst123);
 	that.varDictionary=that.parseContents(contents);
 	that.varDictionaryKeys=Object.keys(that.varDictionary);
 };
@@ -20378,7 +21553,7 @@ Program_TextEditor=function(computer,base){
 	Program_TextEditorConstructor_strF(this,computer,base);
 };
 Program_TextEditor.prototype.setInternalCodeExtensions=function(){
-	var strToCodeoneliner='function toCodeoneliner_(that,strArgs){'+
+	strToCodeoneliner='function toCodeoneliner_(that,strArgs){'+
 '	/*TODO: else and all the = ; checks*/'+
 '	/*to ensure that the JavaScript oneliner is always correct*/'+
 '	alert("toCodeoneliner");'+
@@ -20420,7 +21595,7 @@ Program_TextEditor.prototype.setInternalCodeExtensions=function(){
 '	netspace.wndEditing.freeFastCruncher();'+
 '}';
 	this.lstInternalCodeExtensionFunctions.push(strToCodeoneliner);
-	var strInsertDay='function insertDay(that,strArgs){'+
+	strInsertDay='function insertDay(that,strArgs){'+
 '	/*functions from the global namespace have to be rewritten*/'+
 '	var flush=function(strInput,intMax){'+
 '        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;'+
@@ -20458,7 +21633,7 @@ Program_TextEditor.prototype.setInternalCodeExtensions=function(){
 '	}'+
 '}';
 	this.lstInternalCodeExtensionFunctions.push(strInsertDay);
-	var strInsertMonth='function insertMonth(that,strArgs){'+
+	strInsertMonth='function insertMonth(that,strArgs){'+
 '	/*functions from the global namespace have to be rewritten*/'+
 '	var flush=function(strInput,intMax){'+
 '        	return(strInput.length<intMax)?flush("0"+strInput,intMax):strInput;'+
@@ -20524,259 +21699,6 @@ Program_TextEditor.prototype.setInternalCodeExtensions=function(){
 '	}'+
 '}';
 	this.lstInternalCodeExtensionFunctions.push(strInsertMonth);
-	var strNoWhitespaces='function noWhitespaces(that,strArgs){'+
-'	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;'+
-'	var blnRemoveEmptyLines=false;'+
-'	var blnLeaveComments=false;'+
-'	var blnLeaveQuotes=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;'+
-'	var isAlphanumeric=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		intActual=chrActual.charCodeAt(0);'+
-'		if(intActual>=48&&intActual<=57)return true;'+
-'		if(intActual>=65&&intActual<=90)return true;'+
-'		if(intActual>=97&&intActual<=122)return true;'+
-'		return false;'+
-'	};'+
-'	var isWhitespace=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;'+
-'		return false;'+
-'	};'+
-'	var isEnter=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		if(chrActual==String.fromCharCode(10)||chrActual==String.fromCharCode(13))return true;'+
-'		return false;'+
-'	};'+
-'	var isQuote=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;'+
-'		return false;'+
-'	};'+
-'	var isIndent=function(ii,strToModify){'+
-'		for(var jj=ii;jj>=0;jj--){'+
-'			if(true==isEnter(strToModify[jj]))return true;'+
-'			if(false==isWhitespace(strToModify[jj]))return false;'+
-'		}'+
-'		return true;'+
-'	};'+
-'	var isEmptyLine=function(ii,strToModify){'+
-'		var lstEmptyLine=[ii,ii];'+
-'		'+
-'		for(var jj=ii;jj>=0;jj--){'+
-'			if(true==isEnter(strToModify[jj]))break;'+
-'			if(false==isWhitespace(strToModify[jj]))break;'+
-'			lstEmptyLine[0]=jj;'+
-'		}'+
-'		for(var jj=ii;jj<strToModify.length;jj++){'+
-'			if(true==isEnter(strToModify[jj]))break;'+
-'			if(false==isWhitespace(strToModify[jj]))break;'+
-'			lstEmptyLine[1]=jj;'+
-'		}'+
-'		if(ii==lstEmptyLine[0]&&ii==lstEmptyLine[1]&&false==isEnter(strToModify[lstEmptyLine[0]-1])){'+
-'			return null;'+
-'		}'+
-'		if(true==isEnter(strToModify[lstEmptyLine[1]])){'+
-'			return lstEmptyLine;'+
-'		}'+
-'		return null;'+
-'	};'+
-'	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strToModify){'+
-'		/*true==isWhitespace(chrActual)*/'+
-'		if(true==blnLeaveQuotes)'+
-'			if(0!=intDoublequote||0!=intQuote)return true;'+
-'		if(true==blnLeaveComments)'+
-'			if(0!=intComment||true==blnDoubleComment)return true;'+
-'		if(true==isIndent(ii,strToModify))return true;'+
-'		if(true==isWhitespace(chrNext))return false;'+
-'		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;'+
-'		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;'+
-'		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;'+
-'		return false;'+
-'	};'+
-'	var removeWhitespaces=function(strToModify){'+
-'		var chrPrev,chrII,chrNext;'+
-'		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;'+
-'		for(var ii=1;ii<strToModify.length;ii++){'+
-'			blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;'+
-'			chrPrev=strToModify[ii-1];'+
-'			chrII=strToModify[ii];'+
-'			chrNext=strToModify[ii+1];'+
-'			if(undefined==chrII)break;'+
-'			/*if(true==isEnter(chrII))continue;*/'+
-'			if(0==intQuote&&String.fromCharCode(34)==chrII){'+
-'				intDoublequote=(intDoublequote+1)%2;'+
-'				blnDoublequoteChanged=true;'+
-'			}'+
-'			if(0==intDoublequote&&String.fromCharCode(39)==chrII){'+
-'				intQuote=(intQuote+1)%2;'+
-'				blnQuoteChanged=true;'+
-'			}'+
-'			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;'+
-'			if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){'+
-'				intComment=(intComment+1)%2;'+
-'				blnCommentChanged=true;'+
-'			}'+
-'			if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;'+
-'			if(true==isEnter(chrII))blnDoubleComment=false;'+
-'			if(true==isWhitespace(chrII)){'+
-'				if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strToModify)){'+
-'					strToModify=strToModify.substring(0,ii)+strToModify.substring(ii+1);'+
-'					ii--;'+
-'					if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;'+
-'					if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;'+
-'					if(true==blnCommentChanged)intComment=(intComment+1)%2;'+
-'				}'+
-'			}'+
-'		}'+
-''+
-'		if(true==blnRemoveEmptyLines){'+
-'			var lstEmptyLine=null;'+
-'			for(var ii=1;ii<strToModify.length;ii++){'+
-'				chrPrev=strToModify[ii-1];'+
-'				chrII=strToModify[ii];'+
-'				if(undefined==chrII)break;'+
-'				if(undefined!=chrPrev){'+
-'					lstEmptyLine=isEmptyLine(ii,strToModify);'+
-'					if(null!=lstEmptyLine){'+
-'						strToModify=strToModify.substring(0,lstEmptyLine[0])+strToModify.substring(lstEmptyLine[1]+1);'+
-'						ii=lstEmptyLine[0]-1;'+
-'					}'+
-'				}'+
-'			}'+
-'		}'+
-'		if(true==isWhitespace(strToModify[0]))strToModify=strToModify.substring(1);'+
-'		return strToModify;'+
-'	};'+
-'	var strToModify="";'+
-'	strToModify=that.wndEditing.getStrContents();'+
-'	strToModify=removeWhitespaces(strToModify);'+
-'	that.wndEditing.loadEditingText(strToModify,"noWhitespaces");'+
-'}';
-	this.lstInternalCodeExtensionFunctions.push(strNoWhitespaces);
-	
-	var strWhitespacesMM='function whitespacesMM(that,strArgs){'+
-'	var intDoublequote=0,intQuote=0,intComment=0,blnDoubleComment=false;'+
-'	var blnRemoveEmptyLines=false;'+
-'	var blnLeaveComments=false;'+
-'	var blnLeaveQuotes=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("emptyLines--"))blnRemoveEmptyLines=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("noComments"))blnLeaveComments=true;'+
-'	if(strArgs.length>0&&-1!=strArgs.indexOf("withQuotes"))blnLeaveQuotes=false;'+
-'	var isAlphanumeric=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		intActual=chrActual.charCodeAt(0);'+
-'		if(intActual>=48&&intActual<=57)return true;'+
-'		if(intActual>=65&&intActual<=90)return true;'+
-'		if(intActual>=97&&intActual<=122)return true;'+
-'		return false;'+
-'	};'+
-'	var isWhitespace=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		if(" "==chrActual||String.fromCharCode(9)==chrActual)return true;'+
-'		return false;'+
-'	};'+
-'	var isQuote=function(chrActual){'+
-'		if(undefined==chrActual)return false;'+
-'		if(chrActual==String.fromCharCode(34)||chrActual==String.fromCharCode(39))return true;'+
-'		return false;'+
-'	};'+
-'	var isIndent=function(ii,strLine){'+
-'		for(var intii=ii;intii>=0;intii--){'+
-'			if(false==isWhitespace(strLine[intii]))return false;'+
-'		}'+
-'		return true;'+
-'	};'+
-'	var isEmptyLine=function(strLine){'+
-'		var intii=0;'+
-'		if(0==strLine.length)return true;'+
-'		for(var ii=0;ii<strLine.length;ii++){'+
-'			if(false==isWhitespace(strLine[ii]))break;'+
-'			intii=ii;'+
-'		}'+
-'		if(intii<strLine.length-1)return false;'+
-'		return true;'+
-'	};'+
-'	var leaveWhitespace=function(chrPrev,chrActual,chrNext,ii,strLine){'+
-'		/*true==isWhitespace(chrActual)*/'+
-'		if(true==blnLeaveQuotes)'+
-'			if(0!=intDoublequote||0!=intQuote)return true;'+
-'		if(true==blnLeaveComments)'+
-'			if(0!=intComment||true==blnDoubleComment)return true;'+
-'		if(true==isIndent(ii,strLine))return true;'+
-'		if(true==isWhitespace(chrNext))return false;'+
-'		if(true==isAlphanumeric(chrPrev)&&true==isAlphanumeric(chrNext))return true;'+
-'		if(true==isAlphanumeric(chrPrev)&&true==isQuote(chrNext))return true;'+
-'		if(true==isAlphanumeric(chrNext)&&true==isQuote(chrPrev))return true;'+
-'		return false;'+
-'	};'+
-'	var removeWhitespaces=function(){'+
-'		var chrPrev,chrII,chrNext;'+
-'		var blnDoublequoteChanged=false,blnQuoteChanged=false,blnCommentChanged=false;'+
-'		var strLine;'+
-'		for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){'+
-'			strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
-'			blnDoubleComment=false;'+
-'			for(var ii=0;ii<strLine.length;ii++){'+
-'				blnDoublequoteChanged=false;blnQuoteChanged=false;blnCommentChanged=false;'+
-'				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
-'				chrPrev=strLine[ii-1];'+
-'				chrII=strLine[ii];'+
-'				chrNext=strLine[ii+1];'+
-'				if(undefined==chrII)break;'+
-'				if(0==intQuote&&String.fromCharCode(34)==chrII){'+
-'					intDoublequote=(intDoublequote+1)%2;'+
-'					blnDoublequoteChanged=true;'+
-'				}'+
-'				if(0==intDoublequote&&String.fromCharCode(39)==chrII){'+
-'					intQuote=(intQuote+1)%2;'+
-'					blnQuoteChanged=true;'+
-'				}'+
-'				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(42)==chrII)intComment=(intComment+1)%2;'+
-'				if(String.fromCharCode(42)==chrII&&String.fromCharCode(47)==chrNext){'+
-'					intComment=(intComment+1)%2;'+
-'					blnCommentChanged=true;'+
-'				}'+
-'				if(String.fromCharCode(47)==chrPrev&&String.fromCharCode(47)==chrII)blnDoubleComment=true;'+
-'				if(true==isWhitespace(chrII)){'+
-'					if(false==leaveWhitespace(chrPrev,chrII,chrNext,ii,strLine)){'+
-'						that.wndEditing.setLstCursor_buffer_fastCruncher(ii+1,jj);'+
-'						that.wndEditing.insertEditingBackspace_fastCruncher();'+
-'						ii--;'+
-'						if(true==blnDoublequoteChanged)intDoublequote=(intDoublequote+1)%2;'+
-'						if(true==blnQuoteChanged)intQuote=(intQuote+1)%2;'+
-'						if(true==blnCommentChanged)intComment=(intComment+1)%2;'+
-'					}'+
-'				}'+
-'			}'+
-'		}'+
-'		if(true==blnRemoveEmptyLines){'+
-'			for(var jj=0;jj<that.wndEditing.lstTextBuffer_fastCruncher.length;jj++){'+
-'				strLine=that.wndEditing.lstTextBuffer_fastCruncher[jj];'+
-'				if(true==isEmptyLine(strLine)){'+
-'					that.wndEditing.setLstCursor_buffer_fastCruncher(strLine.length,jj);'+
-'					for(var ii=0;ii<=strLine.length;ii++)'+
-'						that.wndEditing.insertEditingBackspace_fastCruncher();'+
-'					jj--;'+
-'					'+
-'				}'+
-'			}'+
-'		}'+
-'		if(true==isWhitespace(that.wndEditing.lstTextBuffer_fastCruncher[0][0]))'+
-'		{'+
-'			that.wndEditing.setLstCursor_buffer_fastCruncher(0,1);'+
-'			that.wndEditing.insertEditingBackspace_fastCruncher();'+
-'		}'+
-'	};'+
-'	that.wndEditing.initFastCruncher(false);'+
-'	removeWhitespaces();'+
-'	that.wndEditing.loadEditingText_fastCruncher();'+
-'	that.wndEditing.updateWndEditing(true);'+
-'	that.wndEditing.freeFastCruncher();'+
-'}';
-	this.lstInternalCodeExtensionFunctions.push(strWhitespacesMM);
 };
 Program_TextEditor.prototype.loadInternalCodeExtensions=function(){
 	for(var ii=0;ii<this.lstInternalCodeExtensionFunctions.length;ii++)
@@ -21132,6 +22054,7 @@ Program_TextEditor.prototype.closeAllSubmenuWindows=function(){
 };
 Program_TextEditor.prototype.submenuWindowsExtensions=function(){
 	var strFunctionName="";
+	var that=this;
 	for(var ii=0;ii<this.lstExtensionFunctionNames.length;ii++){
 		strFunctionName=this.lstExtensionFunctionNames[ii];
 		this.wndMenu.mnuExtensions.lstFunctions.push(function(){if(-1==that.wndMenu.mnuExtensions.intMenuHighlight){that.closeAllSubmenuWindows();return;}var strArgs=prompt("Extension strArgs:");if(null==strArgs){that.closeAllSubmenuWindows();return;};var intFunctionIndex=that.wndMenu.mnuExtensions.intMenuHighlight-5;that.closeAllSubmenuWindows();that.lstExtensionFunctions[intFunctionIndex](that,strArgs)});
@@ -22526,6 +23449,10 @@ Program_TextEditor.prototype.interpret0modeCommand=function(evtEvent){
 			this.wndEditing.undoLast();
 			return true;
 		break;
+		case ".":
+			this.wndEditing.dotLast();
+			return true;
+		break;
 		case "dd":
 
 			if(this.wndPrompt.intCommandCounter>0){
@@ -23381,7 +24308,6 @@ Program_TextEditor.prototype.loopFunction=function(currentFrameTime){
 	netspace.computer=new Computer([]);
 	netspace.computer.inits();
 	loadLaptop_input();
-	alert("Computer object defined");
 	return netspace.computer;
 };
 function btnShowOptionsPressed(){
@@ -23431,6 +24357,2129 @@ function TheComputerInit(blnTextDiv,lstDimensions,strMode){
 		strMode="";
 	RunTextEditor(strMode);
 }
+var initChengfaChengseMatrix=function(){
+	loadChengfaChengseMatrix();
+};
+var loadChengfaChengseMatrix=function(){
+	
+ChengfaChengseMatrixConstructor=function(that){
+	that.intRows=3;
+	that.intCols=3;
+	that.intMinA=0;
+	that.intMaxA=9;
+	that.intMinB=0;
+	that.intMaxB=9;
+	that.intMatrixAtype=0;
+	that.intMatrixBtype=0;
+	that.intCursorX=0;
+	that.intCursorY=0;
+	that.matrix1=null;that.matrix2=null;that.matrix3=null;that.matrix0=null;
+	that.matrix1c=null;that.matrix2c=null;that.matrix3c=null;
+	that.matrix1d=null;that.matrix2d=null;that.matrix3d=null;
+	that.blnEditC=true;
+	that.strDigitBuffer="";
+	that.strDigitBufferD="";
+	that.chengfaChengseMatrixCube1VarietyManifold3D=null;
+	that.chengfaChengseMatrixCube2VarietyManifold3D=null;
+	that.chengfaChengseMatrixCube3VarietyManifold3D=null;
+	that.lstMatrixCubits=[];
+	that.blnEntertainmentMode=false;
+	that.prevLookat=null;
+	that.prevLookatMatrixCube=null;
+	that.blnMouseMoved=false;
+	that.prevMouseX=null;
+	that.prevMouseY=null;
+	that.intFazhanChengPoints=0;
+	that.intMistakes=0;
+	that.blnErrorEntered=false;
+	that.blnPrecising=false;
+	that.dateBrainputingStart=null;
+	that.intBrainputingSeconds=0;
+	that.strBrainputingTime="00:00:00";
+	that.fltAverageBrainputationSpeed=0;
+	that.intMultiplicationsPerMatrix=that.intRows*that.intCols*3;
+	that.intAdditionsPerMatrix=that.intRows*that.intCols*2;
+	that.intMultiplications=0;
+	that.intAdditions=0;
+	that.dateGameStart=null;
+	that.intGameSeconds=0;
+	that.strGameTime="00:00:00";
+	that.blnDigitPressed=false;
+	that.objDictionary=null;
+	that.lstDictionary=null;
+	that.intDictionaryLength=0;
+	that.lstExternalTextureEntries=null;
+	that.lstVeryOrange=[255,60,0,255];
+};
+ChengfaChengseMatrixConstructor_strF=function(that){
+};
+ChengfaChengseMatrix=function(){
+	ChengfaChengseMatrixConstructor(this);
+	ChengfaChengseMatrixConstructor_strF(this);
+};
+ChengfaChengseMatrix.prototype.inits=function(){
+	this.updateTextures();
+	this.dateGameStart=new Date();
+};
+ChengfaChengseMatrix.prototype.loopFunction=function(){
+};
+ChengfaChengseMatrix.prototype.loadInchesKeyboardDictionary=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+	var inchesKeyboard=null;
+	var objDictionary=null;
+	var that=netspace.chengfaChengseMatrix;
+	if(0!=strContent){
+		inchesKeyboard=new InchesKeyboard();
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intFirst123,intSecond123);
+		objDictionary=inchesKeyboard.parseContents(strContent);
+	}else{
+		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varDictionary;
+	}
+	that.objDictionary=objDictionary;
+	that.lstDictionary=[];
+	for(x in that.objDictionary)
+		that.lstDictionary.push(that.objDictionary[x]);
+	that.lstDictionary=flattenConcat(that.lstDictionary);
+	that.intDictionaryLength=that.lstDictionary.length;
+	that.lstExternalTextureEntries=[];
+};
+ChengfaChengseMatrix.prototype.loadDictionary=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+	var inchesKeyboard=null;
+	var objDictionary=null;
+	var that=netspace.chengfaChengseMatrix;
+	if(0!=strContent){
+		inchesKeyboard=new InchesKeyboard();
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intSecond123);
+		objDictionary=JSON.parse(strContent);
+	}else{
+		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varSlownik;
+	}
+	that.objDictionary=objDictionary;
+	that.lstDictionary=[];
+	var lstEntry=[];
+	for(x in that.objDictionary){
+		lstEntry=[];
+		lstEntry.push(x);
+		for(var i=0;i<that.objDictionary[x].length;i++)
+			lstEntry.push(that.objDictionary[x][i]);
+		that.lstDictionary.push([lstEntry]);
+	}
+	that.lstDictionary=flattenConcat(that.lstDictionary);
+	that.intDictionaryLength=that.lstDictionary.length;
+	that.lstExternalTextureEntries=[];
+};
+ChengfaChengseMatrix.prototype.findLookatCubit=function(){
+	for(var ii=0;ii<this.lstMatrixCubits.length;ii++){
+		if(netspace.lookatX==this.lstMatrixCubits[ii][0]&&netspace.lookatY==this.lstMatrixCubits[ii][1]&&netspace.lookatZ==this.lstMatrixCubits[ii][2]){
+			return ii;
+		}
+	}
+	return null;
+};
+ChengfaChengseMatrix.prototype.pushCubit=function(){
+	var ii=this.findLookatCubit();
+	if(null!=ii)this.spliceCubit(ii);
+	var intBlock=netspace.get3dpixel_screen(netspace.lookatX,netspace.lookatY,netspace.lookatZ);
+	if(intBlock>=27){
+		var txtFunFunFun=document.getElementById("txtFunFunFun");
+		if(null!=this.lstExternalTextureEntries){
+			var intDictionaryEntry=this.lstExternalTextureEntries[intBlock-27];
+			if(undefined!=intDictionaryEntry&&-1!=intDictionaryEntry)
+				txtFunFunFun.value=this.strCrackTheCodeDictionaryEntry(intDictionaryEntry)+txtFunFunFun.value;
+		}
+	}
+	if(this.lstMatrixCubits.length>=3)
+		return;
+	this.lstMatrixCubits.push([netspace.lookatX,netspace.lookatY,netspace.lookatZ,intBlock]);
+	if(3==this.lstMatrixCubits.length&&false==this.blnEntertainmentMode){
+		this.blnEntertainmentMode=true;
+		this.resetMatrixCubes();
+	}
+};
+ChengfaChengseMatrix.prototype.hideMatrixCubes=function(){
+	if(null!=this.chengfaChengseMatrixCube1VarietyManifold3D)
+		this.chengfaChengseMatrixCube1VarietyManifold3D.blnShow=false;
+	if(null!=this.chengfaChengseMatrixCube2VarietyManifold3D)
+		this.chengfaChengseMatrixCube2VarietyManifold3D.blnShow=false;
+	if(null!=this.chengfaChengseMatrixCube3VarietyManifold3D)
+		this.chengfaChengseMatrixCube3VarietyManifold3D.blnShow=false;
+};
+ChengfaChengseMatrix.prototype.resetCubits=function(){
+	for(var ii=0;ii<3;ii++){
+		if(false==this.ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture.checked||true==this.ChengfaChengseMatrix_chkExternalTexture.checked)
+			if(3==this.lstMatrixCubits.length)
+				netspace.put3dpixel_screen(this.lstMatrixCubits[ii][0],this.lstMatrixCubits[ii][1],this.lstMatrixCubits[ii][2],this.lstMatrixCubits[ii][3]);
+		else{
+			if(3==this.lstMatrixCubits.length)
+				netspace.put3dpixel_screen(this.lstMatrixCubits[ii][0],this.lstMatrixCubits[ii][1],this.lstMatrixCubits[ii][2],netspace.intBlock);
+		}
+	}
+	this.lstMatrixCubits=[];
+	this.hideMatrixCubes();
+	this.computeStatistics(true);
+};
+ChengfaChengseMatrix.prototype.popLookatCubit=function(){
+	var ii=this.findLookatCubit();
+	if(null==ii)return;
+	var lstReturn=this.lstMatrixCubits[ii];
+	this.lstMatrixCubits.splice(ii,1);
+	return lstReturn;
+};
+ChengfaChengseMatrix.prototype.spliceCubit=function(ii){
+	var lstReturn=this.lstMatrixCubits[ii];
+	this.lstMatrixCubits.splice(ii,1);
+	return lstReturn;
+};
+ChengfaChengseMatrix.prototype.resetMatrixCubes=function(){
+	this.updateTextures();
+	for(var ii=0;ii<3;ii++){
+		netspace.put3dpixel_screen(this.lstMatrixCubits[ii][0],this.lstMatrixCubits[ii][1],this.lstMatrixCubits[ii][2],0);
+	}
+	var lstVertices=[
+		/*Front face*/
+		-1.0,-1.0,1.0,
+		1.0,-1.0,1.0,
+		1.0,1.0,1.0,
+		-1.0,1.0,1.0,
+		/*Back face*/
+		-1.0,-1.0,-1.0,
+		-1.0,1.0,-1.0,
+		1.0,1.0,-1.0,
+		1.0,-1.0,-1.0,
+		/*Top face*/
+		-1.0,1.0,-1.0,
+		-1.0,1.0,1.0,
+		1.0,1.0,1.0,
+		1.0,1.0,-1.0,
+		/*Bottom face*/
+		-1.0,-1.0,-1.0,
+		1.0,-1.0,-1.0,
+		1.0,-1.0,1.0,
+		-1.0,-1.0,1.0,
+		/*Right face*/
+		1.0,-1.0,-1.0,
+		1.0,1.0,-1.0,
+		1.0,1.0,1.0,
+		1.0,-1.0,1.0,
+		/*Left face*/
+		-1.0,-1.0,-1.0,
+		-1.0,-1.0,1.0,
+		-1.0,1.0,1.0,
+		-1.0,1.0,-1.0,
+	];
+	for(var ii=0;ii<lstVertices.length/3;ii++){
+		lstVertices[3*ii+0]/=2.;
+		lstVertices[3*ii+0]+=0.5;
+		lstVertices[3*ii+1]/=2.;
+		lstVertices[3*ii+1]+=0.5;
+		lstVertices[3*ii+2]/=2.;
+		lstVertices[3*ii+2]+=0.5;
+	}
+	if(null==this.chengfaChengseMatrixCube1VarietyManifold3D||null==this.chengfaChengseMatrixCube2VarietyManifold3D||null==this.chengfaChengseMatrixCube3VarietyManifold3D){
+		var textureCoords=[
+			/*Front face*/
+			0.0,1.0,
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			/*Back face*/
+			/*
+			0.0,0.0,
+			0.0,1.0,
+			1.0,1.0,
+			1.0,0.0,
+			*/
+			/*Back face*/
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			0.0,1.0,
+			/*Top face*/
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			0.0,1.0,
+			/*Different orientation from camera initial setup*/
+			/*Top face*/
+			/*
+			0.0,0.0,
+			0.0,1.0,
+			1.0,1.0,
+			1.0,0.0,
+			*/
+			/*Bottom face*/
+			1.0,0.0,
+			0.0,0.0,
+			0.0,1.0,
+			1.0,1.0,
+			/*Different orientation from camera initial setup*/
+			/*Bottom face*/
+			/*
+			0.0,1.0,
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			*/
+			/*Right face*/
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			0.0,1.0,
+			/*Left face*/
+			0.0,1.0,
+			1.0,1.0,
+			1.0,0.0,
+			0.0,0.0,
+			];
+			var cubeVertexIndices=[
+				0, 1, 2,      0, 2, 3,   /*Front face*/
+				4, 5, 6,      4, 6, 7,   /*Back face*/
+				8, 9, 10,     8, 10, 11, /*Top face*/
+				12, 13, 14,   12, 14, 15,/*Bottom face*/
+				16, 17, 18,   16, 18, 19,/*Right face*/
+				20, 21, 22,   20, 22, 23 /*Left face*/
+			];
+			var lstNormals=[
+				/*Front face*/
+				-1.0,-1.0,1.0,
+				1.0,-1.0,1.0,
+				1.0,1.0,1.0,
+				-1.0,1.0,1.0,
+				/*Back face*/
+				-1.0,-1.0,-1.0,
+				-1.0,1.0,-1.0,
+				1.0,1.0,-1.0,
+				1.0,-1.0,-1.0,
+				/*Top face*/
+				-1.0,1.0,-1.0,
+				-1.0,1.0,1.0,
+				1.0,1.0,1.0,
+				1.0,1.0,-1.0,
+				/*Bottom face*/
+				-1.0,-1.0,-1.0,
+				1.0,-1.0,-1.0,
+				1.0,-1.0,1.0,
+				-1.0,-1.0,1.0,
+				/*Right face*/
+				1.0,-1.0,-1.0,
+				1.0,1.0,-1.0,
+				1.0,1.0,1.0,
+				1.0,-1.0,1.0,
+				/*Left face*/
+				-1.0,-1.0,-1.0,
+				-1.0,-1.0,1.0,
+				-1.0,1.0,1.0,
+				-1.0,1.0,-1.0,
+			];
+	}
+	var textureCanvas1=document.getElementById("ChengfaChengseMatrix_texture1canvas");
+	var lstVertices1=[];
+	for(var ii=0;ii<lstVertices.length/3;ii++){
+		lstVertices1[3*ii+0]=lstVertices[3*ii+0]+this.lstMatrixCubits[0][0];
+		lstVertices1[3*ii+1]=lstVertices[3*ii+1]+this.lstMatrixCubits[0][1];
+		lstVertices1[3*ii+2]=lstVertices[3*ii+2]+this.lstMatrixCubits[0][2];
+	}
+	if(null==this.chengfaChengseMatrixCube1VarietyManifold3D)
+		this.chengfaChengseMatrixCube1VarietyManifold3D=this.createCubeVarietyManifold3d("ChengfaChengseMatrixCube1",lstVertices1,copyList(cubeVertexIndices),copyList(lstNormals),copyList(textureCoords),textureCanvas1);
+	else this.updateCubeVarietyManifolds3d(this.chengfaChengseMatrixCube1VarietyManifold3D,lstVertices1);
+
+	var textureCanvas2=document.getElementById("ChengfaChengseMatrix_texture2canvas");
+	var lstVertices2=[];
+	for(var ii=0;ii<lstVertices.length/3;ii++){
+		lstVertices2[3*ii+0]=lstVertices[3*ii+0]+this.lstMatrixCubits[1][0];
+		lstVertices2[3*ii+1]=lstVertices[3*ii+1]+this.lstMatrixCubits[1][1];
+		lstVertices2[3*ii+2]=lstVertices[3*ii+2]+this.lstMatrixCubits[1][2];
+	}
+	if(null==this.chengfaChengseMatrixCube2VarietyManifold3D)
+		this.chengfaChengseMatrixCube2VarietyManifold3D=this.createCubeVarietyManifold3d("ChengfaChengseMatrixCube2",lstVertices2,copyList(cubeVertexIndices),copyList(lstNormals),copyList(textureCoords),textureCanvas2);
+	else this.updateCubeVarietyManifolds3d(this.chengfaChengseMatrixCube2VarietyManifold3D,lstVertices2);
+	var textureCanvas3=document.getElementById("ChengfaChengseMatrix_texture3canvas");
+	var lstVertices3=[];
+	for(var ii=0;ii<lstVertices.length/3;ii++){
+		lstVertices3[3*ii+0]=lstVertices[3*ii+0]+this.lstMatrixCubits[2][0];
+		lstVertices3[3*ii+1]=lstVertices[3*ii+1]+this.lstMatrixCubits[2][1];
+		lstVertices3[3*ii+2]=lstVertices[3*ii+2]+this.lstMatrixCubits[2][2];
+	}
+	if(null==this.chengfaChengseMatrixCube3VarietyManifold3D)
+		this.chengfaChengseMatrixCube3VarietyManifold3D=this.createCubeVarietyManifold3d("ChengfaChengseMatrixCube3",lstVertices3,copyList(cubeVertexIndices),copyList(lstNormals),copyList(textureCoords),textureCanvas3);
+	else this.updateCubeVarietyManifolds3d(this.chengfaChengseMatrixCube3VarietyManifold3D,lstVertices3);
+	this.dateBrainputingStart=new Date();
+
+};
+ChengfaChengseMatrix.prototype.updateCubeVarietyManifolds3d=function(matrixCube,lstVertices){
+	matrixCube.arrVertices=new Float32Array(lstVertices);
+	matrixCube.vertexBuffer=matrixCube.gl.createBuffer();
+	matrixCube.gl.bindBuffer(matrixCube.gl.ARRAY_BUFFER,matrixCube.vertexBuffer);
+	matrixCube.gl.bufferData(matrixCube.gl.ARRAY_BUFFER,matrixCube.arrVertices,matrixCube.gl.STATIC_DRAW);
+	matrixCube.blnOverwrites=true;
+	matrixCube.blnShow=true;
+};
+ChengfaChengseMatrix.prototype.removeCubeVarietyManifolds3d=function(){
+	var objectsIsland,varietyManifolds3D;
+	if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)
+		objectsIsland=netspace.pointLightIslands[netspace.loadObjectsConfiguration.intPointLightIslandNumber];
+	
+	varietyManifolds3D=objectsIsland.varietyManifolds3D;
+	var intCube1=varietyManifolds3D.indexOf(this.chengfaChengseMatrixCube1VarietyManifold3D);
+	if(-1!=intCube1)varietyManifolds3D.splice(intCube1,1);
+	var intCube2=varietyManifolds3D.indexOf(this.chengfaChengseMatrixCube1VarietyManifold3D);
+	if(-1!=intCube2)varietyManifolds3D.splice(intCube2,1);
+	var intCube3=varietyManifolds3D.indexOf(this.chengfaChengseMatrixCube1VarietyManifold3D);
+	if(-1!=intCube3)varietyManifolds3D.splice(intCube3,1);
+	this.chengfaChengseMatrixCube1VarietyManifold3D=null;
+	this.chengfaChengseMatrixCube2VarietyManifold3D=null;
+	this.chengfaChengseMatrixCube3VarietyManifold3D=null;
+};
+ChengfaChengseMatrix.prototype.createCubeVarietyManifold3d=function(strName,vertices,cubeVertexIndices,arrNormals,textureCoords,textureCanvas){
+	netspace.camera.updateMouse();
+	getLoadObjectsConfiguration();
+	var objectsIsland={};
+	if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)
+		objectsIsland=netspace.pointLightIslands[netspace.loadObjectsConfiguration.intPointLightIslandNumber];
+	var varietyManifolds3D=[];
+	if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)
+		varietyManifolds3D=objectsIsland.varietyManifolds3D;
+	var mat4transformation,vec4color;
+	var vec3Translation=vec3.create([0,0,0]);
+	var vec3Scaling=vec3.create([1,1,1]);
+	var vec3Rotate=vec3.create([0,0,0]);
+	var intTextures=2;
+	mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+	mat4.translate(mat4transformation,mat4transformation,vec3Translation);
+	mat4.scale(mat4transformation,mat4transformation,vec3Scaling);
+	mat4.rotateX(mat4transformation,mat4transformation,toRadian(vec3Rotate[0]));
+	mat4.rotateY(mat4transformation,mat4transformation,toRadian(vec3Rotate[1]));
+	mat4.rotateZ(mat4transformation,mat4transformation,toRadian(vec3Rotate[2]));
+	
+	var vec4color;
+	if(undefined!=netspace.loadObjectsConfiguration.lstObjectsColor&&netspace.loadObjectsConfiguration.blnUseRandomColorForEveryObject)
+		vec4color=vec4.create([rand(0,1),rand(0,1),rand(0,1),1.]);
+	else vec4color=netspace.loadObjectsConfiguration.lstObjectsColor;
+	var varietyManifold3D=new VarietyManifold3D(netspace.gl,strName,flatten(vertices),flatten(cubeVertexIndices),flatten(arrNormals),vec4color,vec4color,0.5,vec4color,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,textureCoords,null);
+	varietyManifolds3D.push(varietyManifold3D);
+	objectsIsland.varietyManifolds3D=varietyManifolds3D;
+	objectsIsland.LightObject=null;
+	for(var ii=0;ii<objectsIsland.varietyManifolds3D.length;ii++)
+		if("Light"==objectsIsland.varietyManifolds3D[ii].name){
+			objectsIsland.LightObject=objectsIsland.varietyManifolds3D[ii];
+			objectsIsland.vec3positionLight=netspace.computeVec3median(objectsIsland.varietyManifolds3D[ii]);
+		}
+	objectsIsland.fltAdditionalMovementParameter0=0;
+	if(null==objectsIsland.LightObject)objectsIsland.vec3positionLight=vec3.create([0,0,0]);
+	if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)
+	{
+		netspace.intActualPointLightIsland=netspace.loadObjectsConfiguration.intPointLightIslandNumber;
+	}else{
+		netspace.pointLightIslands.push(objectsIsland);
+		netspace.intActualPointLightIsland=netspace.pointLightIslands.length-1;
+	}
+	varietyManifold3D.blnShow=true;
+	return varietyManifold3D;
+};
+ChengfaChengseMatrix.prototype.modifyTheExternalQuickTexture=function(intTextureNumber,strSymbol,intColor){
+	var textureWidth=4096;
+	var quickTextureCanvas=netspace.quickTextureCanvas;
+	var quickTextureContext=quickTextureCanvas.getContext("2d");
+	var quickTextureImage=quickTextureContext.getImageData(0,0,textureWidth,textureWidth);
+	quickTextureContext.font="15px Arial"; 
+	quickTextureContext.textAlign="center";
+	quickTextureContext.textBaseline="middle";
+	var index=0;
+	var dX=32;
+	var dY=32;
+	var I,J,i0,j0;
+	var intSymbolsWidth=textureWidth/32;
+	var intSymbolsHeight=textureWidth/32;
+	J=intTextureNumber%intSymbolsWidth+1;
+	I=Math.floor(intTextureNumber/intSymbolsWidth);
+	i0=I*32;
+	j0=J*32;
+
+	var index=0;
+	for(var i=i0;i<i0+32;i+=1){
+		for(var j=j0;j<j0+32;j+=1){
+			index=(i*textureWidth+j)*4;
+			quickTextureImage.data[index+0]=this.lstVeryOrange[0];
+			quickTextureImage.data[index+1]=this.lstVeryOrange[1];
+			quickTextureImage.data[index+2]=this.lstVeryOrange[2];
+			quickTextureImage.data[index+3]=this.lstVeryOrange[3];
+		}
+	}
+	quickTextureContext.putImageData(quickTextureImage,0,0);
+	index=(I*(textureWidth/32)+J);
+	this.lstExternalTextureEntries[index]=-1;
+	quickTextureContext.fillStyle="rgba("+lstColors[intColor][0]+","+lstColors[intColor][1]+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+	if(6==intColor)
+		quickTextureContext.fillStyle="rgba("+lstColors[intColor][0]+","+(lstColors[intColor][1]+50)+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+	quickTextureContext.fillText(strSymbol,j0+16,i0+16);
+	quickTextureImage=quickTextureContext.getImageData(0,0,textureWidth,textureWidth);
+	quickTextureContext.putImageData(quickTextureImage,0,0);
+	netspace.quickTextureCanvas=quickTextureCanvas;
+	netspace.quickTextures=netspace.gl.createTexture();
+	netspace.gl.activeTexture(netspace.gl.TEXTURE0);
+	netspace.gl.bindTexture(netspace.gl.TEXTURE_2D,netspace.quickTextures);
+	netspace.gl.texImage2D(netspace.gl.TEXTURE_2D,0,netspace.gl.RGBA,netspace.gl.RGBA,netspace.gl.UNSIGNED_BYTE,netspace.quickTextureCanvas);
+	netspace.gl.texParameteri(netspace.gl.TEXTURE_2D,netspace.gl.TEXTURE_MIN_FILTER,netspace.gl.NEAREST);
+	netspace.gl.texParameteri(netspace.gl.TEXTURE_2D,netspace.gl.TEXTURE_MAG_FILTER,netspace.gl.NEAREST);
+	netspace.redrawBlocksCanvas();
+	return netspace.quickTextures;
+};
+ChengfaChengseMatrix.prototype.generateAndDivideTheExternalQuickTexture=function(){
+	var textureWidth=4096;
+	var textureCanvas=document.createElement("canvas");
+	var intColor,intDictionaryEntry;
+	textureCanvas.width=textureCanvas.height=textureWidth;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(textureWidth,textureWidth);
+	textureContext.font="15px Arial";
+	textureContext.textAlign="center";
+	textureContext.textBaseline="middle";
+	var index=0;
+	var I,J;
+	var i,j;
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			index=(i*textureWidth+j)*4;
+			textureImage.data[index+0]=this.lstVeryOrange[0];
+			textureImage.data[index+1]=this.lstVeryOrange[1];
+			textureImage.data[index+2]=this.lstVeryOrange[2];
+			textureImage.data[index+3]=this.lstVeryOrange[3];
+		}
+	}
+	textureContext.putImageData(textureImage,0,0);
+	if(true==this.ChengfaChengseMatrix_chkCrackTheCodeMessages.checked){
+		var dX=32;
+		var dY=32;
+		if(null==this.lstDictionary){
+			for(i=0;i<textureWidth;i+=1){
+				for(j=0;j<textureWidth;j+=1){
+					if((i%dX==0)&&(j%dY==0)){
+						intColor=floorRand(0,10);
+						textureContext.fillStyle="rgba("+lstColors[intColor][0]+","+lstColors[intColor][1]+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+						if(6==intColor)
+							textureContext.fillStyle="rgba("+lstColors[intColor][0]+","+(lstColors[intColor][1]+50)+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+						textureContext.fillText(String.fromCharCode(floorRand(0,65535)),j+16,i+16);
+					}
+				}
+			}
+		}else{
+			for(i=0;i<textureWidth;i+=1){
+				for(j=0;j<textureWidth;j+=1){
+					if((i%dX==0)&&(j%dY==0)){
+						intColor=floorRand(0,10);
+						intDictionaryEntry=floorRand(0,this.intDictionaryLength);
+						I=i/32;
+						J=j/32;
+						index=(I*(textureWidth/32)+J);
+						this.lstExternalTextureEntries[index]=intDictionaryEntry;
+						textureContext.fillStyle="rgba("+lstColors[intColor][0]+","+lstColors[intColor][1]+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+						if(6==intColor)
+							textureContext.fillStyle="rgba("+lstColors[intColor][0]+","+(lstColors[intColor][1]+50)+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+						textureContext.fillText(this.lstDictionary[intDictionaryEntry][0],j+16,i+16);
+					}
+				}
+			}
+		}
+	}
+	textureImage=textureContext.getImageData(0,0,4096,4096);
+	netspace.loadAndDivideTheExternalQuickTextureFile(textureImage,4096,4096);
+};
+ChengfaChengseMatrix.prototype.chkGenerateAndUseExternalQuickOrangeTextureChanged=function(){
+	if(null==netspace)return;
+	netspace.chkUseExternalQuickTextures.checked=!netspace.chkUseExternalQuickTextures.checked;
+	var divExternalQuickTextures=document.getElementById("divExternalQuickTextures");
+	var txtExternalQuickTextureNumber=document.getElementById("txtExternalQuickTextureNumber");
+	var divExternalQuickTexturesButton=document.getElementById("divExternalQuickTexturesButton");
+	var divExternalQuickTexturesOptions=document.getElementById("divExternalQuickTexturesOptions");
+	if(null!=netspace.shaderThinkpad)
+	if(true==netspace.chkUseExternalQuickTextures.checked&&3==netspace.shaderThinkpad.intShaderSlotDivideMode)
+		netspace.shaderThinkpad.initExternalTextureRenderer();
+	else netspace.shaderThinkpad.deleteExternalTextureRenderer();
+	if(netspace.chkUseExternalQuickTextures.checked){
+		alert("Converting the regions of the netspace nr. netspace.intActualQuickNetspaceRoom to hold bigger block types");
+		divExternalQuickTextures.style.display="";
+		divExternalQuickTexturesButton.style.display="";
+		txtExternalQuickTextureNumber.value=netspace.quickNetspacesObjectTypes.length;
+		netspace.intExternalQuickTextureNumber=netspace.quickNetspacesObjectTypes.length;
+		this.generateAndDivideTheExternalQuickTexture();
+		netspace.convertBlocksToUint32Array();
+		document.getElementById("chkAutoincrementExternalTextureNumber").checked=true;
+	}
+	else{
+		alert("Converting the regions of the netspace nr. netspace.intActualQuickNetspaceRoom to smaller size - only 255 block types will be kept");
+		divExternalQuickTextures.style.display="none";
+		divExternalQuickTexturesButton.style.display="none";
+		divExternalQuickTexturesOptions.style.display="none";
+		netspace.unloadTheExternalQuickTextureFile();
+		netspace.convertBlocksToUint8Array();
+	}
+};
+ChengfaChengseMatrix.prototype.formatTime=function(intAllSeconds){
+	var intHours,intMinutes,intSeconds,strTime;
+	intSeconds=intAllSeconds%60;
+	intMinutes=Math.floor(intAllSeconds/60);
+	intHours=Math.floor(intMinutes/60);
+	strTime=flush(""+intHours,2)+":"+flush(""+intMinutes,2)+":"+flush(""+intSeconds,2);
+	return strTime;
+};
+ChengfaChengseMatrix.prototype.computeStatistics=function(blnTimeEnd){
+	var dateNow=new Date();
+	var intBrainputingSeconds=0;
+	if(null!=this.dateBrainputingStart){
+		if(true==blnTimeEnd){
+			this.intBrainputingSeconds+=Math.round((dateNow.getTime()-this.dateBrainputingStart.getTime())/1000);
+			this.dateBrainputingStart=null;
+			intBrainputingSeconds=this.intBrainputingSeconds;
+		}else{
+			intBrainputingSeconds=this.intBrainputingSeconds+Math.round((dateNow.getTime()-this.dateBrainputingStart.getTime())/1000);
+		}
+		this.strBrainputingTime=this.formatTime(intBrainputingSeconds);
+	}else{
+		intBrainputingSeconds=this.intBrainputingSeconds;
+		this.strBrainputingTime=this.formatTime(this.intBrainputingSeconds);
+	}
+	this.fltAverageBrainputationSpeed=this.intFazhanChengPoints/this.intBrainputingSeconds;
+	this.intGameSeconds=Math.round((dateNow.getTime()-this.dateGameStart.getTime())/1000);
+	this.strGameTime=this.formatTime(this.intGameSeconds);
+	this.intMultiplications=(this.intMultiplicationsPerMatrix*this.intFazhanChengPoints);
+	this.intAdditions=(this.intAdditionsPerMatrix*this.intFazhanChengPoints);
+	var strStatistics="";
+	strStatistics="intFazhanChengPoint="+this.intFazhanChengPoints+String.fromCharCode(10)+
+	"intMistakes="+this.intMistakes+String.fromCharCode(10)+
+	"intBrainputingSeconds="+intBrainputingSeconds+String.fromCharCode(10)+
+	"strBrainputingTime="+this.strBrainputingTime+String.fromCharCode(10)+
+	"fltAverageBrainputationSpeed="+this.fltAverageBrainputationSpeed+String.fromCharCode(10)+
+	"intGameSeconds="+this.intGameSeconds+String.fromCharCode(10)+
+	"strGameTime="+this.strGameTime+String.fromCharCode(10)+
+	"intMultiplications="+this.intMultiplications+String.fromCharCode(10)+
+	"intAdditions="+this.intAdditions;
+	return strStatistics;
+};
+ChengfaChengseMatrix.prototype.showStatistics=function(){
+	var strStatistics=netspace.chengfaChengseMatrix.computeStatistics(false);
+	alert(strStatistics);
+};
+ChengfaChengseMatrix.prototype.cancelToPreviousState=function(strMatrix){
+	if("A"==strMatrix){
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+		var objPreviousState=ChengfaChengseMatrix_divMatrixAtypes.objPreviousState;
+		var ChengfaChengseMatrix_sltMatrixAtypes=document.getElementById("ChengfaChengseMatrix_sltMatrixAtypes");
+		if(false==nonNumber(objPreviousState.intMatrixType))
+			ChengfaChengseMatrix_sltMatrixAtypes.selectedIndex=objPreviousState.intMatrixType;
+		else ChengfaChengseMatrix_sltMatrixAtypes.selectedIndex=0;
+		var ChengfaChengseMatrix_txtRowsA=document.getElementById("ChengfaChengseMatrix_txtRowsA");
+		if(false==nonNumber(objPreviousState.intRows))
+			ChengfaChengseMatrix_txtRowsA.value=""+objPreviousState.intRows;
+		else ChengfaChengseMatrix_txtRowsA.value="3";
+		var ChengfaChengseMatrix_txtColsA=document.getElementById("ChengfaChengseMatrix_txtColsA");
+		if(false==nonNumber(objPreviousState.intCols))
+			ChengfaChengseMatrix_txtColsA.value=objPreviousState.intCols;
+		else ChengfaChengseMatrix_txtColsA.value="3";
+		var ChengfaChengseMatrix_txtMinA=document.getElementById("ChengfaChengseMatrix_txtMinA");
+		
+
+		if(false==nonNumber(objPreviousState.intMinA))
+			ChengfaChengseMatrix_txtMinA.value=""+objPreviousState.intMinA;
+		else ChengfaChengseMatrix_txtMinA.value="0";
+		var ChengfaChengseMatrix_txtMaxA=document.getElementById("ChengfaChengseMatrix_txtMaxA");
+		if(false==nonNumber(objPreviousState.intMaxA))
+			ChengfaChengseMatrix_txtMaxA.value=objPreviousState.intMaxA;
+		else ChengfaChengseMatrix_txtMaxA.value="9";
+	}
+	if("B"==strMatrix){
+		var ChengfaChengseMatrix_divMatrixBtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+		var objPreviousState=ChengfaChengseMatrix_divMatrixBtypes.objPreviousState;
+		var ChengfaChengseMatrix_sltMatrixBtypes=document.getElementById("ChengfaChengseMatrix_sltMatrixBtypes");
+		if(false==nonNumber(objPreviousState.intMatrixType))
+			ChengfaChengseMatrix_sltMatrixBtypes.selectedIndex=objPreviousState.intMatrixType;
+		else ChengfaChengseMatrix_sltMatrixBtypes.selectedIndex=0;
+		var ChengfaChengseMatrix_txtRowsB=document.getElementById("ChengfaChengseMatrix_txtRowsB");
+		if(false==nonNumber(objPreviousState.intRows))
+			ChengfaChengseMatrix_txtRowsB.value=""+objPreviousState.intRows;
+		else ChengfaChengseMatrix_txtRowsB.value="3";
+		var ChengfaChengseMatrix_txtColsB=document.getElementById("ChengfaChengseMatrix_txtColsB");
+		if(false==nonNumber(objPreviousState.intCols))
+			ChengfaChengseMatrix_txtColsB.value=objPreviousState.intCols;
+		else ChengfaChengseMatrix_txtColsB.value="3";
+		var ChengfaChengseMatrix_txtMinB=document.getElementById("ChengfaChengseMatrix_txtMinB");
+		
+
+		if(false==nonNumber(objPreviousState.intMinB))
+			ChengfaChengseMatrix_txtMinB.value=""+objPreviousState.intMinB;
+		else ChengfaChengseMatrix_txtMinB.value="0";
+		var ChengfaChengseMatrix_txtMaxB=document.getElementById("ChengfaChengseMatrix_txtMaxB");
+		if(false==nonNumber(objPreviousState.intMaxB))
+			ChengfaChengseMatrix_txtMaxB.value=objPreviousState.intMaxB;
+		else ChengfaChengseMatrix_txtMaxB.value="9";
+
+	}
+};
+ChengfaChengseMatrix.prototype.OKactualState=function(strMatrix){
+	var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+	var ChengfaChengseMatrix_divMatrixBtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+	var strVersion="In this version ";
+	var strABequal="A and B only square matrices with equal dimensions.";
+	var that=netspace.chengfaChengseMatrix;
+	var objPreviousState;
+	if("A"==strMatrix){
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+		ChengfaChengseMatrix_divMatrixAtypes.objPreviousState=that.savePreviousState(strMatrix);
+		objPreviousState=ChengfaChengseMatrix_divMatrixAtypes.objPreviousState;
+		if(objPreviousState.intRows!=objPreviousState.intCols){
+			alert(strVersion+"intRows==intCols, "+strABequal);
+			return;
+		}
+		if(objPreviousState.intRows<1||objPreviousState.intCols<1){
+			alert(strVersion+"intRows>=1 && intCols>=1. "+strABequal);
+			return;
+		}
+		that.intRows=objPreviousState.intRows;
+		that.intCols=objPreviousState.intCols;
+		that.intMinA=objPreviousState.intMin;
+		that.intMaxA=objPreviousState.intMax;
+		that.intMatrixAtype=objPreviousState.intMatrixType;
+		ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+		if(false==that.blnEntertainmentMode){
+			that.initMatrices();
+			that.updateTextures();
+		}
+		that.next();
+	}
+	if("B"==strMatrix){
+		var ChengfaChengseMatrix_divMatrixBtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+		ChengfaChengseMatrix_divMatrixBtypes.objPreviousState=that.savePreviousState(strMatrix);
+		objPreviousState=ChengfaChengseMatrix_divMatrixBtypes.objPreviousState;
+		if(objPreviousState.intRows!=objPreviousState.intCols){
+			alert(strVersion+"intRows==intCols, "+strABequal);
+			return;
+		}
+		if(objPreviousState.intRows<1||objPreviousState.intCols<1){
+			alert(strVersion+"intRows>=1 && intCols>=1. "+strABequal);
+			return;
+		}
+		that.intRows=objPreviousState.intRows;
+		that.intCols=objPreviousState.intCols;
+		that.intMinB=objPreviousState.intMin;
+		that.intMaxB=objPreviousState.intMax;
+		that.intMatrixBtype=objPreviousState.intMatrixType;
+		ChengfaChengseMatrix_divMatrixBtypes.style.display="none";
+		if(false==that.blnEntertainmentMode){
+			that.initMatrices();
+			that.updateTextures();
+		}
+		that.next();
+	}
+};
+ChengfaChengseMatrix.prototype.savePreviousState=function(strMatrix){
+	var objPreviousState={};
+	if("A"==strMatrix){
+		var ChengfaChengseMatrix_sltMatrixAtypes=document.getElementById("ChengfaChengseMatrix_sltMatrixAtypes");
+		objPreviousState.intMatrixType=ChengfaChengseMatrix_sltMatrixAtypes.selectedIndex;
+		var ChengfaChengseMatrix_txtRowsA=document.getElementById("ChengfaChengseMatrix_txtRowsA");
+		objPreviousState.intRows=parseInt(ChengfaChengseMatrix_txtRowsA.value);
+		var ChengfaChengseMatrix_txtColsA=document.getElementById("ChengfaChengseMatrix_txtColsA");
+		objPreviousState.intCols=parseInt(ChengfaChengseMatrix_txtColsA.value);
+		var ChengfaChengseMatrix_txtMinA=document.getElementById("ChengfaChengseMatrix_txtMinA");
+		objPreviousState.intMin=parseInt(ChengfaChengseMatrix_txtMinA.value);
+		var ChengfaChengseMatrix_txtMaxA=document.getElementById("ChengfaChengseMatrix_txtMaxA");
+		objPreviousState.intMax=parseInt(ChengfaChengseMatrix_txtMaxA.value);
+		return objPreviousState;
+	}
+	if("B"==strMatrix){
+		var ChengfaChengseMatrix_sltMatrixBtypes=document.getElementById("ChengfaChengseMatrix_sltMatrixBtypes");
+		objPreviousState.intMatrixType=ChengfaChengseMatrix_sltMatrixBtypes.selectedIndex;
+		var ChengfaChengseMatrix_txtRowsB=document.getElementById("ChengfaChengseMatrix_txtRowsB");
+		objPreviousState.intRows=parseInt(ChengfaChengseMatrix_txtRowsB.value);
+		var ChengfaChengseMatrix_txtColsB=document.getElementById("ChengfaChengseMatrix_txtColsB");
+		objPreviousState.intCols=parseInt(ChengfaChengseMatrix_txtColsB.value);
+		var ChengfaChengseMatrix_txtMinB=document.getElementById("ChengfaChengseMatrix_txtMinB");
+		objPreviousState.intMin=parseInt(ChengfaChengseMatrix_txtMinB.value);
+		var ChengfaChengseMatrix_txtMaxB=document.getElementById("ChengfaChengseMatrix_txtMaxB");
+		objPreviousState.intMax=parseInt(ChengfaChengseMatrix_txtMaxB.value);
+		return objPreviousState;
+	}
+};
+ChengfaChengseMatrix.prototype.initExtensionInterface=function(){
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.addExtension("ChengfaChengseMatrixExtension","Orange "+String.fromCharCode(34)+"Enter The Matrix"+String.fromCharCode(34)+ " Multiplication",function(){});
+
+	var ChengfaChengseMatrix_chkMode=document.createElement("input");
+	ChengfaChengseMatrix_chkMode.type="checkbox";
+	ChengfaChengseMatrix_chkMode.id="ChengfaChengseMatrix_chkMode";
+	ChengfaChengseMatrix_chkMode.onclick=function(){
+		if(true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture.checked&&true==this.checked||true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkExternalTexture.checked){
+			netspace.redrawBlocksCanvas();
+		}
+	};
+	
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkMode);	
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("橙色"+String.fromCharCode(34)+"Enter The Matrix"+String.fromCharCode(34)+"乘法mode"));
+	}
+	this.ChengfaChengseMatrix_chkMode=ChengfaChengseMatrix_chkMode;
+	var ChengfaChengseMatrix_btnDefaultMode=document.createElement("button");
+	ChengfaChengseMatrix_btnDefaultMode.id="ChengfaChengseMatrix_btnDefaultMode";
+	ChengfaChengseMatrix_btnDefaultMode.innerText="default mode "+String.fromCharCode(34)+"ignition"+String.fromCharCode(34);
+	ChengfaChengseMatrix_btnDefaultMode.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.ChengfaChengseMatrix_chkMode.checked=true;
+		that.ChengfaChengseMatrix_chkMode.onclick();
+		document.getElementById("ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary").click();
+	};
+	
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnDefaultMode);
+	}
+	this.ChengfaChengseMatrix_chkMode=ChengfaChengseMatrix_chkMode;
+
+	var ChengfaChengseMatrix_chkShowMatrices=document.createElement("input");
+	ChengfaChengseMatrix_chkShowMatrices.type="checkbox";
+	ChengfaChengseMatrix_chkShowMatrices.id="ChengfaChengseMatrix_chkShowMatrices";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkShowMatrices);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Show matrices"));
+	}
+	ChengfaChengseMatrix_chkShowMatrices.onchange=function(){
+		if(true==this.checked){
+			document.getElementById("ChengfaChengseMatrix_divTextures").style="";
+		}else{
+			document.getElementById("ChengfaChengseMatrix_divTextures").style="display:none";
+		}
+	};
+
+	var divTextures=document.createElement("div");
+	divTextures.id="ChengfaChengseMatrix_divTextures";
+	divTextures.style="display:none";
+	var intTexturesWidth=256;
+	var intTexturesHeight=256;
+	var ChengfaChengseMatrix_texture1canvas=document.createElement("canvas");
+	ChengfaChengseMatrix_texture1canvas.width=intTexturesWidth;
+	ChengfaChengseMatrix_texture1canvas.height=intTexturesHeight;
+	ChengfaChengseMatrix_texture1canvas.id="ChengfaChengseMatrix_texture1canvas";
+	divTextures.appendChild(ChengfaChengseMatrix_texture1canvas);
+	var ChengfaChengseMatrix_texture2canvas=document.createElement("canvas");
+	ChengfaChengseMatrix_texture2canvas.width=intTexturesWidth;
+	ChengfaChengseMatrix_texture2canvas.height=intTexturesHeight;
+	ChengfaChengseMatrix_texture2canvas.id="ChengfaChengseMatrix_texture2canvas";
+	divTextures.appendChild(ChengfaChengseMatrix_texture2canvas);
+	var ChengfaChengseMatrix_texture3canvas=document.createElement("canvas");
+	ChengfaChengseMatrix_texture3canvas.width=intTexturesWidth;
+	ChengfaChengseMatrix_texture3canvas.height=intTexturesHeight;
+	ChengfaChengseMatrix_texture3canvas.id="ChengfaChengseMatrix_texture3canvas";
+	divTextures.appendChild(ChengfaChengseMatrix_texture3canvas);
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",divTextures);
+
+	var ChengfaChengseMatrix_btnSelfdevelopmentPoints=document.createElement("button");
+	ChengfaChengseMatrix_btnSelfdevelopmentPoints.innerText="发展成 points ";
+	ChengfaChengseMatrix_btnSelfdevelopmentPoints.id="ChengfaChengseMatrix_btnSelfdevelopmentPoints";
+	var ChengfaChengseMatrix_btnFazhanChengPoints=document.createElement("button");
+	ChengfaChengseMatrix_btnFazhanChengPoints.innerText="0";
+	ChengfaChengseMatrix_btnFazhanChengPoints.id="ChengfaChengseMatrix_btnFazhanChengPoints";
+	ChengfaChengseMatrix_btnSelfdevelopmentPoints.onclick=this.showStatistics;
+	ChengfaChengseMatrix_btnFazhanChengPoints.onclick=this.showStatistics;
+	
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnSelfdevelopmentPoints);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnFazhanChengPoints);
+	}
+	this.ChengfaChengseMatrix_btnFazhanChengPoints=ChengfaChengseMatrix_btnFazhanChengPoints;
+
+	var ChengfaChengseMatrix_chkCrackTheCodeMessages=document.createElement("input");
+	ChengfaChengseMatrix_chkCrackTheCodeMessages.type="checkbox";
+	ChengfaChengseMatrix_chkCrackTheCodeMessages.id="ChengfaChengseMatrix_chkCrackTheCodeMessages";
+	
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkCrackTheCodeMessages);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Show "+String.fromCharCode(34)+"Crack the Code"+String.fromCharCode(34)+" messages"));
+	}
+	this.ChengfaChengseMatrix_chkCrackTheCodeMessages=ChengfaChengseMatrix_chkCrackTheCodeMessages;
+
+	var ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary=document.createElement("button");
+	ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary.innerText="Load "+String.fromCharCode(34)+"Crack the Code"+String.fromCharCode(34)+ " dictionary...";
+	ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary.id="ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary";
+	ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary.onclick=function(){
+		var objArgs={};
+		var that=netspace.chengfaChengseMatrix;
+		that.ChengfaChengseMatrix_chkCrackTheCodeMessages.checked=true;
+		openFile(function(content){that.loadDictionary(content);/*that.loadInchesKeyboardDictionary(content);*/
+		if(false==that.ChengfaChengseMatrix_chkExternalTexture.checked){
+			that.ChengfaChengseMatrix_chkExternalTexture.checked=true;
+			that.ChengfaChengseMatrix_chkExternalTexture.onchange();
+		}
+},objArgs);
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnLoadCrackTheCodeDictionary);
+	}
+	var ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture=document.createElement("input");
+	ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture.type="checkbox";
+	ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture.id="ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture";
+	ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture.onchange=function(){
+		if(true==this.checked){
+			netspace.redrawBlocksCanvas();
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Replace multiplied cubits with actual quick texture"));
+	}
+	this.ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture=ChengfaChengseMatrix_chkReplaceCubitsWithActualQuickTexture;
+	var ChengfaChengseMatrix_chkExternalTexture=document.createElement("input");
+	ChengfaChengseMatrix_chkExternalTexture.type="checkbox";
+	ChengfaChengseMatrix_chkExternalTexture.id="ChengfaChengseMatrix_chkExternalTexture";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkExternalTexture);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("with external texture"));
+	}
+	ChengfaChengseMatrix_chkExternalTexture.onchange=function(){
+		netspace.chengfaChengseMatrix.chkGenerateAndUseExternalQuickOrangeTextureChanged();
+		if(true==this.checked){
+			txtExternalQuickTextureNumberClicked();
+		}
+	};
+	this.ChengfaChengseMatrix_chkExternalTexture=ChengfaChengseMatrix_chkExternalTexture;
+
+	var ChengfaChengseMatrix_chkPlayIn2D=document.createElement("input");
+	ChengfaChengseMatrix_chkPlayIn2D.type="checkbox";
+	ChengfaChengseMatrix_chkPlayIn2D.id="ChengfaChengseMatrix_chkPlayIn2D";
+	ChengfaChengseMatrix_chkPlayIn2D.onchange=function(){
+		if(true==this.checked){
+			var chkShowMatrices=document.getElementById("ChengfaChengseMatrix_chkShowMatrices");
+			chkShowMatrices.checked=true;
+			chkShowMatrices.onchange();
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkPlayIn2D);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Play in 2D"));
+	}
+	this.ChengfaChengseMatrix_chkPlayIn2D=ChengfaChengseMatrix_chkPlayIn2D;
+
+	var ChengfaChengseMatrix_btnResetStatistics=document.createElement("button");
+	ChengfaChengseMatrix_btnResetStatistics.innerText="Reset statistics";
+	ChengfaChengseMatrix_btnResetStatistics.id="ChengfaChengseMatrix_btnResetStatistics";
+	ChengfaChengseMatrix_btnResetStatistics.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.intFazhanChengPoints=0;
+		that.intMistakes=0;
+		that.blnErrorEntered=false;
+		that.dateBrainputingStart=null;
+		that.intBrainputingSeconds=0;
+		that.strBrainputingTime="00:00:00";
+		that.fltAverageBrainputationSpeed=0;
+		that.intMultiplicationsPerMatrix=that.intRows*that.intCols*3;
+		that.intAdditionsPerMatrix=that.intRows*that.intCols*2;
+		that.intMultiplications=0;
+		that.intAdditions=0;
+		that.dateGameStart=new Date();
+		that.intGameSeconds=0;
+		that.strGameTime="00:00:00";
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnResetStatistics);
+	var ChengfaChengseMatrix_chkNonModifyingMouseclicks=document.createElement("input");
+	ChengfaChengseMatrix_chkNonModifyingMouseclicks.type="checkbox";
+	ChengfaChengseMatrix_chkNonModifyingMouseclicks.id="ChengfaChengseMatrix_chkNonModifyingMouseclicks";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkNonModifyingMouseclicks);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Non modifying mouseclicks"));
+	}
+	this.ChengfaChengseMatrix_chkNonModifyingMouseclicks=ChengfaChengseMatrix_chkNonModifyingMouseclicks;
+
+	var ChengfaChengseMatrix_chkMatrixKeyboardOff=document.createElement("input");
+	ChengfaChengseMatrix_chkMatrixKeyboardOff.type="checkbox";
+	ChengfaChengseMatrix_chkMatrixKeyboardOff.id="ChengfaChengseMatrix_chkMatrixKeyboardOff";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_chkMatrixKeyboardOff);
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",document.createTextNode("Matrix keyboard off"));
+	}
+	this.ChengfaChengseMatrix_chkMatrixKeyboardOff=ChengfaChengseMatrix_chkMatrixKeyboardOff;
+
+	var ChengfaChengseMatrix_btnMatrixTypes=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixTypes.innerText="Matrix types...";
+	ChengfaChengseMatrix_btnMatrixTypes.id="ChengfaChengseMatrix_btnMatrixTypes";
+	ChengfaChengseMatrix_btnMatrixTypes.onclick=function(){
+		var ChengfaChengseMatrix_divMatrixABtypes=document.getElementById("ChengfaChengseMatrix_divMatrixABtypes");
+		if("none"==ChengfaChengseMatrix_divMatrixABtypes.style.display)
+			ChengfaChengseMatrix_divMatrixABtypes.style.display="";
+		else ChengfaChengseMatrix_divMatrixABtypes.style.display="none";
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnMatrixTypes);
+	var ChengfaChengseMatrix_divMatrixABtypes=document.createElement("div");
+	ChengfaChengseMatrix_divMatrixABtypes.id="ChengfaChengseMatrix_divMatrixABtypes";
+	ChengfaChengseMatrix_divMatrixABtypes.style.display="none";
+		
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_divMatrixABtypes);
+
+	var ChengfaChengseMatrix_btnMatrixAtypes=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixAtypes.innerText="Matrix A types...";
+	ChengfaChengseMatrix_btnMatrixAtypes.id="ChengfaChengseMatrix_btnMatrixAtypes";
+	ChengfaChengseMatrix_btnMatrixAtypes.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+		ChengfaChengseMatrix_divMatrixAtypes.objPreviousState=that.savePreviousState("A");
+		if("none"==ChengfaChengseMatrix_divMatrixAtypes.style.display){
+			ChengfaChengseMatrix_divMatrixAtypes.style.display="";
+		}
+		else ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixABtypes.appendChild(ChengfaChengseMatrix_btnMatrixAtypes);
+
+	var ChengfaChengseMatrix_btnMatrixBtypes=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixBtypes.innerText="Matrix B types...";
+	ChengfaChengseMatrix_btnMatrixBtypes.id="ChengfaChengseMatrix_btnMatrixBtypes";
+	ChengfaChengseMatrix_btnMatrixBtypes.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		var ChengfaChengseMatrix_divMatrixBtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+		ChengfaChengseMatrix_divMatrixBtypes.objPreviousState=that.savePreviousState("B");
+		if("none"==ChengfaChengseMatrix_divMatrixBtypes.style.display){
+			ChengfaChengseMatrix_divMatrixBtypes.style.display="";
+		}
+		else ChengfaChengseMatrix_divMatrixBtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixABtypes.appendChild(ChengfaChengseMatrix_btnMatrixBtypes);
+	var ChengfaChengseMatrix_divMatrixAtypes=document.createElement("div");
+	ChengfaChengseMatrix_divMatrixAtypes.id="ChengfaChengseMatrix_divMatrixAtypes";
+	ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+	ChengfaChengseMatrix_divMatrixAtypes.innerHTML="Matrix A types:";
+	var ChengfaChengseMatrix_divMatrixBtypes=document.createElement("div");
+	ChengfaChengseMatrix_divMatrixBtypes.id="ChengfaChengseMatrix_divMatrixBtypes";
+	ChengfaChengseMatrix_divMatrixBtypes.style.display="none";
+	ChengfaChengseMatrix_divMatrixBtypes.innerHTML="Matrix B types:";
+	ChengfaChengseMatrix_divMatrixABtypes.appendChild(ChengfaChengseMatrix_divMatrixAtypes);
+	ChengfaChengseMatrix_divMatrixABtypes.appendChild(ChengfaChengseMatrix_divMatrixBtypes);
+		
+	var ChengfaChengseMatrix_arrMatrixABtypes=["Entries 0-9","Zero matrix","Ones matrix","Identity","Entries [min,max]...","Fractions c/d 0-9","Fractions c/d [min,max]..."];
+	var ChengfaChengseMatrix_sltMatrixAtypes=document.createElement("select");
+	ChengfaChengseMatrix_sltMatrixAtypes.id="ChengfaChengseMatrix_sltMatrixAtypes";
+	for(var ii=0;ii<ChengfaChengseMatrix_arrMatrixABtypes.length;ii++){
+		var option=document.createElement("option");
+		option.value=ii;
+		option.text=ChengfaChengseMatrix_arrMatrixABtypes[ii];
+		ChengfaChengseMatrix_sltMatrixAtypes.appendChild(option);
+	}
+	ChengfaChengseMatrix_sltMatrixAtypes.selectedIndex=0;
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_sltMatrixAtypes);
+
+	var ChengfaChengseMatrix_txtRowsA=document.createElement("input");
+	ChengfaChengseMatrix_txtRowsA.id="ChengfaChengseMatrix_txtRowsA";
+	ChengfaChengseMatrix_txtRowsA.type="number";
+	ChengfaChengseMatrix_txtRowsA.value="3";
+	ChengfaChengseMatrix_txtRowsA.style="width:35px";
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(document.createTextNode("Rows:"));
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_txtRowsA);
+
+	var ChengfaChengseMatrix_txtColsA=document.createElement("input");
+	ChengfaChengseMatrix_txtColsA.id="ChengfaChengseMatrix_txtColsA";
+	ChengfaChengseMatrix_txtColsA.type="number";
+	ChengfaChengseMatrix_txtColsA.value="3";
+	ChengfaChengseMatrix_txtColsA.style="width:35px";
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(document.createTextNode("Cols:"));
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_txtColsA);
+
+	var ChengfaChengseMatrix_txtMinA=document.createElement("input");
+	ChengfaChengseMatrix_txtMinA.id="ChengfaChengseMatrix_txtMinA";
+	ChengfaChengseMatrix_txtMinA.type="number";
+	ChengfaChengseMatrix_txtMinA.value="0";
+	ChengfaChengseMatrix_txtMinA.style="width:35px";
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(document.createTextNode("min:"));
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_txtMinA);
+
+	var ChengfaChengseMatrix_txtMaxA=document.createElement("input");
+	ChengfaChengseMatrix_txtMaxA.id="ChengfaChengseMatrix_txtMaxA";
+	ChengfaChengseMatrix_txtMaxA.type="number";
+	ChengfaChengseMatrix_txtMaxA.value="9";
+	ChengfaChengseMatrix_txtMaxA.style="width:35px";
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(document.createTextNode("max:"));
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_txtMaxA);
+
+	var ChengfaChengseMatrix_btnMatrixAtypesOK=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixAtypesOK.innerText="OK";
+	ChengfaChengseMatrix_btnMatrixAtypesOK.id="ChengfaChengseMatrix_btnMatrixAtypesOK";
+	ChengfaChengseMatrix_btnMatrixAtypesOK.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.OKactualState("A");
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+		ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_btnMatrixAtypesOK);
+
+	var ChengfaChengseMatrix_btnMatrixAtypesCancel=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixAtypesCancel.innerText="Cancel";
+	ChengfaChengseMatrix_btnMatrixAtypesCancel.id="ChengfaChengseMatrix_btnMatrixAtypesCancel";
+	ChengfaChengseMatrix_btnMatrixAtypesCancel.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.cancelToPreviousState("A");
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixAtypes");
+		ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixAtypes.appendChild(ChengfaChengseMatrix_btnMatrixAtypesCancel);
+
+	var ChengfaChengseMatrix_sltMatrixBtypes=document.createElement("select");
+	ChengfaChengseMatrix_sltMatrixBtypes.id="ChengfaChengseMatrix_sltMatrixBtypes";
+	for(var ii=0;ii<ChengfaChengseMatrix_arrMatrixABtypes.length;ii++){
+		var option=document.createElement("option");
+		option.value=ii;
+		option.text=ChengfaChengseMatrix_arrMatrixABtypes[ii];
+		ChengfaChengseMatrix_sltMatrixBtypes.appendChild(option);
+	}
+	ChengfaChengseMatrix_sltMatrixBtypes.selectedIndex=0;
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_sltMatrixBtypes);
+
+	var ChengfaChengseMatrix_txtRowsB=document.createElement("input");
+	ChengfaChengseMatrix_txtRowsB.id="ChengfaChengseMatrix_txtRowsB";
+	ChengfaChengseMatrix_txtRowsB.type="number";
+	ChengfaChengseMatrix_txtRowsB.value="3";
+	ChengfaChengseMatrix_txtRowsB.style="width:35px";
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(document.createTextNode("Rows:"));
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_txtRowsB);
+
+	var ChengfaChengseMatrix_txtColsB=document.createElement("input");
+	ChengfaChengseMatrix_txtColsB.id="ChengfaChengseMatrix_txtColsB";
+	ChengfaChengseMatrix_txtColsB.type="number";
+	ChengfaChengseMatrix_txtColsB.value="3";
+	ChengfaChengseMatrix_txtColsB.style="width:35px";
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(document.createTextNode("Cols:"));
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_txtColsB);
+
+	var ChengfaChengseMatrix_txtMinB=document.createElement("input");
+	ChengfaChengseMatrix_txtMinB.id="ChengfaChengseMatrix_txtMinB";
+	ChengfaChengseMatrix_txtMinB.type="number";
+	ChengfaChengseMatrix_txtMinB.value="0";
+	ChengfaChengseMatrix_txtMinB.style="width:35px";
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(document.createTextNode("min:"));
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_txtMinB);
+
+	var ChengfaChengseMatrix_txtMaxB=document.createElement("input");
+	ChengfaChengseMatrix_txtMaxB.id="ChengfaChengseMatrix_txtMaxB";
+	ChengfaChengseMatrix_txtMaxB.type="number";
+	ChengfaChengseMatrix_txtMaxB.value="9";
+	ChengfaChengseMatrix_txtMaxB.style="width:35px";
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(document.createTextNode("max:"));
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_txtMaxB);
+
+	var ChengfaChengseMatrix_btnMatrixBtypesOK=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixBtypesOK.innerText="OK";
+	ChengfaChengseMatrix_btnMatrixBtypesOK.id="ChengfaChengseMatrix_btnMatrixBtypesOK";
+	ChengfaChengseMatrix_btnMatrixBtypesOK.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.OKactualState("B");
+		var ChengfaChengseMatrix_divMatrixAtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+		ChengfaChengseMatrix_divMatrixAtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_btnMatrixBtypesOK);
+
+	var ChengfaChengseMatrix_btnMatrixBtypesCancel=document.createElement("button");
+	ChengfaChengseMatrix_btnMatrixBtypesCancel.innerText="Cancel";
+	ChengfaChengseMatrix_btnMatrixBtypesCancel.id="ChengfaChengseMatrix_btnMatrixBtypesCancel";
+	ChengfaChengseMatrix_btnMatrixBtypesCancel.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.cancelToPreviousState("B");
+		var ChengfaChengseMatrix_divMatrixBtypes=document.getElementById("ChengfaChengseMatrix_divMatrixBtypes");
+		ChengfaChengseMatrix_divMatrixBtypes.style.display="none";
+	};
+	ChengfaChengseMatrix_divMatrixBtypes.appendChild(ChengfaChengseMatrix_btnMatrixBtypesCancel);
+
+	var ChengfaChengseMatrix_btnModifyExternalTexture=document.createElement("button");
+	ChengfaChengseMatrix_btnModifyExternalTexture.innerText="Modify external texture...";
+	ChengfaChengseMatrix_btnModifyExternalTexture.id="ChengfaChengseMatrix_btnModifyExternalTexture";
+	ChengfaChengseMatrix_btnModifyExternalTexture.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		if("none"==ChengfaChengseMatrix_divModifyExternalTexture.style.display){
+			ChengfaChengseMatrix_divModifyExternalTexture.style.display="";
+		}
+		else ChengfaChengseMatrix_divModifyExternalTexture.style.display="none";
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnModifyExternalTexture);
+
+	var ChengfaChengseMatrix_divModifyExternalTexture=document.createElement("div");
+	ChengfaChengseMatrix_divModifyExternalTexture.id="ChengfaChengseMatrix_divModifyExternalTexture";
+	ChengfaChengseMatrix_divModifyExternalTexture.style.display="none";
+		
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_divModifyExternalTexture);
+
+
+	var ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol=document.createElement("button");
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol.innerText="Modify external texture with symbol...";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol.id="ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		var strActualSymbol;
+		if(null!=that.lstDictionary&&undefined!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]&&-1!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27])
+			strActualSymbol=that.lstDictionary[that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]][0];
+		else strActualSymbol=String.fromCharCode(9000);
+		var strDefault="["+netspace.intExternalQuickTextureNumber+","+strActualSymbol+",1]";
+		var strDetails=prompt("Enter [intTextureNumber,strInchyChar,intColor]:",strDefault);
+		if(null!=strDetails){
+			var lstDetails=strDetails.substring(1,strDetails.length-1).split(",");
+			if(lstDetails.length<3){
+				alert("Incorrect information.");return;
+			}
+			var intTextureNumber,strSymbol,intColor;
+			intTextureNumber=parseInt(lstDetails[0]);
+			strSymbol=lstDetails[1];
+			intColor=parseInt(lstDetails[2]);
+			if(true==nonNumber(intTextureNumber)||true==nonNumber(intColor)){
+				alert("Incorrect information.");return;
+			}
+			that.modifyTheExternalQuickTexture(intTextureNumber,strSymbol,intColor);
+			that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]=-1;
+		}
+	};
+	ChengfaChengseMatrix_divModifyExternalTexture.appendChild(ChengfaChengseMatrix_btnModifyExternalTextureWithSymbol);
+	var ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode=document.createElement("button");
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode.innerText="Modify external texture with symbol fromCharCode...";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode.id="ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		var strActualSymbol;
+		if(null!=that.lstDictionary&&undefined!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]&&-1!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27])
+			strActualSymbol=that.lstDictionary[that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]][0];
+		else strActualSymbol=String.fromCharCode(9000);
+		strActualSymbol=""+strActualSymbol.charCodeAt(0);
+		var strDefault="["+netspace.intExternalQuickTextureNumber+","+strActualSymbol+",1]";
+		var strDetails=prompt("Enter [intTextureNumber,strInchyChar,intColor]:",strDefault);
+		if(null!=strDetails){
+			var lstDetails=strDetails.substring(1,strDetails.length-1).split(",");
+			if(lstDetails.length<3){
+				alert("Incorrect information.");return;
+			}
+			var intTextureNumber,intSymbol,strSymbol,intColor;
+			intTextureNumber=parseInt(lstDetails[0]);
+			intSymbol=parseInt(lstDetails[1]);
+			intColor=parseInt(lstDetails[2]);
+			if(true==nonNumber(intTextureNumber)||true==nonNumber(intSymbol)||true==nonNumber(intColor)){
+				alert("Incorrect information.");return;
+			}
+			strSymbol=String.fromCharCode(intSymbol);
+			that.modifyTheExternalQuickTexture(intTextureNumber,strSymbol,intColor);
+			that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]=-1;
+		}
+
+	};
+	ChengfaChengseMatrix_divModifyExternalTexture.appendChild(ChengfaChengseMatrix_btnModifyExternalTextureWithSymbolFromCharCode);
+
+
+	var ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary=document.createElement("button");
+	ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary.innerText="Modify external texture with pinyin from dictionary...";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary.id="ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary";
+	ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		var strActualSymbol;
+		if(null!=that.lstDictionary&&undefined!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]&&-1!=that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27])
+			strActualSymbol=that.lstDictionary[that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]][0];
+		else strActualSymbol=String.fromCharCode(9000);
+		var strDefault="["+netspace.intExternalQuickTextureNumber+","+strActualSymbol+",1]";
+		var strDetails=prompt("Enter [intTextureNumber,strInchyChar,intColor]:",strDefault);
+		if(null!=strDetails){
+			var lstDetails=strDetails.substring(1,strDetails.length-1).split(",");
+			if(lstDetails.length<3){
+				alert("Incorrect information.");return;
+			}
+			var intTextureNumber,strSymbol,intDictionaryEntry,strDictionaryEntry,intColor;
+			intTextureNumber=parseInt(lstDetails[0]);
+			strSymbol=lstDetails[1];
+			intColor=parseInt(lstDetails[2]);
+			if(true==nonNumber(intTextureNumber)||true==nonNumber(intColor)){
+				alert("Incorrect information.");return;
+			}
+			intDictionaryEntry=-1;
+			for(var ii=0;ii<that.lstDictionary.length;ii++){
+				if(strSymbol==that.lstDictionary[ii][0]){
+					intDictionaryEntry=ii;
+					break;
+				}
+			}
+			that.modifyTheExternalQuickTexture(intTextureNumber,strSymbol,intColor);
+			that.lstExternalTextureEntries[netspace.intExternalQuickTextureNumber-27]=intDictionaryEntry;
+		}
+
+	};
+	ChengfaChengseMatrix_divModifyExternalTexture.appendChild(ChengfaChengseMatrix_btnModifyExternalTextureWithWordFromDictionary);
+
+	var ChengfaChengseMatrix_btnNext=document.createElement("button");
+	ChengfaChengseMatrix_btnNext.innerText="Next";
+	ChengfaChengseMatrix_btnNext.id="ChengfaChengseMatrix_btnNext";
+	ChengfaChengseMatrix_btnNext.onclick=function(){
+		var that=netspace.chengfaChengseMatrix;
+		that.next();
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("ChengfaChengseMatrixExtension",ChengfaChengseMatrix_btnNext);
+};
+ChengfaChengseMatrix.prototype.ij=function(i,j){
+	return i*this.intCols+j;
+};
+ChengfaChengseMatrix.prototype.matrixMatrixMultiplication=function(matrixA,matrixAc,matrixAd,matrixB,matrixBc,matrixBd){
+	if(null!=matrixAc&&null!=matrixAd)
+		matrixA=this.updateFractionMatrix(matrixA,matrixAc,matrixAd);
+	if(null!=matrixBc&&null!=matrixBd)
+		matrixB=this.updateFractionMatrix(matrixB,matrixBc,matrixBd);
+	var i,j,k;
+	var theMatrix=new Array(this.intRows*this.intCols);
+	var sum=0.0;
+	for(i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			sum=0.0;
+			for(k=0;k<this.intRows;k++){
+				sum+=matrixA[this.ij(i,k)]*matrixB[this.ij(k,j)];
+			}
+			theMatrix[this.ij(i,j)]=sum;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.initMatrices=function(){
+	this.blnEditC=true;
+	switch(this.intMatrixAtype){
+		case 0:
+		this.matrix1c=this.initMatrix(0,9+1);
+		this.matrix1d=this.initOnesMatrix();
+		this.matrix1=this.initZeroMatrix();
+		break;
+		case 1:
+		this.matrix1c=this.initZeroMatrix();
+		this.matrix1d=this.initOnesMatrix();
+		this.matrix1=this.initZeroMatrix();
+		break;
+		case 2:
+		this.matrix1c=this.initOnesMatrix();
+		this.matrix1d=this.initOnesMatrix();
+		this.matrix1=this.initZeroMatrix();
+		break;
+		case 3:
+		this.matrix1c=this.initIdentityMatrix();
+		this.matrix1d=this.initOnesMatrix();
+		this.matrix1=this.initZeroMatrix();
+		break;
+		case 4:
+		this.matrix1c=this.initMatrix(this.intMinA,this.intMaxA+1);
+		this.matrix1d=this.initOnesMatrix();
+		this.matrix1=this.initZeroMatrix();
+		break;
+		case 5:
+		this.matrix1=this.initZeroMatrix();
+		this.matrix1c=this.initMatrix(0,9+1);
+		this.matrix1d=this.initMatrixd(0,9+1);
+		break;
+		case 6:
+		this.matrix1=this.initZeroMatrix();
+		this.matrix1c=this.initMatrix(this.intMinA,this.intMaxA+1);
+		this.matrix1d=this.initMatrixd(this.intMinA,this.intMaxA+1);
+		break;
+	}
+	switch(this.intMatrixBtype){
+		case 0:
+		this.matrix2c=this.initMatrix(0,9+1);
+		this.matrix2d=this.initOnesMatrix();
+		this.matrix2=this.initZeroMatrix();
+		break;
+		case 1:
+		this.matrix2c=this.initZeroMatrix();
+		this.matrix2d=this.initOnesMatrix();
+		this.matrix2=this.initZeroMatrix();
+		break;
+		case 2:
+		this.matrix2c=this.initOnesMatrix();
+		this.matrix2d=this.initOnesMatrix();
+		this.matrix2=this.initZeroMatrix();
+		break;
+		case 3:
+		this.matrix2c=this.initIdentityMatrix();
+		this.matrix2d=this.initOnesMatrix();
+		this.matrix2=this.initZeroMatrix();
+		break;
+		case 4:
+		this.matrix2c=this.initMatrix(this.intMinB,this.intMaxB+1);
+		this.matrix2d=this.initOnesMatrix();
+		this.matrix2=this.initZeroMatrix();
+		break;
+		case 5:
+		this.matrix2=this.initZeroMatrix();
+		this.matrix2c=this.initMatrix(0,9+1);
+		this.matrix2d=this.initMatrixd(0,9+1);
+		break;
+		case 6:
+		this.matrix2=this.initZeroMatrix();
+		this.matrix2c=this.initMatrix(this.intMinB,this.intMaxB+1);
+		this.matrix2d=this.initMatrixd(this.intMinB,this.intMaxB+1);
+		break;
+	}
+	this.matrix3=this.initZeroMatrix();
+	this.matrix3c=this.initZeroMatrix();
+	this.matrix3d=this.initOnesMatrix();
+	this.matrix0=this.matrixMatrixMultiplication(this.matrix1,this.matrix1c,this.matrix1d,this.matrix2,this.matrix2c,this.matrix2d);
+};
+ChengfaChengseMatrix.prototype.initMatrix=function(intMin,intMax){
+	var theMatrix=new Array(this.intRows*this.intCols);
+	var intRandom;
+	var i,j;
+	for (i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			intRandom=floorRand(intMin,intMax);
+			theMatrix[this.ij(i,j)]=intRandom;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.initMatrixd=function(intMin,intMax){
+	var theMatrix=new Array(this.intRows*this.intCols);
+	var intRandom;
+	var i,j;
+	for (i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			do{
+				intRandom=floorRand(intMin,intMax);
+			}while(intRandom==0);
+			if(intRandom<0)intRandom*=-1;
+			theMatrix[this.ij(i,j)]=intRandom;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.initZeroMatrix=function(){
+	var i,j;
+	theMatrix=new Array(this.intRows*this.intCols);
+	for (i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			theMatrix[this.ij(i,j)]=0;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.initOnesMatrix=function(){
+	var i,j;
+	theMatrix=new Array(this.intRows*this.intCols);
+	for(i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			theMatrix[this.ij(i,j)]=1;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.initIdentityMatrix=function(){
+	var i,j;
+	theMatrix=new Array(this.intRows*this.intCols);
+	for(i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			if(i==j)
+				theMatrix[this.ij(i,j)]=1;
+			else theMatrix[this.ij(i,j)]=0;
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.strCrackTheCodeDictionaryEntry=function(intEntryNumber){
+	var strEntry;
+	var strMeanings,strMeanings0,strMeanings1,strMeanings2;
+	strMeanings0=this.lstDictionary[intEntryNumber][2][0];
+	strMeanings1=this.lstDictionary[intEntryNumber][3][0];
+	strMeanings2=this.lstDictionary[intEntryNumber][4][0];
+	strMeanings="";
+	if(undefined!=strMeanings0)strMeanings+=strMeanings0+" ";
+	if(undefined!=strMeanings1)strMeanings+=strMeanings1+" ";
+	if(undefined!=strMeanings2)strMeanings+=strMeanings2+" ";
+	strEntry=this.lstDictionary[intEntryNumber][0]+" "+this.lstDictionary[intEntryNumber][1]+" "+strMeanings+String.fromCharCode(10);
+	return strEntry;
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage0=function(){
+	var that=netspace.chengfaChengseMatrix;
+	if(true==that.ChengfaChengseMatrix_chkCrackTheCodeMessages.checked){
+		if(null==that.lstDictionary){
+			var strPrometheus="";
+			for(var ii=0;ii<23;ii++)
+				strPrometheus+=String.fromCharCode(floorRand(0,65535));
+				alert("this.intFazhanChengPoints++; "+String.fromCharCode(34)+"Crack the Code"+String.fromCharCode(34)+" relax message="+String.fromCharCode(10)+strPrometheus);
+		}else{
+			var strDictionaryEntry=that.strCrackTheCodeDictionaryEntry(floorRand(0,that.intDictionaryLength));
+			alert("this.intFazhanChengPoints++; "+String.fromCharCode(34)+"Crack the Code"+String.fromCharCode(34)+" relax message="+String.fromCharCode(10)+strDictionaryEntry);
+			var txtFunFunFun=document.getElementById("txtFunFunFun");
+			txtFunFunFun.value=strDictionaryEntry+txtFunFunFun.value;
+		}
+	}
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,1);
+	setTimeout(that.matrixEnteredAnimationStage1,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage1=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,2);
+	setTimeout(that.matrixEnteredAnimationStage2,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage2=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,1);
+	setTimeout(that.matrixEnteredAnimationStage3,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage3=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,2);
+	setTimeout(that.matrixEnteredAnimationStage4,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage4=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,1);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,1);
+	setTimeout(that.matrixEnteredAnimationStage5,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationStage5=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.updateMatrixEnteredTexture(1,that.matrix1,that.matrix1c,that.matrix1d,that.chengfaChengseMatrixCube1VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(2,that.matrix2,that.matrix2c,that.matrix2d,that.chengfaChengseMatrixCube2VarietyManifold3D,2);
+	that.updateMatrixEnteredTexture(3,that.matrix3,that.matrix3c,that.matrix3d,that.chengfaChengseMatrixCube3VarietyManifold3D,2);
+	setTimeout(that.matrixEnteredAnimationDone,500);
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimationDone=function(){
+	var that=netspace.chengfaChengseMatrix;
+	that.resetCubits();
+	that.initMatrices();
+	if(true==that.ChengfaChengseMatrix_chkPlayIn2D.checked){
+		that.dateBrainputingStart=new Date();
+		that.updateTextures();
+	}
+};
+ChengfaChengseMatrix.prototype.matrixEnteredAnimation=function(){
+	setTimeout(this.matrixEnteredAnimationStage0,1000);
+
+};
+ChengfaChengseMatrix.prototype.next=function(){
+	if(true==this.blnEntertainmentMode){
+		this.blnEntertainmentMode=false;
+	}
+	this.ChengfaChengseMatrix_btnFazhanChengPoints.innerText=""+this.intFazhanChengPoints;
+	this.resetCubits();
+	this.initMatrices();
+	if(true==netspace.chengfaChengseMatrix.ChengfaChengseMatrix_chkPlayIn2D.checked){
+		this.dateBrainputingStart=new Date();
+	}
+	this.updateTextures();
+};
+ChengfaChengseMatrix.prototype.matrixEntered=function(){
+	this.setError();
+	this.blnEntertainmentMode=false;
+	this.matrixEnteredAnimation();
+	this.intFazhanChengPoints++;
+	this.ChengfaChengseMatrix_btnFazhanChengPoints.innerText=""+this.intFazhanChengPoints;
+};
+ChengfaChengseMatrix.prototype.updateFractionMatrix=function(theMatrix,theMatrixc,theMatrixd){
+	var i,j;
+	for(i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			theMatrix[this.ij(i,j)]=theMatrixc[this.ij(i,j)]/theMatrixd[this.ij(i,j)];
+		}
+	}
+	return theMatrix;
+};
+ChengfaChengseMatrix.prototype.checkCorrectness=function(){
+	this.matrix3=this.updateFractionMatrix(this.matrix3,this.matrix3c,this.matrix3d);
+	var i,j;
+	for(i=0;i<this.intRows;i++){
+		for(j=0;j<this.intCols;j++){
+			if(this.matrix3[this.ij(i,j)]!=this.matrix0[this.ij(i,j)])
+				return false;
+		}
+	}
+	return true;
+};
+ChengfaChengseMatrix.prototype.readDigitBuffer=function(){
+	if(true==this.blnEditC)
+		this.readDigitBufferC();
+	else this.readDigitBufferD();
+};
+ChengfaChengseMatrix.prototype.readDigitBufferC=function(){
+	var blnEndingDot=false;
+	if(this.strDigitBuffer.length>0)return;
+	if("."==this.strDigitBuffer[this.strDigitBuffer.length-1])blnEndingDot=true;
+	if(0==this.matrix3c[this.ij(this.intCursorX,this.intCursorY)])
+		if("-"==this.strDigitBuffer)
+			this.strDigitBuffer="-";
+		else this.strDigitBuffer="";
+	else this.strDigitBuffer=""+this.matrix3c[this.ij(this.intCursorX,this.intCursorY)];
+
+	if(true==blnEndingDot)this.strDigitBuffer+=".";
+};
+ChengfaChengseMatrix.prototype.readDigitBufferD=function(){
+	var blnEndingDot=false;
+	if(this.strDigitBuffer.length>0)return;
+	if(1==this.matrix3d[this.ij(this.intCursorX,this.intCursorY)]){
+		return;
+	}
+	if("."==this.strDigitBufferD[this.strDigitBufferD.length-1])blnEndingDot=true;
+	this.strDigitBufferD=""+this.matrix3d[this.ij(this.intCursorX,this.intCursorY)];
+	if(true==blnEndingDot)this.strDigitBufferD+".";
+	return;
+};
+ChengfaChengseMatrix.prototype.writeDigitBuffer=function(){
+	if(true==this.blnEditC)
+		this.writeDigitBufferC();
+	else this.writeDigitBufferD();
+	this.matrix3=this.updateFractionMatrix(this.matrix3,this.matrix3c,this.matrix3d);
+};
+ChengfaChengseMatrix.prototype.writeDigitBufferC=function(){
+	if(0==this.strDigitBuffer.length)
+		this.matrix3c[this.ij(this.intCursorX,this.intCursorY)]=0;
+	if("-"==this.strDigitBuffer)this.matrix3c[this.ij(this.intCursorX,this.intCursorY)]=0;
+	var intDigitBuffer=parseFloat(this.strDigitBuffer);
+	if(true==nonNumber(intDigitBuffer))return;
+	else this.matrix3c[this.ij(this.intCursorX,this.intCursorY)]=intDigitBuffer;
+	if(true==this.checkCorrectness())
+		this.matrixEntered();
+};
+ChengfaChengseMatrix.prototype.writeDigitBufferD=function(){
+	if(0==this.strDigitBufferD.length)this.matrix3d[this.ij(this.intCursorX,this.intCursorY)]=1;
+	var intDigitBuffer=parseFloat(this.strDigitBufferD);
+	if(true==nonNumber(intDigitBuffer))return;
+	if(0==intDigitBuffer)return;
+	else this.matrix3d[this.ij(this.intCursorX,this.intCursorY)]=intDigitBuffer;
+	if(true==this.checkCorrectness())
+		this.matrixEntered();
+};
+ChengfaChengseMatrix.prototype.setError=function(evtKey){
+	this.blnErrorEntered=false;
+	var intShouldBe=this.matrix0[this.ij(this.intCursorX,this.intCursorY)];
+	if(true==this.blnPrecising){
+		this.blnPrecising=false;
+		if(intShouldBe!=0&&intShouldBe==this.matrix3[this.ij(this.intCursorX,this.intCursorY)]){
+			this.intMistakes--;
+		}
+	}
+	this.ChengfaChengseMatrix_btnFazhanChengPoints.innerText=""+this.intFazhanChengPoints;
+};
+ChengfaChengseMatrix.prototype.onKeyDown=function(evtKey){
+	if(true==this.ChengfaChengseMatrix_chkMatrixKeyboardOff.checked)return;
+	if("/"==evtKey.key){
+		this.blnPrecising=true;
+		this.blnEditC=!this.blnEditC;
+		this.strDigitBuffer="";
+		this.strDigitBufferD="";
+		this.analyzeError();
+		this.updateTextures();
+	}
+	if("-"==evtKey.key){
+		this.readDigitBuffer();
+		if("-"==this.strDigitBuffer.substring(0,1))this.strDigitBuffer=this.strDigitBuffer.substring(1);
+		else this.strDigitBuffer="-"+this.strDigitBuffer;
+		this.writeDigitBuffer();
+		this.analyzeError();
+		this.updateTextures();
+	}
+	if("Backspace"==evtKey.key){
+		this.readDigitBuffer();
+		if(this.strDigitBuffer.length>0&&true==this.blnEditC)
+			this.strDigitBuffer=this.strDigitBuffer.substring(0,this.strDigitBuffer.length-1);
+		if(this.strDigitBufferD.length>0&&false==this.blnEditC)
+			this.strDigitBufferD=this.strDigitBufferD.substring(0,this.strDigitBufferD.length-1);
+		this.writeDigitBuffer();
+		this.blnErrorEntered=false;
+		this.blnPrecising=false;
+		this.analyzeError();
+		this.updateTextures();
+	}
+	if("Escape"==evtKey.key){
+		this.strDigitBuffer="";
+		this.strDigitBufferD="";
+		this.blnEditC=false;
+		this.writeDigitBuffer();
+		this.blnEditC=true;
+		this.writeDigitBuffer();
+		this.blnErrorEntered=false;
+		this.blnPrecising=false;
+		this.analyzeError();
+		this.updateTextures();
+	}
+	switch(evtKey.key){
+		case "j":/*down*/
+			this.setError();
+			this.intCursorX=(this.intCursorX<this.intRows-1)?this.intCursorX+1:this.intCursorX;
+			this.blnEditC=true;
+			this.strDigitBuffer="";
+			this.strDigitBufferD="";
+			this.analyzeError();
+			this.updateTextures();
+		break;
+		case "k":/*up*/
+			this.setError();
+			this.intCursorX=(this.intCursorX>0)?this.intCursorX-1:this.intCursorX;
+			this.blnEditC=true;
+			this.strDigitBuffer="";
+			this.strDigitBufferD="";
+			this.analyzeError();
+			this.updateTextures();
+		break;
+		case "h":/*left*/
+			this.setError();
+			this.intCursorY=(this.intCursorY>0)?this.intCursorY-1:this.intCursorY;
+			this.blnEditC=true;
+			this.strDigitBuffer="";
+			this.strDigitBufferD="";
+			this.analyzeError();
+			this.updateTextures();
+		break;
+		case "l":/*right*/
+			this.setError();
+			this.intCursorY=(this.intCursorY<this.intCols-1)?this.intCursorY+1:this.intCursorY;
+			this.blnEditC=true;
+			this.strDigitBuffer="";
+			this.strDigitBufferD="";
+			this.analyzeError();
+			this.updateTextures();
+		break;
+	}
+	if(evtKey.which>=48&&evtKey.which<=57){
+		this.blnDigitPressed=true;
+		intColor=evtKey.which-48;
+		this.readDigitBuffer();
+		if(true==this.blnEditC)
+			this.strDigitBuffer+=intColor;
+		else this.strDigitBufferD+=intColor;
+		this.writeDigitBuffer();
+		this.analyzeError();
+		this.updateTextures();
+	}
+	if("."==evtKey.key||","==evtKey.key){
+		this.blnDigitPressed=true;
+		this.readDigitBuffer();
+		if(true==this.blnEditC)
+			this.strDigitBuffer+=".";
+		else this.strDigitBufferD+=".";
+		this.writeDigitBuffer();
+
+		this.analyzeError();
+		this.updateTextures();
+	}
+	if(evtKey.which>=96&&evtKey.which<=105){/*keypad*/
+		this.blnDigitPressed=true;
+		intColor=evtKey.which-96;
+		this.readDigitBuffer();
+		if(true==this.blnEditC)
+			this.strDigitBuffer+=intColor;
+		else this.strDigitBufferD+=intColor;
+		this.writeDigitBuffer();
+		this.analyzeError();
+		this.updateTextures();
+	}
+};
+ChengfaChengseMatrix.prototype.onKeyUp=function(evtKey){
+};
+ChengfaChengseMatrix.prototype.onMouseMove=function(evtMouse){
+	/*
+	if(true==netspace.camera.blnMouseBlocked)return;
+	var intMouseX,intMouseY;
+	intMouseX=evtMouse.offsetX;
+	intMouseY=evtMouse.offsetY;
+	if(netspace.chengfaChengseMatrix.prevMouseX!=intMouseX||netspace.chengfaChengseMatrix.prevMouseY!=intMouseY){
+		netspace.chengfaChengseMatrix.blnMouseMoved=true;
+	}
+	netspace.chengfaChengseMatrix.prevMouseX=intMouseX;
+	netspace.chengfaChengseMatrix.prevMouseY=intMouseY;
+	*/
+};
+/*assumption that VarietyManifold3D is a cube*/
+VarietyManifold3D.prototype.getFrontZ=function(){
+	return this.arrVertices[2];
+};
+VarietyManifold3D.prototype.getBackZ=function(){
+	return this.arrVertices[14];
+};
+VarietyManifold3D.prototype.getTopY=function(){
+	return this.arrVertices[25];
+};
+VarietyManifold3D.prototype.getBottomY=function(){
+	return this.arrVertices[37];
+};
+VarietyManifold3D.prototype.getRightX=function(){
+	return this.arrVertices[48];
+};
+VarietyManifold3D.prototype.getLeftX=function(){
+	return this.arrVertices[60];
+};
+ChengfaChengseMatrix.prototype.getMatrixCube_screen=function(fltX,fltY,fltZ){
+	var lstMatrixCubes=[this.chengfaChengseMatrixCube1VarietyManifold3D,this.chengfaChengseMatrixCube2VarietyManifold3D,this.chengfaChengseMatrixCube3VarietyManifold3D];
+	var fltFrontZ,fltBackZ,fltTopY,fltBottomY,fltRightX,fltLeftX;
+	for(var ii=0;ii<lstMatrixCubes.length;ii++){
+		if(null==lstMatrixCubes[ii])continue;
+		fltFrontZ=lstMatrixCubes[ii].getFrontZ();
+		fltBackZ=lstMatrixCubes[ii].getBackZ();
+		fltTopY=lstMatrixCubes[ii].getTopY();
+		fltBottomY=lstMatrixCubes[ii].getBottomY();
+		fltRightX=lstMatrixCubes[ii].getRightX();
+		fltLeftX=lstMatrixCubes[ii].getLeftX();
+		if(fltZ>=fltBackZ&&fltZ<=fltFrontZ&&fltY>=fltBottomY&&fltY<=fltTopY&&fltX>=fltLeftX&&fltX<=fltRightX){
+			return lstMatrixCubes[ii];
+		}
+	}
+	return null;
+};
+ChengfaChengseMatrix.prototype.getLookatMatrixCube=function(){
+	var lookatX,lookatY,lookatZ;
+	var vec3testpos=vec3.create(netspace.camera.vec3position);
+	var vec3prevpos=vec3.create(netspace.camera.vec3position);
+	var tmpVec3=vec3.create();
+	var theLookatMatrixCube=null;
+	for(var ii=0;ii<99;ii++){
+		vec3prevpos=vec3.create(vec3testpos);
+		vec3.scale(tmpVec3,netspace.camera.vec3lookat,0.1);
+		vec3.add(vec3testpos,vec3testpos,tmpVec3);
+		lookatX=Math.floor(vec3testpos[0]);
+		lookatY=Math.floor(vec3testpos[1]);
+		lookatZ=Math.floor(vec3testpos[2]);
+		theLookatMatrixCube=this.getMatrixCube_screen(lookatX,lookatY,lookatZ);
+		if(null!=theLookatMatrixCube)
+			break;
+	}
+	return theLookatMatrixCube;
+};
+ChengfaChengseMatrix.prototype.updateTextures=function(){
+	this.ChengfaChengseMatrix_btnFazhanChengPoints.innerText=""+this.intFazhanChengPoints;
+	this.updateTexture(1,this.matrix1,this.matrix1c,this.matrix1d,this.chengfaChengseMatrixCube1VarietyManifold3D);
+	this.updateTexture(2,this.matrix2,this.matrix2c,this.matrix2d,this.chengfaChengseMatrixCube2VarietyManifold3D);
+	this.updateSolverTexture(3,this.matrix3,this.matrix3c,this.matrix3d,this.chengfaChengseMatrixCube3VarietyManifold3D);
+};
+ChengfaChengseMatrix.prototype.getFirstDigit=function(intNumber){
+	var intAbsNumber=Math.abs(intNumber);
+	return Math.floor(intAbsNumber/(Math.pow(10,Math.floor(Math.log10(intAbsNumber)))));
+};
+ChengfaChengseMatrix.prototype.getLastDigit=function(intNumber){
+	var intAbsNumber=Math.abs(intNumber);
+	return intAbsNumber-(Math.floor(intAbsNumber/10))*10;
+};
+ChengfaChengseMatrix.prototype.updateTexture=function(intNumber,theMatrix,theMatrixc,theMatrixd,varietyManifold3D){
+	var textureWidth=256;
+	var textureCanvas=document.getElementById("ChengfaChengseMatrix_texture"+intNumber+"canvas");
+	var intColor=0,intSignificantDigitColor=0;
+	var factorX=(this.intRows/textureWidth);
+	var factorY=(this.intCols/textureWidth);
+	textureCanvas.width=textureCanvas.height=textureWidth;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(textureWidth,textureWidth);
+	textureContext.font="20px Arial";
+	textureContext.textAlign="center";
+	textureContext.textBaseline="middle";
+	var index;
+	var i,j;
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			index=(i*textureWidth+j)*4;
+			intColor=theMatrixc[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+			if(intColor>9)intColor=this.getFirstDigit(intColor);
+			if(intColor<0)intColor=this.getFirstDigit(intColor);
+			textureImage.data[index+0]=lstColors[intColor][0];
+			textureImage.data[index+1]=lstColors[intColor][1];
+			textureImage.data[index+2]=lstColors[intColor][2];
+			textureImage.data[index+3]=lstColors[intColor][3];
+		}
+	}
+	var dX,dY;
+	if(5!=this.intRows){
+		dX=Math.round(textureWidth/this.intRows);
+		dY=Math.round(textureWidth/this.intCols);
+	}else{
+		dX=Math.ceil(textureWidth/this.intRows);
+		dY=Math.ceil(textureWidth/this.intCols);
+	}
+	var intC,intD;
+	textureContext.putImageData(textureImage,0,0);
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			if((i%dX==0)&&(j%dY==0)){
+				intC=theMatrixc[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				intD=theMatrixd[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				intSignificantDigitColor=this.getFirstDigit(intC);
+				intSignificantDigitColor=this.getFirstDigit(intC);
+				if(1==intSignificantDigitColor)textureContext.fillStyle="white";
+				else textureContext.fillStyle="black";
+				if(1==intD){
+					if(1==this.intRows)textureContext.fillText(intC,j+120,i+120);
+					if(2==this.intRows)textureContext.fillText(intC,j+60,i+70);
+					if(3==this.intRows)textureContext.fillText(intC,j-45,i-40);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+				}else{
+					if(1==this.intRows)textureContext.fillText(intC,j+80,i+80);
+					if(2==this.intRows)textureContext.fillText(intC,j+40,i+50);
+					if(3==this.intRows)textureContext.fillText(intC,j-60,i-55);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+
+					if(1==this.intRows)textureContext.fillText("/",j+120,i+120);
+					if(2==this.intRows)textureContext.fillText("/",j+60,i+70);
+					if(3==this.intRows)textureContext.fillText("/",j-45,i-40);
+					if(this.intRows>3)textureContext.fillText("/",j+20,i+20);
+
+					if(1==this.intRows)textureContext.fillText(intD,j+160,i+160);
+					if(2==this.intRows)textureContext.fillText(intD,j+80,i+90);
+					if(3==this.intRows)textureContext.fillText(intD,j-30,i-25);
+					if(this.intRows>3)textureContext.fillText(intD,j+30,i+30);
+				}
+			}
+		}
+	}
+	if(null!=varietyManifold3D){
+		varietyManifold3D.texture=varietyManifold3D.gl.createTexture();
+		varietyManifold3D.gl.activeTexture(varietyManifold3D.gl.TEXTURE0);
+		varietyManifold3D.gl.bindTexture(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.texture);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MIN_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MAG_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texImage2D(varietyManifold3D.gl.TEXTURE_2D,0,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.UNSIGNED_BYTE,textureCanvas);
+	}
+};
+ChengfaChengseMatrix.prototype.analyzeError=function(){
+	var strShouldBe="";
+	var intNumer;
+	this.updateFractionMatrix(this.matrix3,this.matrix3c,this.matrix3d);
+	var strDigitBuffer=(true==this.blnEditC)?this.strDigitBuffer:this.strDigitBufferD;
+	if(false==this.blnErrorEntered){
+		this.readDigitBuffer();
+		intNumber=this.matrix0[this.ij(this.intCursorX,this.intCursorY)];
+		if(0==intNumber&&true==this.blnEditC)return;
+		strShouldBe=""+intNumber;
+		if(true==this.blnDigitPressed&&strShouldBe.substring(0,strDigitBuffer.length)!=strDigitBuffer){
+			if(intNumber!=this.matrix3[this.ij(this.intCursorX,this.intCursorY)]){
+				this.blnErrorEntered=true;
+				this.intMistakes++;
+				this.ChengfaChengseMatrix_btnFazhanChengPoints.innerText=""+this.intFazhanChengPoints;
+			}
+		}
+		
+	}else{
+		if(this.matrix0[this.ij(this.intCursorX,this.intCursorY)]==this.matrix3[this.ij(this.intCursorX,this.intCursorY)]){
+			this.blnErrorEntered=false;
+		}
+	}
+	this.blnDigitPressed=false;
+};
+ChengfaChengseMatrix.prototype.updateSolverTexture=function(intNumber,theMatrix,theMatrixc,theMatrixd,varietyManifold3D){
+	var textureWidth=256;
+	var textureCanvas=document.getElementById("ChengfaChengseMatrix_texture"+intNumber+"canvas");
+	var intColor=0;
+	var factorX=this.intRows/textureWidth;
+	var factorY=this.intCols/textureWidth;
+	textureCanvas.width=textureCanvas.height=textureWidth;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(textureWidth,textureWidth);
+	textureContext.font="20px Arial";
+	textureContext.textAlign="center";
+	textureContext.textBaseline="middle";
+	var index;
+	var i,j;
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			index=(i*textureWidth+j)*4;
+			intColor=theMatrixc[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+			if((Math.floor(i*factorX)==this.intCursorX)&&(Math.floor(j*factorY)==this.intCursorY)){
+				if(this.matrix0[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))]==this.matrix3[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))]){
+					intColor=0;
+				}else{
+					intColor=1;
+				}
+			}else{
+				intColor=2;
+			}
+			textureImage.data[index+0]=lstColors[intColor][0];
+			textureImage.data[index+1]=lstColors[intColor][1];
+			textureImage.data[index+2]=lstColors[intColor][2];
+			textureImage.data[index+3]=lstColors[intColor][3];
+		}
+	}
+	var dX,dY;
+	if(5!=this.intRows){
+		dX=Math.round(textureWidth/this.intRows);
+		dY=Math.round(textureWidth/this.intCols);
+	}else{
+		dX=Math.ceil(textureWidth/this.intRows);
+		dY=Math.ceil(textureWidth/this.intCols);
+	}
+	var intC,intD;
+	textureContext.putImageData(textureImage,0,0);
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			if((i%dX==0)&&(j%dY==0)){
+				intC=theMatrixc[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				intD=theMatrixd[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				if((Math.floor(i*factorX)==this.intCursorX)&&(Math.floor(j*factorY)==this.intCursorY)){
+					if(this.matrix0[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))]==this.matrix3[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))]){
+						textureContext.fillStyle="black";
+					}else{
+						textureContext.fillStyle="white";
+					}
+				}else{
+					textureContext.fillStyle="black";
+				}
+				if("-"==this.strDigitBuffer)
+					if((Math.floor(i*factorX)==this.intCursorX)&&(Math.floor(j*factorY)==this.intCursorY))
+						intC="-";
+				if("."==this.strDigitBuffer[this.strDigitBuffer.length-1])
+					if((Math.floor(i*factorX)==this.intCursorX)&&(Math.floor(j*factorY)==this.intCursorY))
+						intC+=".";
+				if("."==this.strDigitBufferD[this.strDigitBuffer.length-1])
+					if((Math.floor(i*factorX)==this.intCursorX)&&(Math.floor(j*factorY)==this.intCursorY))
+						intD+=".";
+				if(1==intD){
+					if(1==this.intRows)textureContext.fillText(intC,j+120,i+120);
+					if(2==this.intRows)textureContext.fillText(intC,j+60,i+70);
+					if(3==this.intRows)textureContext.fillText(intC,j-45,i-40);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+				}else{
+					if(1==this.intRows)textureContext.fillText(intC,j+80,i+80);
+					if(2==this.intRows)textureContext.fillText(intC,j+40,i+50);
+					if(3==this.intRows)textureContext.fillText(intC,j-60,i-55);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+
+					if(1==this.intRows)textureContext.fillText("/",j+120,i+120);
+					if(2==this.intRows)textureContext.fillText("/",j+60,i+70);
+					if(3==this.intRows)textureContext.fillText("/",j-45,i-40);
+					if(this.intRows>3)textureContext.fillText("/",j+20,i+20);
+
+					if(1==this.intRows)textureContext.fillText(intD,j+160,i+160);
+					if(2==this.intRows)textureContext.fillText(intD,j+80,i+90);
+					if(3==this.intRows)textureContext.fillText(intD,j-30,i-25);
+					if(this.intRows>3)textureContext.fillText(intD,j+30,i+30);
+				}
+			}
+		}
+	}
+	if(null!=varietyManifold3D){
+		varietyManifold3D.texture=varietyManifold3D.gl.createTexture();
+		varietyManifold3D.gl.activeTexture(varietyManifold3D.gl.TEXTURE0);
+		varietyManifold3D.gl.bindTexture(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.texture);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MIN_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MAG_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texImage2D(varietyManifold3D.gl.TEXTURE_2D,0,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.UNSIGNED_BYTE,textureCanvas);
+	}
+};
+ChengfaChengseMatrix.prototype.updateMatrixEnteredTexture=function(intNumber,theMatrix,theMatrixc,theMatrixd,varietyManifold3D,intColorScheme){
+	var lstBackgroundColors=[lstColors[1],lstColors[2]];
+	var lstForegroundColors=[lstColors[0],lstColors[1]];
+	var textureWidth=256;
+	var textureCanvas=document.getElementById("ChengfaChengseMatrix_texture"+intNumber+"canvas");
+	var intColor=0;
+	var factorX=(this.intRows/textureWidth);
+	var factorY=(this.intCols/textureWidth);
+	textureCanvas.width=textureCanvas.height=textureWidth;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(textureWidth,textureWidth);
+	textureContext.font="20px Arial";
+	textureContext.textAlign="center";
+	textureContext.textBaseline="middle";
+	var index;
+	var i,j;
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			index=(i*textureWidth+j)*4;
+			intColor=theMatrix[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+			textureImage.data[index+0]=lstBackgroundColors[intColorScheme-1][0];
+			textureImage.data[index+1]=lstBackgroundColors[intColorScheme-1][1];
+			textureImage.data[index+2]=lstBackgroundColors[intColorScheme-1][2];
+			textureImage.data[index+3]=lstBackgroundColors[intColorScheme-1][3];
+		}
+	}
+	var dX,dY;
+	if(5!=this.intRows){
+		dX=Math.round(textureWidth/this.intRows);
+		dY=Math.round(textureWidth/this.intCols);
+	}else{
+		dX=Math.ceil(textureWidth/this.intRows);
+		dY=Math.ceil(textureWidth/this.intCols);
+	}
+	textureContext.putImageData(textureImage,0,0);
+	textureContext.fillStyle="rgba("+lstForegroundColors[intColorScheme-1][0]+","+lstForegroundColors[intColorScheme-1][1]+","+lstForegroundColors[intColorScheme-1][2]+","+lstForegroundColors[intColorScheme-1][3]+")";
+	for(i=0;i<textureWidth;i+=1){
+		for(j=0;j<textureWidth;j+=1){
+			if((i%dX==0)&&(j%dY==0)){
+				intC=theMatrixc[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				intD=theMatrixd[this.ij(Math.floor(i*factorX),Math.floor(j*factorY))];
+				textureContext.fillStyle="rgba("+lstForegroundColors[intColorScheme-1][0]+","+lstForegroundColors[intColorScheme-1][1]+","+lstForegroundColors[intColorScheme-1][2]+","+lstForegroundColors[intColorScheme-1][3]+")";
+				if(1==intD){
+					if(1==this.intRows)textureContext.fillText(intC,j+120,i+120);
+					if(2==this.intRows)textureContext.fillText(intC,j+60,i+70);
+					if(3==this.intRows)textureContext.fillText(intC,j-45,i-40);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+				}else{
+					if(1==this.intRows)textureContext.fillText(intC,j+80,i+80);
+					if(2==this.intRows)textureContext.fillText(intC,j+40,i+50);
+					if(3==this.intRows)textureContext.fillText(intC,j-60,i-55);
+					if(this.intRows>3)textureContext.fillText(intC,j+10,i+10);
+
+					if(1==this.intRows)textureContext.fillText("/",j+120,i+120);
+					if(2==this.intRows)textureContext.fillText("/",j+60,i+70);
+					if(3==this.intRows)textureContext.fillText("/",j-45,i-40);
+					if(this.intRows>3)textureContext.fillText("/",j+20,i+20);
+
+					if(1==this.intRows)textureContext.fillText(intD,j+160,i+160);
+					if(2==this.intRows)textureContext.fillText(intD,j+80,i+90);
+					if(3==this.intRows)textureContext.fillText(intD,j-30,i-25);
+					if(this.intRows>3)textureContext.fillText(intD,j+30,i+30);
+				}
+			}
+		}
+	}
+	if(null!=varietyManifold3D){
+		varietyManifold3D.texture=varietyManifold3D.gl.createTexture();
+		varietyManifold3D.gl.activeTexture(varietyManifold3D.gl.TEXTURE0);
+		varietyManifold3D.gl.bindTexture(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.texture);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MIN_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texParameteri(varietyManifold3D.gl.TEXTURE_2D,varietyManifold3D.gl.TEXTURE_MAG_FILTER,varietyManifold3D.gl.NEAREST);
+		varietyManifold3D.gl.texImage2D(varietyManifold3D.gl.TEXTURE_2D,0,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.RGBA,varietyManifold3D.gl.UNSIGNED_BYTE,textureCanvas);
+	}
+};
+	netspace.chengfaChengseMatrix=new ChengfaChengseMatrix();
+	loadChengfaChengseMatrix_input();
+	netspace.chengfaChengseMatrix.initExtensionInterface();
+	netspace.chengfaChengseMatrix.initMatrices();
+	netspace.chengfaChengseMatrix.inits();
+	return netspace.chengfaChengseMatrix;
+};
+var loadChengfaChengseMatrix_input=function(){
+	var prevOnKeyDown=netspace.onKeyDown;
+	var prevOnKeyUp=netspace.onKeyUp;
+	var onKeyDown=function(evtKey){
+		netspace.chengfaChengseMatrix.onKeyDown(evtKey);
+		prevOnKeyDown(evtKey);
+	};
+	var onKeyUp=function(evtKey){
+		netspace.chengfaChengseMatrix.onKeyUp(evtKey);
+		if(undefined!=prevOnKeyUp)
+			prevOnKeyUp(evtKey);
+	};
+	netspace.onKeyDown=onKeyDown;
+	netspace.onKeyUp=onKeyUp;
+
+	window.onkeydown=netspace.onKeyDown;
+	window.onkeyup=netspace.onKeyUp;
+	var prevOnMouseMove=netspace.onMouseMove;
+	var onMouseMove=function(evtMouse){
+		netspace.chengfaChengseMatrix.onMouseMove(evtMouse);
+		prevOnMouseMove(evtMouse);
+	};
+	netspace.onMouseMove=onMouseMove;
+	var maincanvas=document.getElementById("maincanvas");
+	maincanvas.onmousemove=onMouseMove;
+
+	var prevAdditionalLoopFunction=netspace.additionalLoopFunction;
+	var additionalLoopFunction=function(currentFrameTime){
+		prevAdditionalLoopFunction(currentFrameTime);
+		netspace.chengfaChengseMatrix.loopFunction(currentFrameTime);
+	};
+	netspace.additionalLoopFunction=additionalLoopFunction;
+};
 function init(){
 	var chkTouchscreenKeys=document.getElementById("chkTouchscreenKeys");
 	chkTouchscreenKeys.onchange=chkTouchscreenKeysChanged;
@@ -23494,6 +26543,7 @@ function init(){
 	if(true==blnTextEditorOnStart){
 		TheComputerInit(blnComputerTextDivMode,lstTextScreenSize,strTextEditorCommandLineModeArgs);
 	}
+	initChengfaChengseMatrix();
 }
 window.onload=init;
 </script>
