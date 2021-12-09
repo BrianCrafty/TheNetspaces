@@ -1,0 +1,550 @@
+<html>
+
+<style>
+.button2 {
+    background-color: rgba(255, 100, 0, 1.0)
+    border: none;
+    color: grey;
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    margin: 4px 2px;
+    cursor: pointer;
+}
+
+input, button {background-color: rgba(255, 100, 0, 1.0);
+    border: none;
+    color: black;} 
+
+textarea {background-color: black;
+    border-color: rgba(255, 100, 0, 1.0);
+    color: grey;
+ scrollbar-face-color: black;
+    scrollbar-track-color: rgba(255, 100, 0, 1.0);
+    scrollbar-arrow-color: black;
+    scrollbar-highlight-color: orange;
+    scrollbar-shadow-color: orange;
+    scrollbar-3dlight-color: orange;
+    scrollbar-darkshadow-color: orange;
+} 
+
+</style>
+
+<head>
+	<script type="text/javascript">
+var currnet_hour=0; var current_minute=0, current_second=0; 
+var intTimeDiff=0;
+var theCharmingOffset=0;
+var theHighlightedI=0, theHighlightedJ=0;
+var theRows=10, theCols=30;
+var theQueryLength=0;
+var arrQueryHistory=new Array(0);
+/*var maxRandomChar=65535;*/
+var maxRandomChar=2459;
+var randomChar=Math.floor(Math.random()*maxRandomChar);
+var epsilon=0.00001;
+function ij(i, j){
+		return j*theCols+i;
+}
+function addToQueryHistory(chrChar, varComment){
+	/*JavaScript specific - writing after table end, extend table - often changes unevitable here while inserting into other languages {timesaveing comment}+-1*/
+	arrQueryHistory[arrQueryHistory.length]=chrChar;
+	arrQueryHistory[arrQueryHistory.length]=varComment;
+}
+function writeQueryHistory(){
+	var txtText="";
+	var theCharCode=0;
+	for (theCounter=0; theCounter<arrQueryHistory.length;theCounter+=2){
+		theCharCode=arrQueryHistory[theCounter].charCodeAt(0);
+		txtText+= arrQueryHistory[theCounter]+" &#9 "+parseInt(theCharCode)+" &#9 0x"+ finalizeDec2Hex(theCharCode)+"h &#9 "+arrQueryHistory[theCounter+1]+"&#10";
+	}
+	document.getElementById("queryHistory").innerHTML="<textarea style='font-size: 23pt' cols='50' rows='15' >"+txtText+"</textarea>";
+}
+function btnEncodePressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split('');
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0; ii<varArray.length; ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (true==blnFlushChecked)
+			addToQueryHistory(varArray[ii], varComment);
+		if (ii<(varArray.length-1))
+			txtText+=',';
+		}
+	document.getElementById("responseData").innerHTML="<textarea cols='30' rows='10' >"+txtText+"</textarea>";
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	}
+}
+function decodeCharCode(varNumber){
+	if (varNumber.length<10)
+		return String.fromCharCode(varNumber);
+	else return String.fromCharCode(encode_dB_number(varNumber)[0]);
+}
+function btnDecodePressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		txtText+=decodeCharCode(varArray[ii]);
+		if (true==blnFlushChecked)
+			addToQueryHistory(String.fromCharCode(varArray[ii]),varComment);
+	}
+	document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+txtText+"</textarea>";
+	
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	} 
+}
+function encodeData(varString){
+	var ii;
+	var varArray=varString.split('');
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (ii<(varArray.length-1))
+			txtText+='';
+		}
+	return txtText;
+}
+function decodeString(varNumber){
+	var varInput=encodeData(varNumber);
+	if (varNumber.length<10)
+		return String.fromCharCode(varInput);
+	else return String.fromCharCode(encode_dB_number(varInput)[0]);
+}
+function btnDeencodeStringPressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+	var varDeencodedInput;
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		varDeencodedInput=decodeString(varArray[ii]);
+		txtText+=varDeencodedInput;
+		if (true==blnFlushChecked)
+			addToQueryHistory(varDeencodedInput, varComment);
+	}
+	document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+txtText+"</textarea>";
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	} 
+}
+function initCharsTable(){
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function calculateOffset(theCharmingOffset, theHighlightedI,theHighlightedJ, theRows, theCols){
+	return theCharmingOffset+theHighlightedJ+theHighlightedI*(theRows);
+}
+function flush (input, max) {
+  return (input.length<max)?flush("0"+input,max):input;
+}
+function getFloor(fltNumber){
+	var intNumber=Math.round(fltNumber);
+	var sign=1;
+	if (Math.abs(intNumber)>Math.abs(fltNumber)){
+		sign=(intNumber>=0)?1:-1;	
+		return sign*(Math.abs(intNumber)-1);
+	}
+	else return intNumber;
+}
+function cellClicked(i,j){
+	theHighlightedI=i;
+	theHighlightedJ=j;
+	writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ);
+}
+function writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ){
+	var thePrevCharmingOffset=theCharmingOffset;
+	var txtInnerHTML="<table border='1' style='border-collapse: collapse'>";
+	var charsTable=document.getElementById("charsTable");
+	var theCharsCharmingOffset=0;
+	var blnHighlightedChecked=document.getElementById("chkHighlighted").checked;
+	for (j=-1;j<theRows;j++){
+		if (-1==j)
+			txtInnerHTML+="<th>"+" &#32 "+"</th>";
+		else txtInnerHTML+="<th>"+flush(""+j,1)+"</th>";
+	}
+	for (i=0;i<theCols;i++){
+		txtInnerHTML+="<tr><th>"+(thePrevCharmingOffset+i*theRows)+"</th>";
+		for (j=0;j<theRows;j++){
+			if ((i==theHighlightedI)&&(j==theHighlightedJ))
+				if (true==blnHighlightedChecked)
+					txtInnerHTML+="<td bgcolor='ff6400' onclick='cellClicked("+i+", "+j+")'>"+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+				else txtInnerHTML+="<td onclick='cellClicked("+i+","+j+")'> "+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+			else txtInnerHTML+="<td onclick='cellClicked("+i+","+j+")'> "+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+			theCharmingOffset++;
+			
+		}
+		txtInnerHTML+="<th>"+(thePrevCharmingOffset+i*theRows+j-1)+"</th>";
+		txtInnerHTML+="</tr>";
+	}
+	for (j=-1;j<theRows;j++){
+		if (-1==j)
+			txtInnerHTML+="<th>"+" &#32 "+"</th>";
+		else txtInnerHTML+="<th>"+flush(""+j,1)+"</th>";
+	}
+	txtInnerHTML+="</table>";
+	theCharsCharmingOffset=calculateOffset(thePrevCharmingOffset, theHighlightedI, theHighlightedJ, theRows, theCols);	
+	txtInnerHTML+=" <font size='5'> &#13 &#13 &#13 Offset= "+theCharsCharmingOffset+" = 0x"+finalizeDec2Hex(theCharsCharmingOffset)+"h"+ " &nbsp "+String.fromCharCode(theCharsCharmingOffset);
+	var d = new Date();
+	current_hour = d.getHours();
+	current_minute = d.getMinutes();
+	current_second = d.getSeconds();
+	var current_hour_extra40=current_hour;
+	var current_minute_extra40=current_minute;
+	var current_hour_prev=current_hour;
+	var current_minute_prev=current_minute;
+	var intMinutesDiff=0,intHoursDiff=0;
+	if (intTimeDiff!=0){
+		intHoursDiff=getFloor(intTimeDiff/60);
+		intMinutesDiff=intTimeDiff%60;
+		current_hour+=intHoursDiff;
+		current_minute+=intMinutesDiff;
+		current_hour+=getFloor(current_minute/60);
+		current_minute=current_minute%60;
+		if (current_minute<0){
+			current_hour--;
+			current_minute=60+current_minute;
+		}
+	}
+	current_hour=current_hour%24;
+	if (current_hour<0) current_hour=24+current_hour;
+	current_hour_extra40=current_hour;
+	current_minute_extra40=current_minute;
+	if (current_minute<40){
+		current_hour_extra40--;
+		current_minute_extra40=current_minute+60;
+	}
+	current_hour_extra40=current_hour_extra40%24;
+	if (current_hour_extra40<0) current_hour_extra40 = 23;
+	document.title=String.fromCharCode(100*current_hour+current_minute);
+	txtInnerHTML+=" &nbsp &nbsp &nbsp Watch: "+flush(""+current_hour_prev,2)+" : "+flush(""+current_minute_prev,2)+" &nbsp &nbsp &nbsp "+String.fromCharCode(100*current_hour_prev+current_minute_prev)+ " Random char: "+ randomChar+String.fromCharCode(randomChar) +" </font> ";
+	charsTable.innerHTML=txtInnerHTML;
+	var divWatch = document.getElementById("divWatch");
+	var tmpStrHex=finalizeDec2Hex(100*current_hour+current_minute);
+	var tmpStrHexExtra40=finalizeDec2Hex(100*current_hour_extra40+current_minute_extra40);
+	var strHex=tmpStrHex;
+	var strHexExtra40=tmpStrHexExtra40;
+	if (tmpStrHex.length==1) 
+		strHex="000"+tmpStrHex;
+	if (tmpStrHexExtra40.length==1) 
+		strHexExtra40="000"+tmpStrHexExtra40;
+	if (tmpStrHex.length==2) 
+		strHex="00"+tmpStrHex;
+	if (tmpStrHexExtra40.length==2) 
+		strHexExtra40="00"+tmpStrHexExtra40;
+	if (tmpStrHex.length==3) 
+		strHex='0'+tmpStrHex;
+	if (tmpStrHexExtra40.length==3) 
+		strHexExtra40='0'+tmpStrHexExtra40;
+	var strTableHex="<table rows=2 cols=2 border = 1> <tr><td>"+ strHex[0] +"</td> <td>"+ strHex[1]+ "</td></tr><tr><td>"+ strHex[2] +"</td> <td>"+ strHex[3] +"</td> </tr> </table> 0x" + strHex+"h";
+	var strTableHexExtra40="<table rows=2 cols=2 border = 1> <tr><td>"+ strHexExtra40[0] +"</td> <td>"+ strHexExtra40[1]+ "</td></tr><tr><td>"+ strHexExtra40[2] +"</td> <td>"+ strHexExtra40[3] +"</td> </tr> </table> 0x"+strHexExtra40+"h";
+	var strWatch="";	
+	strWatch+="<table rows=1 cols=2> <tr><td> <font size = '9'> "+flush(""+current_hour,2)+" : "+flush(""+current_minute,2)+"<font size ='3'> : "+flush(""+current_second,2)+"</font> &nbsp "+String.fromCharCode(100*current_hour+current_minute)+ " &nbsp "+" </font></td><td align='center'>"+strTableHex+"</td></tr></table>"; 
+	/*Binarish*/
+strWatch+="<table rows=1 cols=2> <tr><td> <font size = '9'> "+dec2Bin(flush(""+current_hour,2))+" : "+dec2Bin(flush(""+current_minute,2))+"<font size ='3'> : "+dec2Bin(flush(""+current_second,2))+"</font> &nbsp "+String.fromCharCode(100*current_hour+current_minute)+ " &nbsp "+" </font></td><td align='center'>"+strTableHex+"</td></tr></table>"; 
+	strWatch+="<br/> <table rows=1 cols=2> <tr><td align='center'> <font size = '9'> "+flush(""+current_hour_extra40,2)+" : "+flush(""+current_minute_extra40,2)+"<font size ='3'> : "+flush(""+current_second,2)+"</font> &nbsp "+String.fromCharCode(100*current_hour_extra40+current_minute_extra40)+ " &nbsp "+ " </font></td><td align='center'>"+strTableHexExtra40 +"</td></tr></table>";  
+	/*Binarish*/
+	strWatch+="<br/> <table rows=1 cols=2> <tr><td align='center'> <font size = '9'> "+dec2Bin(flush(""+current_hour_extra40,2))+" : "+dec2Bin(flush(""+current_minute_extra40,2))+"<font size ='3'> : "+dec2Bin(flush(""+current_second,2))+"</font> &nbsp "+String.fromCharCode(100*current_hour_extra40+current_minute_extra40)+ " &nbsp "+ " </font></td><td align='center'>"+strTableHexExtra40 +"</td></tr></table>";  
+	
+	strWatch+="<br/> Random char: "+ randomChar+ " &nbsp " +String.fromCharCode(randomChar)+" &nbsp 0x"+finalizeDec2Hex(randomChar)+"h";
+	divWatch.innerHTML=strWatch;
+}	
+	
+function btnTimeDiffPressed(){
+	var strTimeDiff=prompt("time diff -+ in minutes");
+	try{	
+		intTimeDiff=parseInt(strTimeDiff);
+	}catch(xcp){}
+	if (true==isNaN(intTimeDiff)) intTimeDiff=0;
+}
+function btnTimeDiffMMPressed(){
+	intTimeDiff--;
+}
+function btnTimeDiffPPPressed(){
+	intTimeDiff++;
+}
+function finalizeDec2Hex(number){
+	if(number<0)
+	{
+		number=0xFFFFFFFF+number+1;
+	}
+	return number.toString(16).toUpperCase();
+}
+function btnPrevCharsSidePressed(){
+	theCharmingOffset-=(theRows*theCols);
+	if (theCharmingOffset<0) theCharmingOffset=0;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function btnNextCharsSidePressed(){
+	theCharmingOffset+=(theRows*theCols);
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyLeftPressed(){
+	if (theHighlightedJ>0)
+		theHighlightedJ--;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyUpPressed(){
+	if (theHighlightedI>0)
+		theHighlightedI--;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyRightPressed(){
+	if (theHighlightedJ<theRows-1)
+		theHighlightedJ++;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyDownPressed(){
+	if (theHighlightedI<theCols-1)
+		theHighlightedI++;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyCallback(ev){
+	var theKeyCode=ev.which; 
+	if (37==theKeyCode)
+		keyLeftPressed();
+	if (38==theKeyCode)
+		keyUpPressed();
+	if (39==theKeyCode)
+		keyRightPressed();
+	if (40==theKeyCode)
+		keyDownPressed();
+}
+function searchChar(charSearch){
+	var ii;
+	for (ii=0;ii<65535+1;ii++){
+		if (charSearch==String.fromCharCode(ii)){
+			theCharmingOffset=ii;
+			theHighlightedI=0;
+			theHighlightedJ=0;	
+			writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+			return charSearch;
+		}
+	}
+	alert("Char not found");
+}
+function btnSearchDecPressed(){
+	var theUnicodeCode=parseInt(prompt("Unicode decimal code to serach:"));
+	if (theUnicodeCode>0){
+		searchChar(String.fromCharCode(theUnicodeCode));
+	}
+}	
+function btnSearchHexPressed(){
+	var theUnicodeCode=parseInt(prompt("Unicode hexadecimal code to serach:"),16);
+	if (theUnicodeCode>0){
+		searchChar(String.fromCharCode(theUnicodeCode));
+	}
+}	
+function btnSearchCharPressed(){
+	var chrSearch=prompt("Char to serach:");
+	if ((chrSearch!="")&&(chrSearch!=null)){
+		searchChar(chrSearch);
+	}
+}	
+function btnResetPressed(){
+	theCharmingOffset=0;
+	theHighlightedI=0;
+	theHighlightedJ=0;	
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function extractStrings(varNumber){
+	var discreetBreacket=new Array(Math.ceil((varNumber.length-1)/2));
+	var theCounter=(varNumber.length)-2;
+	for (theInternalCounter=Math.floor((varNumber.length-1)/2); theInternalCounter>=0; theInternalCounter--){
+		discreetBreacket[theInternalCounter]=parseInt(varNumber.substring(theCounter,theCounter+2));
+		theCounter-=2;
+	}
+	return discreetBreacket;
+}
+function dec2Bin(dvar){
+	return secondStage(extractStrings(dvar));
+}
+function finalizeBin2Dec(bvar){
+	return parseInt((bvar+'').replace(/[^01]/gi, ''),2);
+}
+function dec2Bin(dvar){
+	return secondStage(extractStrings(dvar));
+}
+function maxValue(dB){
+	var theMaxValue=0;
+	for (theCounter=0;theCounter<dB.length; theCounter++)
+	{
+		if (dB[theCounter]>theMaxValue){
+			theMaxValue=dB[theCounter];
+		}
+	}
+	return theMaxValue;
+}
+function flushBraecket(dB, dBrests){
+	var fltRest=0.;
+	for (theCounter=0;theCounter<dB.length; theCounter++){
+		fltRest=dB[theCounter]-Math.floor(dB[theCounter]);
+		if (fltRest>epsilon)
+		{
+			if (theCounter<dB.length-1){
+				dB[theCounter+1]=dB[theCounter+1]+10*Math.pow(10,2-1)*(fltRest);
+				dB[theCounter]=Math.floor(dB[theCounter]);
+
+			}else{
+				dBrests[dBrests.length]=(10*fltRest)%2;/*JavaScript specific - writing after table end, extend table - often changes unevitable here while inserting into other languages {timesaveing comment}+-1*/
+				dB[theCounter]=Math.floor(dB[theCounter]);
+
+			}
+		}
+		if(fltRest<=epsilon){
+			if (theCounter>=dB.length-1){
+				dBrests[dBrests.length]=0;/*JavaScript specific - writing after table end, extend table - often changes unevitable here while inserting into other languages {timesaveing comment}+-1*/
+			}
+		}
+	}
+}
+function secondStage(dB){
+	var shiftsBreacket=new Array(0);	
+	var varResult="";
+	var pow1, pow2;
+	var theCounter;
+	pow1=1;
+	pow2=Math.pow(10,2-1);
+	var dBrests=new Array(0);
+	while (maxValue(dB)>epsilon){
+		for (theCounter=0;theCounter<dB.length; theCounter++)
+			dB[theCounter]=dB[theCounter]/2.;
+		flushBraecket(dB, dBrests);
+		for (theCounter=0;theCounter<dB.length; theCounter++){
+			if (theCounter>=dB.length-1){
+				varResult=dBrests[dBrests.length-1]+varResult;
+				dB[theCounter]=(Math.floor(pow1*dB[theCounter]))/pow1;
+			}
+			dB[theCounter]=(Math.floor(pow2*dB[theCounter]))/pow2;
+		}
+
+	}	
+	return varResult;
+}
+function watch(){
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function chkFlushChanged(){
+	var blnChecked = document.getElementById("chkFlush").checked;
+	if (true==blnChecked)
+		document.getElementById("divFlush").innerHTML="<input type='text' id='txtComment'></input>";
+	else document.getElementById("divFlush").innerHTML="";
+}
+function encode_dB_number(varNumber){
+	varResult=secondStage(extractStrings(varNumber));
+	var varInput=varResult.substring((varResult.length<16)?0:varResult.length-16,varResult.length);
+	var arrReturn = new Array(0);
+	arrReturn[0]= parseInt((varInput+'').replace(/[^01]/gi, ''),2);	
+	arrReturn[1]=varResult.length;
+	return arrReturn;
+}
+function btndBNumberPressed(){
+	var varNumber=prompt("Enter discreetBreacket number: ");
+	var decNumber= encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	prompt("Result: ", decNumber[0]+" = "+varInput+ " binary length: "+ decNumber[1]);
+}
+function btndBStringPressed(){
+	var varInput=encodeData(prompt("Enter discreetBreacket string: "));
+	var varNumber=prompt("discreetBreacket numbers: ", varInput);
+	var decNumber=encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	prompt("Result: ", decNumber[0]+" = "+varInput+ " binary length: "+ decNumber[1]);
+}
+function btnBinarishBindings(){
+	var strBinarish=document.getElementById("txtBinarish").value;	
+	var strDecimal=finalizeBin2Dec(strBinarish);
+	var strChar=String.fromCharCode(strDecimal);	
+	document.getElementById("divBinarish").innerHTML="<font size='15'>"+strBinarish+ " "+ strDecimal +" "+ strChar+ " </font>";
+}
+function btnToBinarishBindings(){
+	var strDecimal=document.getElementById("txtToBinarish").value;	
+	var strBinarish=dec2Bin(strDecimal);
+	var strChar=String.fromCharCode(strDecimal);	
+	document.getElementById("divBinarish").innerHTML="<font size='15'>"+strBinarish+ " "+ strDecimal +" "+ strChar+ " </font>";
+}
+function init(){
+	document.getElementById("btnEncode").onclick=btnEncodePressed;
+	document.getElementById("btnDecode").onclick=btnDecodePressed;
+	document.getElementById("btnDeencodeString").onclick=btnDeencodeStringPressed;
+	document.getElementById("txtImpresionismArts").focus();
+	document.getElementById("btnPrevCharsSide").onclick=btnPrevCharsSidePressed;
+	document.getElementById("btnNextCharsSide").onclick=btnNextCharsSidePressed;
+	document.getElementById("btnSearchDec").onclick=btnSearchDecPressed;
+	document.getElementById("btnSearchHex").onclick=btnSearchHexPressed;
+	document.getElementById("btnSearchChar").onclick=btnSearchCharPressed;
+	document.getElementById("btnReset").onclick=btnResetPressed;
+	document.getElementById("btndBNumber").onclick=btndBNumberPressed;
+	document.getElementById("btndBString").onclick=btndBStringPressed;
+	document.getElementById("btnCharTableUp").onclick=keyUpPressed;
+	document.getElementById("btnCharTableLeft").onclick=keyLeftPressed;
+	document.getElementById("btnCharTableDown").onclick=keyDownPressed;
+	document.getElementById("btnCharTableRight").onclick=keyRightPressed;
+	document.getElementById("btnTimeDiff").onclick=btnTimeDiffPressed;
+	document.getElementById("btnTimeDiffMM").onclick=btnTimeDiffMMPressed;
+	document.getElementById("btnTimeDiffPP").onclick=btnTimeDiffPPPressed;
+	document.getElementById("btnBinarish").onclick=btnBinarishBindings;
+	document.getElementById("btnToBinarish").onclick=btnToBinarishBindings;
+	window.onkeydown=keyCallback;
+	document.getElementById("chkFlush").onchange=chkFlushChanged;
+	window.onkeydown=keyCallback;
+	initCharsTable();
+	setInterval(watch , 1000);
+}
+window.onload=init
+	</script>
+</head>
+<body style="background-color:black; color:grey; ">
+<div id="divBinarish"></div><br/>
+<input type="text" id="txtBinarish"> </input> <input type="button" id="btnBinarish" value="Binarish ->"> <br/>
+<input type="text" id="txtToBinarish"> </input> <input type="button" id="btnToBinarish" value="Binarish <-"> <br/>
+ <table rows=1 cols=3> <tr><td><input type="button" class="button button" id="btnTimeDiffMM" value="<" style="height:200px; width:50px"> </td><td>
+<div id="divWatch">
+</div>
+</td><td><input type="button" id="btnTimeDiffPP" value=">" style="height:200px; width:50px"> </td></tr></table>
+<div id="timeDiff">
+	<input type="button" value="time diff" id="btnTimeDiff" />
+</div>
+<div id="divHiddenDiv" >
+	 <div id="caption"></div>
+	<table><tr><td>	
+	<table>	
+		<tr><td><textarea id="txtImpresionismArts" cols="30" rows="10">Impresionism arts </textarea></td></tr>
+		<tr><td><table><tr><td><button id="btnDecode">Decode</button> </td><td><div id="divFlush"> </div></td><td><button id="btnDeencodeString">|{[(%Deencode string,s,%)]}| </button> </td><td> <input type="checkbox" id="chkFlush" value="Flush"> Flush to queries </input> </td><td><button id="btnEncode">Encode</button></td></tr></table></td></tr>
+</table>
+</td></tr> 
+<td><tr> 
+ 	 <div id="responseData"></div>
+</td></tr> 
+</table>
+<table><tr><td>
+<div id="charsTable"></div>
+</td><td>
+<!--button interfaces for touch screens-->
+<table><tr><td></td><td><button id="btnCharTableUp" style="width:50px;height:50px"> &#94 </button><td></td></tr><tr><td><button id="btnCharTableLeft" style="width:50px;height:50px"> &#60 </button> </td><td><button id="btnCharTableDown" style="width:50px;height:50px"> &#118 </button></td><td><button id="btnCharTableRight" style="width:50px;height:50px"> &#62 </button></td></tr></table>
+</td></tr></table>
+<table><tr><td><button id="btnPrevCharsSide" style="width:200px;height:50px">Prev</button></td><td><button id="btnNextCharsSide" style="width:200px;height:50px">Next</button></td><td><button id="btnSearchDec" style="width:200px;height:50px">Search dec</button></td><td><button id="btnSearchHex" style="width:200px;height:50px">Search hex</button></td><td><button id="btnSearchChar" style="width:200px;height:50px">Search char</button></td><td><button id="btnReset" style="width:200px;height:50px">Reset</button></td><td><input type="checkbox" id="chkHighlighted" checked="true">Highlighted active char </input> </td></tr>
+	<tr><td>discreet Breackets: </td> <td><button id="btndBNumber" style="width:200px;height:50px"> |{[(%big number in dB%)]}| </button> </td> 
+		<td><button id="btndBString" style="width:200px;height:50px"> |{[(%big string in dB%)]}| </button></td><td> </td><td> </td> <td> </td> <td> </td> </tr>
+</table>
+ 	 <div id="queryHistory"></div>
+</div>
+</body>
+</html>
