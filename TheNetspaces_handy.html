@@ -9913,7 +9913,7 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	var chkBackspaceEmpty1=document.createElement("input");
 	chkBackspaceEmpty1.type="checkbox";
 	chkBackspaceEmpty1.id="chkBackspaceEmpty1";
-	chkBackspaceEmpty1.checked=true;
+	chkBackspaceEmpty1.checked=false;
 	var chkBackspaceEmptyTitle1=document.createTextNode("<-");
 	var chkInchesKeyboard1=document.createElement("input");
 	chkInchesKeyboard1.type="checkbox";
@@ -9943,9 +9943,14 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	txtArtificialTextarea1.rows=1;
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
-		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;return;}
+		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
+		if(undefined!=chrValue)
+			alert(chrValue+":"+chrValue.charCodeAt(0));
 		netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 		var chrValue=this.value[0];
+		if(chrValue.charCodeAt(0)>255){
+			chrValue=this.value;/*inches from OS input systems*/
+		}
 		if(undefined!=chrValue&&null!=chrValue){
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=chrValue;newEvent.code=chrValue;
@@ -9956,8 +9961,14 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 				this.value="";
 				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			}
+			if("string"==typeof(chrValue)&&chrValue.length>1&&chrValue.charCodeAt(0)>255){
+				netspace.computer.onKeyDown(newEvent);
+				this.value="";
+				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
+			}
 		}
 	};
+	txtArtificialTextarea1.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea1.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -9977,7 +9988,7 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.computer.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -10005,7 +10016,7 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	var chkBackspaceEmpty2=document.createElement("input");
 	chkBackspaceEmpty2.type="checkbox";
 	chkBackspaceEmpty2.id="chkBackspaceEmpty2";
-	chkBackspaceEmpty2.checked=true;
+	chkBackspaceEmpty2.checked=false;
 	var chkBackspaceEmptyTitle2=document.createTextNode("<-");
 	var chkInchesKeyboard2=document.createElement("input");
 	chkInchesKeyboard2.type="checkbox";
@@ -10027,6 +10038,7 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
+	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -10046,7 +10058,7 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.computer.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -10254,7 +10266,7 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	var chkBackspaceEmpty1=document.createElement("input");
 	chkBackspaceEmpty1.type="checkbox";
 	chkBackspaceEmpty1.id="chkBackspaceEmpty1";
-	chkBackspaceEmpty1.checked=true;
+	chkBackspaceEmpty1.checked=false;
 	var chkBackspaceEmptyTitle1=document.createTextNode("<-");
 	var chkInchesKeyboard1=document.createElement("input");
 	chkInchesKeyboard1.type="checkbox";
@@ -10284,9 +10296,14 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	txtArtificialTextarea1.rows=1;
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
-		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;return;}
+		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
+		if(undefined!=chrValue)
+			alert(chrValue+":"+chrValue.charCodeAt(0));
 		netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 		var chrValue=this.value[0];
+		if(chrValue.charCodeAt(0)>255){
+			chrValue=this.value;/*inches from OS input systems*/
+		}
 		if(undefined!=chrValue&&null!=chrValue){
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=chrValue;newEvent.code=chrValue;
@@ -10297,8 +10314,14 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 				this.value="";
 				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			}
+			if("string"==typeof(chrValue)&&chrValue.length>1&&chrValue.charCodeAt(0)>255){
+				netspace.computer.onKeyDown(newEvent);
+				this.value="";
+				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
+			}
 		}
 	};
+	txtArtificialTextarea1.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea1.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -10318,7 +10341,7 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.computer.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -10346,7 +10369,7 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	var chkBackspaceEmpty2=document.createElement("input");
 	chkBackspaceEmpty2.type="checkbox";
 	chkBackspaceEmpty2.id="chkBackspaceEmpty2";
-	chkBackspaceEmpty2.checked=true;
+	chkBackspaceEmpty2.checked=false;
 	var chkBackspaceEmptyTitle2=document.createTextNode("<-");
 	var chkInchesKeyboard2=document.createElement("input");
 	chkInchesKeyboard2.type="checkbox";
@@ -10368,6 +10391,7 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
+	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -10387,7 +10411,7 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -10614,7 +10638,7 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	var chkBackspaceEmpty1=document.createElement("input");
 	chkBackspaceEmpty1.type="checkbox";
 	chkBackspaceEmpty1.id="chkBackspaceEmpty";
-	chkBackspaceEmpty1.checked=true;
+	chkBackspaceEmpty1.checked=false;
 	var chkBackspaceEmptyTitle1=document.createTextNode("<-");
 	var chkInchesKeyboard1=document.createElement("input");
 	chkInchesKeyboard1.type="checkbox";
@@ -10644,9 +10668,14 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	txtArtificialTextarea1.rows=1;
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
-		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;return;}
+		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
+		if(undefined!=chrValue)
+			alert(chrValue+":"+chrValue.charCodeAt(0));
 		netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 		var chrValue=this.value[0];
+		if(chrValue.charCodeAt(0)>255){
+			chrValue=this.value;/*inches from OS input systems*/
+		}
 		if(undefined!=chrValue&&null!=chrValue){
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=chrValue;newEvent.code=chrValue;
@@ -10657,8 +10686,14 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 				this.value="";
 				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			}
+			if("string"==typeof(chrValue)&&chrValue.length>1&&chrValue.charCodeAt(0)>255){
+				netspace.computer.onKeyDown(newEvent);
+				this.value="";
+				netspace.computer.txtArtificialTextarea_blnOninputDone=true;
+			}
 		}
 	};
+	txtArtificialTextarea1.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea1.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -10678,7 +10713,7 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.computer.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -10706,7 +10741,7 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	var chkBackspaceEmpty2=document.createElement("input");
 	chkBackspaceEmpty2.type="checkbox";
 	chkBackspaceEmpty2.id="chkBackspaceEmpty2";
-	chkBackspaceEmpty2.checked=true;
+	chkBackspaceEmpty2.checked=false;
 	var chkBackspaceEmptyTitle2=document.createTextNode("<-");
 	var chkInchesKeyboard2=document.createElement("input");
 	chkInchesKeyboard2.type="checkbox";
@@ -10728,6 +10763,7 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
+	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
                 var whichKeyCode=evtKey.keyCode||evtKey.which;
                 if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
@@ -10747,7 +10783,7 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 			var newEvent=netspace.computer.emptyKeyEvent();
 			newEvent.key=strKey;newEvent.code=strKey;
 			netspace.computer.onKeyDown(newEvent);
-			netspace.computer.txtArtificialTextarea_blnOninputDone=false;
+			netspace.computer.txtArtificialTextarea_blnOninputDone=true;
 			this.value="";
 			return;
                     }
@@ -12740,6 +12776,7 @@ Program_Bash.prototype.onKeyDown=function(evtEvent){
 		default:
 		var strChar=this.computer.getChar_text(evtEvent,this);
 		if("string"==typeof(strChar)&&1==strChar.length)this.editPrompt(strChar);
+		if("string"==typeof(strChar)&&strChar.length>1&&strChar.charCodeAt(0)>255)this.editPrompt(strChar);
 			break;
 	}
 };
@@ -20469,13 +20506,13 @@ TextWindow.prototype.replaceKeywordComplement=function(strWord,lstPrevCursor_buf
 TextWindow.prototype.showKeywordComplementsWindow=function(lstKeywordComplements,strWord,lstPrevCursor_buffer){
 	var intMaxKeywordHintsWidth=10;
 	var intKeywordHintsHeight=(lstKeywordComplements.length>=this.intMaxKeywordHintsHeight)?this.intMaxKeywordHintsHeight:lstKeywordComplements.length;
-	var intRootY=(this.lstCursor_buffer[1]+intKeywordHintsHeight<=this.base.intScreenHeight_text)?this.lstCursor_buffer[1]:this.lstCursor_buffer[1]-intKeywordHintsHeight;
+	var intRootY=(this.lstCursor_screen[1]+intKeywordHintsHeight<=this.base.intScreenHeight_text)?this.lstCursor_screen[1]:this.lstCursor_screen[1]-intKeywordHintsHeight;
 	var strVisibleContent="";
 	for(var ii=0;ii<=intKeywordHintsHeight;ii++){
 		strVisibleContent+=lstKeywordComplements[ii];
 		if(ii<intKeywordHintsHeight)strVisibleContent+=this.chrEnter;
 	}
-	var wndKeywordsHints=new TextWindow(this.computer,this.base,this.theSuper,this.lstCursor_buffer[0],intRootY,intMaxKeywordHintsWidth+2,intKeywordHintsHeight+2,"",strVisibleContent,1);
+	var wndKeywordsHints=new TextWindow(this.computer,this.base,this.theSuper,this.lstCursor_screen[0],intRootY,intMaxKeywordHintsWidth+2,intKeywordHintsHeight+2,"",strVisibleContent,1);
 	wndKeywordsHints.strPrevKeywordHint=lstKeywordComplements[0];
 	wndKeywordsHints.lstKeywordComplements=lstKeywordComplements;
 	wndKeywordsHints.strWord=strWord;
@@ -20602,7 +20639,7 @@ TextWindow.prototype.insertEditingChar_=function(chrKey){
 	this.setLstTextBuffer(this.lstCursor_buffer[1],strLine.substring(0,this.lstCursor_buffer[0])+chrKey+strLine.substring(this.lstCursor_buffer[0]));
 	/*this.blnModiff=true;*/
 	this.keywordsAfterStage_charEditing(1,beforeKeywords);
-	this.setLstCursor_buffer0(this.lstCursor_buffer[0]+1);
+	this.setLstCursor_buffer0(this.lstCursor_buffer[0]+chrKey.length);
 	this.updateWndEditing(true);
 };
 TextWindow.prototype.insertEditingChar_slower=function(chrKey){
@@ -20623,7 +20660,7 @@ TextWindow.prototype.insertEditingChar_slower=function(chrKey){
 TextWindow.prototype.insertEditingChar_fastCruncher=function(chrKey){
 	var strLine=netspace.wndEditing.lstTextBuffer_fastCruncher[netspace.wndEditing.lstCursor_buffer_fastCruncher[1]];
 	netspace.wndEditing.setLstTextBuffer_fastCruncher(netspace.wndEditing.lstCursor_buffer_fastCruncher[1],strLine.substring(0,netspace.wndEditing.lstCursor_buffer_fastCruncher[0])+chrKey+strLine.substring(netspace.wndEditing.lstCursor_buffer_fastCruncher[0]));
-	netspace.wndEditing.setLstCursor_buffer0_fastCruncher(netspace.wndEditing.lstCursor_buffer_fastCruncher[0]+1);
+	netspace.wndEditing.setLstCursor_buffer0_fastCruncher(netspace.wndEditing.lstCursor_buffer_fastCruncher[0]+chrKey.length);
 };
 
 TextWindow.prototype.prependTab_fastCruncher=function(){
@@ -20641,7 +20678,7 @@ TextWindow.prototype.replaceEditingChar_=function(chrKey){
 	this.setLstTextBuffer(this.lstCursor_buffer[1],strLine.substring(0,this.lstCursor_buffer[0])+chrKey+strLine.substring(this.lstCursor_buffer[0]+1));
 	/*this.blnModiff=true;*/
 	this.keywordsAfterStage_charEditing(0,beforeKeywords);
-	this.setLstCursor_buffer0(this.lstCursor_buffer[0]+1);
+	this.setLstCursor_buffer0(this.lstCursor_buffer[0]+chrKey.length);
 	this.updateWndEditing(true);
 };
 TextWindow.prototype.insertEditingChar__=function(evtEvent){
@@ -20663,7 +20700,7 @@ TextWindow.prototype.insertEditingChar__=function(evtEvent){
 		this.insertEditingDelete_();
 		return true;
 	}
-	if(1==chrKey.length){
+	if(1==chrKey.length||chrKey.charCodeAt(0)>255){
 		this.insertEditingChar_(chrKey);
 		return true;
 	}
@@ -20691,7 +20728,7 @@ TextWindow.prototype.replaceEditingChar__=function(evtEvent){
 		this.insertEditingDelete_();
 		return true;
 	}
-	if(1==chrKey.length){
+	if(1==chrKey.length||chrKey.charCodeAt(0)>255){
 		this.replaceEditingChar_(chrKey);
 		return true;
 	}
@@ -21293,13 +21330,13 @@ InchesKeyboard.prototype.openFile=function(func){
 InchesKeyboard.prototype.showKeywordComplementsWindow=function(lstKeywordComplements,intKeywordHintNumber){
 	var intMaxKeywordHintsWidth=10;
 	var intKeywordHintsHeight=(lstKeywordComplements.length>=this.textEditor.wndEditing.intMaxKeywordHintsHeight)?this.textEditor.wndEditing.intMaxKeywordHintsHeight:lstKeywordComplements.length;
-	var intRootY=(this.textEditor.wndEditing.lstCursor_buffer[1]+intKeywordHintsHeight<=this.textEditor.base.intScreenHeight_text)?(this.textEditor.wndEditing.lstCursor_buffer[1]+1):(this.textEditor.wndEditing.lstCursor_buffer[1]+1-intKeywordHintsHeight);
+	var intRootY=(this.textEditor.wndEditing.lstCursor_screen[1]+intKeywordHintsHeight<=this.textEditor.base.intScreenHeight_text)?(this.textEditor.wndEditing.lstCursor_screen[1]+1):(this.textEditor.wndEditing.lstCursor_screen[1]+1-intKeywordHintsHeight);
 	var strVisibleContent="";
 	for(var ii=0;ii<=intKeywordHintsHeight;ii++){
 		strVisibleContent+=lstKeywordComplements[ii];
 		if(ii<intKeywordHintsHeight)strVisibleContent+=this.textEditor.wndEditing.chrEnter;
 	}
-	this.wndKeywordsHints=new TextWindow(netspace.computer,this.textEditor.base,this.textEditor.wndEditing,this.textEditor.wndEditing.lstCursor_buffer[0]+1,intRootY,intMaxKeywordHintsWidth+2,intKeywordHintsHeight+2,"",strVisibleContent,1);
+	this.wndKeywordsHints=new TextWindow(netspace.computer,this.textEditor.base,this.textEditor.wndEditing,this.textEditor.wndEditing.lstCursor_screen[0]+1,intRootY,intMaxKeywordHintsWidth+2,intKeywordHintsHeight+2,"",strVisibleContent,1);
 	this.wndKeywordsHints.strPrevKeywordHint=lstKeywordComplements[0];
 	this.wndKeywordsHints.lstKeywordComplements=lstKeywordComplements;
 	this.wndKeywordsHints.intKeywordHintNumber=0;
