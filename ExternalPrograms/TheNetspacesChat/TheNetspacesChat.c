@@ -1,8 +1,9 @@
 /*
-The code could be unsecure - better to use
+The code in that version could be unsecure - better to use
 in "demilitarized zone" only like local or tunneled
 network with the security on the network level
-and server on the separate or sandboxed computer.
+and server on the separate or sandboxed computer
+when online in hazardous networks.
 */
 #include <stdio.h>
 #include <string.h>
