@@ -210,8 +210,7 @@ var copyListRecursive=function(lstBufferSrc){
 	for(var ii=0;ii<lstBufferSrc.length;ii++){
 		if(true==isList(lstBufferSrc[ii]))
 			lstBufferDst.push(copyListRecursive(lstBufferSrc[ii]));
-		else
-		lstBufferDst.push(lstBufferSrc[ii]);
+		else lstBufferDst.push(lstBufferSrc[ii]);
 	}
 	return lstBufferDst;
 };
@@ -16116,6 +16115,18 @@ Program_txtFunFunFun.prototype.loopFunction=function(currentFrameTime){
 	for(var ii=0;ii<this.base.lstScreenBuffer_text.length;ii++)
 		this.base.lstScreenBuffer_text[ii]=strFunFunFun[ii];
 };
+ChatWindowConstructor_strF=function(that,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize,intMyID,intInterlocutorID){
+};
+ChatWindowConstructor=function(that,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize,intMyID,intInterlocutorID){
+	that.txtContents=new TextWindow(computer,base,theSuper,intRootX,intRootY,intWidth,intHeight-2*intBorderSize-2,strTitle,strTextContents,intBorderSize);
+	that.txtInput=new TextWindow(computer,base,theSuper,intRootX,intRootY+intHeight-2*intBorderSize-2,intWidth,2*intBorderSize+2,strTitle,strTextContents,intBorderSize);
+	that.chat=new Chat(that);
+	that.chat.init(intMyID,intInterlocutorID,that.txtInput,that.txtContents);
+};
+ChatWindow=function(computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize,intMyID,intInterlocutorID){
+	ChatWindowConstructor(this,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize,intMyID,intInterlocutorID);
+	ChatWindowConstructor_strF(this,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize,intMyID,intInterlocutorID);
+};
 TextWindowConstructor_strF=function(that,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize){
 };
 TextWindowConstructor=function(that,computer,base,theSuper,intRootX,intRootY,intWidth,intHeight,strTitle,strTextContents,intBorderSize){
@@ -21162,6 +21173,179 @@ TextWindow.prototype.gotoDefinition=function(){
 	this.strSearchString=strWord;
 	this.gotoNextString_(0,1);
 };
+Chat=function(textEditor){
+	this.txtContents=null;
+	this.txtInput=null;
+	this.intMyID=null;
+	this.intInterlocutorID=null;
+	this.strServerAddress="http://127.0.0.1:38120";
+	this.strNickname="Me";
+	this.dctInterlocutorNicknames={};
+	this.lstConversation=[];
+	this.textEditor=textEditor;
+};
+Chat.prototype.LoadTextResource=function(url,callback){
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.open('GET',url,true);
+	xmlhttp.onload=function(e){
+		if(xmlhttp.status<200||xmlhttp.status>=300){
+			console.error('ERROR loading text resource',url,xmlhttp.status,xmlhttp.statusText);
+			callback(new Error(xmlhttp.statusText));
+		}else{
+			callback(null,xmlhttp.responseText);
+		}
+	};
+	xmlhttp.onerror=callback;
+	xmlhttp.send();
+};
+Chat.prototype.appendText=function(strText){
+	this.txtContents.pushLstTextBuffer(strText);
+	this.txtContents.setLstCursor_buffer(0,this.txtContents.lstTextBuffer.length-1);
+	this.txtContents.updateWndEditing(true);
+};
+Chat.prototype.appendMessage=function(lstMessage){
+	var theNickname=lstMessage[0];
+	var strDate=lstMessage[1];
+	var strMessage=lstMessage[2];
+	this.appendText(strDate+" "+theNickname+": "+strMessage);
+};
+Chat.prototype.appendMessage_=function(loadResults){
+	var strDate=this.getDateString();
+	var intMessage=loadResults.indexOf("strMessage");
+	var strMessage=loadResults.substring(intMessage+11,loadResults.length-1);
+	var intIdIndex=loadResults.indexOf("&intSendTo=");
+	if(-1!=intIdIndex)return;
+	if(-1==intIdIndex)intIdIndex=loadResults.indexOf("&intRecvFrom=")+13;
+	else intIdIndex+=11;
+	var intIdIndex2=loadResults.indexOf("&strMessage=")+12;
+	var strId=loadResults.substring(intIdIndex,intIdIndex2);
+	var theInterlocutorID=parseInt(strId);
+	strMessage=unescape(strMessage);
+	this.appendText(strDate+" "+this.dctInterlocutorNicknames[theInterlocutorID]+": "+strMessage);
+};
+Chat.prototype.getDateString=function(){
+        var d=new Date();
+        var hour =d.getHours();
+        var minute=d.getMinutes();
+        var second=d.getSeconds();
+	return flush(""+hour,2)+":"+flush(""+minute,2)+":"+flush(""+second,2);
+};
+Chat.prototype.interpretCommand=function(strText){
+	var lstText;
+	var strCallstring="";
+	var strDate="";
+	if("/"==strText.substring(0,1)){
+		if("/server"==strText.substring(0,7)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				this.strServerAddress=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=connect("+this.strNickname+")";
+				setTimeout(this.stage2,1000);
+				return strCallstring;
+			}else{
+				var strDate=getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /server address:port"]);
+			}
+		}
+		if("/nick"==strText.substring(0,5)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				var theNickname=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=nickname("+escape(theNickname)+")";
+				return strCallstring;
+			}else{
+				var strDate=this.getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /nick Nickname"]);
+			}
+		}
+		if("/join"==strText.substring(0,5)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				var strChannel=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=join("+strChannel+")";
+				return strCallstring;
+			}else{
+				var strDate=this.getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /join #intId0,intId1,...,intIdN"]);
+			}
+		}
+	}
+		strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=sendTo("+this.intInterlocutorID+","+escape(strText)+")";
+	return strCallstring;
+};
+Chat.prototype.txtInputOnKeyDown=function(evtKey){
+	if("Enter"==evtKey.key&&true==evtKey.shiftKey){
+		var txtValue=netspace.chat.txtInput.getStrContents();
+		netspace.chat.txtInput.loadText("");
+		netspace.chat.txtInput.setLstCursor_buffer(0,0);
+		netspace.chat.txtInput.updateWndEditing(true);
+		var strDate=netspace.chat.getDateString();
+		netspace.chat.appendMessage([netspace.chat.strNickname,strDate,txtValue]);
+		var strCallstring=netspace.chat.interpretCommand(txtValue);
+		netspace.chat.LoadTextResource(strCallstring,netspace.chat.getServerContent);
+		return true;
+	}
+};
+Chat.prototype.interpretResults=function(loadResults){
+	var intMessage=loadResults.indexOf("strMessage");
+	if(-1!=intMessage){
+		this.appendMessage_(loadResults);
+		return;
+	}
+	intMessage=loadResults.indexOf("changedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.strNickname=theNickname;
+		this.appendText("nickname set");
+		var strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=changedNickname("+this.intInterlocutorID+","+escape(this.strNickname)+")";
+		this.LoadTextResource(strCallstring,this.getServerContent);
+		return;
+	}
+	intMessage=loadResults.indexOf("interlocutorChangedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.appendText("interlocutor nickname set");
+		var intId=parseInt(strId);
+		this.dctInterlocutorNicknames[intId]=theNickname;
+		return;
+	}
+};
+Chat.prototype.getServerContent=function(loadError,loadResults){
+	if(loadResults){
+		netspace.chat.interpretResults(loadResults);
+	}
+};
+Chat.prototype.receivingFunction=function(loadError,loadResults){
+	if(loadResults){
+		var strDate=netspace.chat.getDateString();
+		netspace.chat.interpretResults(loadResults);
+		netspace.chat.LoadTextResource(netspace.chat.strServerAddress+"/index.html?intID="+netspace.chat.intMyID+"&strCommand=receiving()",netspace.chat.receivingFunction);
+	}
+};
+Chat.prototype.stage2=function(){
+	netspace.chat.LoadTextResource(netspace.chat.strServerAddress+"/index.html?intID="+netspace.chat.intMyID+"&strCommand=receiving()",netspace.chat.receivingFunction);
+};
+Chat.prototype.init=function(intMyID,intInterlocutorID,txtInput,txtContents){
+	netspace.chat=this;
+	this.intMyID=intMyID;
+	this.intInterlocutorID=intInterlocutorID;
+	this.dctInterlocutorNicknames[this.intInterlocutorID]="Interlocutor";
+	this.txtContents=txtContents;
+	this.txtInput=txtInput;
+	this.txtInput.onKeyDown=this.txtInputOnKeyDown;
+	this.LoadTextResource(this.strServerAddress+"/index.html?intID="+intMyID+"&strCommand=connect("+strNickname+")",this.getServerContent);
+	setTimeout(this.stage2,1000);
+};
 InchesKeyboard=function(textEditor){
 	this.textEditor=textEditor;
 	this.blnWordChoiceMode=false;
@@ -22074,69 +22258,116 @@ Program_TextEditor.prototype.isDigit=function(chrChar){
 	if(intCharCode>=48&&intCharCode<=57)return true;
 	return false;
 };
+Program_TextEditor.prototype.getChatNumbers=function(strArgs){
+	var intChat=strArgs.indexOf("-chat");
+	var strChatSubstring=strArgs.substring(intChat+5,strArgs.length);
+	var intNextCommand=strChatSubstring.indexOf("-");
+	var strChatNumbersSubstring;
+	if(-1==intNextCommand)strChatNumbersSubstring=strChatSubstring;
+	else strChatNumbersSubstring=strChatSubstring.substring(0,intNextCommand);
+	var lstStrNumbers=strChatNumbersSubstring.split(" ");
+	var intNumber;
+	var lstChatNumbers=[];
+	for(var ii=0;ii<lstStrNumbers.length;ii++){
+		intNumber=parseInt(lstStrNumbers[ii]);	
+		if(false==nonNumber(intNumber))
+			lstChatNumbers.push(intNumber);
+	}
+	var int2vwin=strArgs.indexOf("-2vwin");
+	var intO=strArgs.indexOf("-O");
+	var int2hwin=strArgs.indexOf("-2hwin");
+	var into=strArgs.indexOf("-o");
+	if(-1==int2vwin&&-1==intO&&-1==int2hwin&&-1==into)
+		return [lstChatNumbers];
+	if(-1!=int2vwin)
+		if(int2vwin<intChat)
+			return ["text",lstChatNumbers];
+	if(-1!=intO)
+		if(intO<intChat)
+			return ["text",lstChatNumbers];
+	if(-1!=int2vwin)
+		if(int2vwin>intChat)
+			return [lstChatNumbers,"text"];
+	if(-1!=intO)
+		if(intO>intChat)
+			return [lstChatNumbers,"text"];
+	if(-1!=int2hwin)
+		if(int2hwin<intChat)
+			return ["text",lstChatNumbers];
+	if(-1!=into)
+		if(into<intChat)
+			return ["text",lstChatNumbers];
+	if(-1!=int2hwin)
+		if(int2hwin>intChat)
+			return [lstChatNumbers,"text"];
+	if(-1!=into)
+		if(into>intChat)
+			return [lstChatNumbers,"text"];
+};
 Program_TextEditor.prototype.analyzeCommandline=function(){
+	var lstChatNumbers=null;
+	if(this.substringInString("-chat",this.strArgs))lstChatNumbers=this.getChatNumbers(this.strArgs);
 	if(this.substringInString("-mini",this.strArgs)||this.substringInString("-maxi",this.strArgs)){
 		if(this.substringInString("-mini",this.strArgs)){
 			this.blnSimpleMode=false;
 			if(this.substringInString("-2vwin",this.strArgs)){
-				this.twoMiniVerticalWindows();
+				this.twoMiniVerticalWindows(lstChatNumbers);
 				return true;
 			};
 			if(this.substringInString("-O",this.strArgs)){
-				this.twoMiniVerticalWindows();
+				this.twoMiniVerticalWindows(lstChatNumbers);
 				return true;
 			};
 			if(this.substringInString("-2hwin",this.strArgs)){
-				this.twoMiniHorizontalWindows();
+				this.twoMiniHorizontalWindows(lstChatNumbers);
 				return true;
 			}
 			if(this.substringInString("-o",this.strArgs)){
-				this.twoMiniHorizontalWindows();
+				this.twoMiniHorizontalWindows(lstChatNumbers);
 				return true;
 			}
-
-			this.oneMiniFullscreenWindow();
+			this.oneMiniFullscreenWindow(lstChatNumbers);
 			return true;	
 		}
 		if(this.substringInString("-maxi",this.strArgs)){
 			this.blnSimpleMode=false;
 			if(this.substringInString("-2vwin",this.strArgs)){
-				this.twoMaxiVerticalWindows();
+				this.twoMaxiVerticalWindows(lstChatNumbers);
 				return true;
 			};
 			if(this.substringInString("-O",this.strArgs)){
-				this.twoMaxiVerticalWindows();
+				this.twoMaxiVerticalWindows(lstChatNumbers);
 				return true;
 			};
 			if(this.substringInString("-2hwin",this.strArgs)){
-				this.twoMaxiHorizontalWindows();
+				this.twoMaxiHorizontalWindows(lstChatNumbers);
 				return true;
 			}
 			if(this.substringInString("-o",this.strArgs)){
-				this.twoMaxiHorizontalWindows();
+				this.twoMaxiHorizontalWindows(lstChatNumbers);
 				return true;
 			}
-			this.oneMaxiFullscreenWindow();
+			this.oneMaxiFullscreenWindow(lstChatNumbers);
 			return true;	
 		}
 	}else{
 		if(this.substringInString("-2vwin",this.strArgs)){
-			this.twoSimpleVerticalWindows();
+			this.twoSimpleVerticalWindows(lstChatNumbers);
 			return true;
 		};
 		if(this.substringInString("-O",this.strArgs)){
-			this.twoSimpleVerticalWindows();
+			this.twoSimpleVerticalWindows(lstChatNumbers);
 			return true;
 		};
 		if(this.substringInString("-2hwin",this.strArgs)){
-			this.twoSimpleHorizontalWindows();
+			this.twoSimpleHorizontalWindows(lstChatNumbers);
 			return true;
 		}
 		if(this.substringInString("-o",this.strArgs)){
-			this.twoSimpleHorizontalWindows();
+			this.twoSimpleHorizontalWindows(lstChatNumbers);
 			return true;
 		}
-		this.oneSimpleWindow();
+		this.oneSimpleWindow(lstChatNumbers);
 		return true;
 	}
 
@@ -22730,176 +22961,610 @@ Program_TextEditor.prototype.resizeWindow=function(strCommand){
 Program_TextEditor.prototype.closeWindow=function(){
 	this.wndEditing.close();
 };
-Program_TextEditor.prototype.oneSimpleWindow=function(){
+Program_TextEditor.prototype.oneSimpleWindow=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
-	var wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	this.intFocusWindow=this.lstTextWindows.length-1;
-	this.blnSimpleMode=true;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
-	this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
-	this.wndEditing.setInsertMode("i");
-	this.menuWindows();
+	if(null==lstChatNumbers){
+		var wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		this.intFocusWindow=this.lstTextWindows.length-1;
+		this.blnSimpleMode=true;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
+		this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.wndEditing.setInsertMode("i");
+		this.menuWindows();
+	}else{
+		var chatWindow=new ChatWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+		this.lstTextWindows.push(chatWindow.txtContents);
+		this.lstEditingWindows.push(chatWindow.txtContents);
+		this.lstTextWindows.push(chatWindow.txtInput);
+		this.lstEditingWindows.push(chatWindow.txtInput);
+		chatWindow.txtInput.wndUp=chatWindow.txtContents;
+		chatWindow.txtContents.wndDown=chatWindow.txtInput;
+		chatWindow.txtInput.wndDown=chatWindow.txtContents;
+		chatWindow.txtContents.wndUp=chatWindow.txtInput;
+		this.intFocusWindow=chatWindow.txtInput;
+		this.wndEditing=chatWindow.txtInput;
+		this.blnSimpleMode=true;
+		chatWindow.txtInput.setInsertMode("i");
+		chatWindow.txtContents.setInsertMode("i");
+		this.menuWindows();
+		this.bringToFront(chatWindow.txtInput);
+		chatWindow.txtInput.setFocus();
+	}
 };
-Program_TextEditor.prototype.oneMiniFullscreenWindow=function(){
+Program_TextEditor.prototype.oneMiniFullscreenWindow=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
-	var wndEditing=new TextWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",0);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	this.intFocusWindow=this.lstTextWindows.length-1;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
-	this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
-	this.blnSimpleMode=false;
+	if(null==lstChatNumbers){
+		var wndEditing=new TextWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",0);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		this.intFocusWindow=this.lstTextWindows.length-1;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
+		this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.blnSimpleMode=false;
+	}else{
+		var chatWindow=new ChatWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,this.base.intScreenHeight_text-1,"","",0,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+		this.lstTextWindows.push(chatWindow.txtContents);
+		this.lstEditingWindows.push(chatWindow.txtContents);
+		this.lstTextWindows.push(chatWindow.txtInput);
+		this.lstEditingWindows.push(chatWindow.txtInput);
+		chatWindow.txtInput.wndUp=chatWindow.txtContents;
+		chatWindow.txtContents.wndDown=chatWindow.txtInput;
+		chatWindow.txtInput.wndDown=chatWindow.txtContents;
+		chatWindow.txtContents.wndUp=chatWindow.txtInput;
+		this.intFocusWindow=chatWindow.txtInput;
+		this.wndEditing=chatWindow.txtInput;
+		this.blnSimpleMode=false;
+		this.bringToFront(chatWindow.txtInput);
+		chatWindow.txtInput.setFocus();
+	}
 };
-Program_TextEditor.prototype.oneMaxiFullscreenWindow=function(){
+Program_TextEditor.prototype.oneMaxiFullscreenWindow=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
-	var wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-2,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	this.intFocusWindow=this.lstTextWindows.length-1;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
-	this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
-	this.blnSimpleMode=false;
-	this.menuWindows();
+	if(null==lstChatNumbers){
+		var wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-2,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		this.intFocusWindow=this.lstTextWindows.length-1;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-1];
+		this.wndEditing.loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.blnSimpleMode=false;
+		this.menuWindows();
+	}else{
+		var chatWindow=new ChatWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,this.base.intScreenHeight_text-2,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+		this.lstTextWindows.push(chatWindow.txtContents);
+		this.lstEditingWindows.push(chatWindow.txtContents);
+		this.lstTextWindows.push(chatWindow.txtInput);
+		this.lstEditingWindows.push(chatWindow.txtInput);
+		chatWindow.txtInput.wndUp=chatWindow.txtContents;
+		chatWindow.txtContents.wndDown=chatWindow.txtInput;
+		chatWindow.txtInput.wndDown=chatWindow.txtContents;
+		chatWindow.txtContents.wndUp=chatWindow.txtInput;
+		this.intFocusWindow=chatWindow.txtInput;
+		this.wndEditing=chatWindow.txtInput;
+		this.blnSimpleMode=false;
+		this.menuWindows();
+		this.bringToFront(chatWindow.txtInput);
+		chatWindow.txtInput.setFocus();
+
+	}
 };
-Program_TextEditor.prototype.twoMiniVerticalWindows=function(){
+Program_TextEditor.prototype.twoMiniVerticalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=false;
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=false;
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+			
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,0,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",0,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+		}
+		window0.wndLeft=window1;
+		window1.wndRight=window0;
+		/*cyclic*/
+		window0.wndRight=window1;
+		window1.wndLeft=window0;
+
+		this.blnSimpleMode=false;
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+
+	}
 };
-Program_TextEditor.prototype.twoMaxiVerticalWindows=function(){
+Program_TextEditor.prototype.twoMaxiVerticalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+		this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
 
-	this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+		this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=false;
-	this.menuWindows();
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=false;
+		this.menuWindows();
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+			
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+		}
+		window0.wndLeft=window1;
+		window1.wndRight=window0;
+		/*cyclic*/
+		window0.wndRight=window1;
+		window1.wndLeft=window0;
+
+		this.blnSimpleMode=false;
+		this.menuWindows();
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+	}
 };
-Program_TextEditor.prototype.twoMiniHorizontalWindows=function(){
+Program_TextEditor.prototype.twoMiniHorizontalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2),this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2),this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=false;
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=false;
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2),this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,0,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window1;
+			window1.wndUp=chatWindow.txtInput;
+			chatWindow.txtContents.wndUp=window1;
+			window1.wndDown=chatWindow.txtContents;
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2),this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",0,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtContents.wndUp=window0;
+			window0.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window0;
+			window0.wndUp=chatWindow.txtInput;
+		}
+		this.blnSimpleMode=false;
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+	}
 };
-Program_TextEditor.prototype.twoMaxiHorizontalWindows=function(){
+Program_TextEditor.prototype.twoMaxiHorizontalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=false;
-	this.menuWindows();
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=false;
+		this.menuWindows();
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window1;
+			window1.wndUp=chatWindow.txtInput;
+			chatWindow.txtContents.wndUp=window1;
+			window1.wndDown=chatWindow.txtContents;
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtContents.wndUp=window0;
+			window0.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window0;
+			window0.wndUp=chatWindow.txtInput;
+		}
+		this.blnSimpleMode=false;
+		this.menuWindows();
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+	}
 };
-Program_TextEditor.prototype.twoSimpleVerticalWindows=function(){
+Program_TextEditor.prototype.twoSimpleVerticalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-1,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[1].wndLeft=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndRight=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[2].wndLeft=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndRight=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=true;
-	this.wndEditing.setInsertMode("i");
-	this.menuWindows();
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=true;
+		this.wndEditing.setInsertMode("i");
+		this.menuWindows();
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.setInsertMode("i");
+			chatWindow.txtContents.setInsertMode("i");
+			
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,Math.floor(this.base.intScreenWidth_text/2)+1,1,Math.floor(this.base.intScreenWidth_text/2)-1,this.base.intScreenHeight_text-2,"","",1,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			/*cyclic*/
+			chatWindow.txtContents.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.setInsertMode("i");
+			chatWindow.txtContents.setInsertMode("i");
+		}
+		window0.wndLeft=window1;
+		window1.wndRight=window0;
+		/*cyclic*/
+		window0.wndRight=window1;
+		window1.wndLeft=window0;
+
+		this.blnSimpleMode=true;
+		this.menuWindows();
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+
+	}
 };
-Program_TextEditor.prototype.twoSimpleHorizontalWindows=function(){
+Program_TextEditor.prototype.twoSimpleHorizontalWindows=function(lstChatNumbers){
 	var strTxtFunFunFunContents=document.getElementById("txtFunFunFun").value;
 	var wndEditing;
-	wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
-	var wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",1);
-	this.lstTextWindows.push(wndEditing);
-	this.lstEditingWindows.push(wndEditing);
+	if(null==lstChatNumbers){
+		wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
+		var wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-1,"","",1);
+		this.lstTextWindows.push(wndEditing);
+		this.lstEditingWindows.push(wndEditing);
 
-	this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
-	this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
-	this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[1].wndDown=this.lstTextWindows[2];
+		this.lstTextWindows[1].wndUp=this.lstTextWindows[2];
+		this.lstTextWindows[1].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
-	this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
-	this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
+		this.lstTextWindows[2].wndDown=this.lstTextWindows[1];
+		this.lstTextWindows[2].wndUp=this.lstTextWindows[1];
+		this.lstTextWindows[2].loadEditingText(strTxtFunFunFunContents,"txtFunFunFun");
 
-	this.intFocusWindow=this.lstTextWindows.length-2;
-	this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
-	this.blnSimpleMode=true;
-	this.wndEditing.setInsertMode("i");
-	this.menuWindows();
+		this.intFocusWindow=this.lstTextWindows.length-2;
+		this.wndEditing=this.lstTextWindows[this.lstTextWindows.length-2];
+		this.blnSimpleMode=true;
+		this.wndEditing.setInsertMode("i");
+		this.menuWindows();
+	}else{
+		var chatWindow,window0,window1;
+		chatWindow=null;
+		if("text"==lstChatNumbers[0]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window0=wndEditing;
+			window0.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window0;
+			this.wndEditing=window0;
+		}
+		if("text"==lstChatNumbers[1]){
+			wndEditing=new TextWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1);
+			this.lstTextWindows.push(wndEditing);
+			this.lstEditingWindows.push(wndEditing);
+			window1=wndEditing;
+			window1.loadEditingText(strTxtFunFunFunContents,"strTxtFunFunFun");
+			this.intFocusWindow=window1;
+			this.wndEditing=window1;
+		}
+		if(true==isList(lstChatNumbers[0])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1,lstChatNumbers[0][0],lstChatNumbers[0][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window0=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window1;
+			window1.wndUp=chatWindow.txtInput;
+			chatWindow.txtContents.wndUp=window1;
+			window1.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.setInsertMode("i");
+			chatWindow.txtContents.setInsertMode("i");
+		}
+		if(true==isList(lstChatNumbers[1])){
+			chatWindow=new ChatWindow(this.computer,this.base,this,0,Math.floor(this.base.intScreenHeight_text/2)+1,this.base.intScreenWidth_text,Math.floor(this.base.intScreenHeight_text/2)-2,"","",1,lstChatNumbers[1][0],lstChatNumbers[1][1]);
+			this.lstTextWindows.push(chatWindow.txtContents);
+			this.lstTextWindows.push(chatWindow.txtInput);
+			this.lstEditingWindows.push(chatWindow.txtContents);
+			window1=chatWindow.txtInput;
+			this.intFocusWindow=chatWindow.txtInput;
+			this.wndEditing=chatWindow.txtInput;
+			chatWindow.txtContents.wndDown=chatWindow.txtInput;
+			chatWindow.txtInput.wndUp=chatWindow.txtContents;
+			chatWindow.txtContents.wndUp=window0;
+			window0.wndDown=chatWindow.txtContents;
+			chatWindow.txtInput.wndDown=window0;
+			window0.wndUp=chatWindow.txtInput;
+			chatWindow.txtInput.setInsertMode("i");
+			chatWindow.txtContents.setInsertMode("i");
+		}
+		this.blnSimpleMode=true;
+		this.menuWindows();
+		if(null!=chatWindow){
+			this.bringToFront(chatWindow.txtInput);
+			chatWindow.txtInput.setFocus();
+		}
+
+	}
 };
 Program_TextEditor.prototype.promptInits=function(){
 	this.lstTextWindows.push(new TextWindow(this.computer,this.base,this,0,this.base.intScreenHeight_text-1,this.base.intScreenWidth_text,1,"","",0));
