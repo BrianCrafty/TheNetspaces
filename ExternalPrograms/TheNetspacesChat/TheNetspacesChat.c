@@ -1,3 +1,9 @@
+/*
+The code could be unsecure - better to use
+in "demilitarized zone" only like local or tunneled
+network with the security on the network level
+and server on the separate or sandboxed computer.
+*/
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
