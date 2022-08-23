@@ -1,0 +1,2375 @@
+<html>
+	<style>
+.button2 {
+    background-color:rgba(255,100,0,1.0)
+    border:none;
+    color:grey;
+    padding:15px 32px;
+    text-align:center;
+    text-decoration:none;
+    display:inline-block;
+    font-size:16px;
+    margin:4px 2px;
+    cursor:pointer;
+}
+
+input,button {background-color:rgba(255,100,0,1.0);
+    border:none;
+    color:black;}
+
+textarea {background-color:black;
+    border-color:rgba(255,100,0,1.0);
+    color:grey;
+ scrollbar-face-color:black;
+    scrollbar-track-color:rgba(255,100,0,1.0);
+    scrollbar-arrow-color:black;
+    scrollbar-highlight-color:orange;
+    scrollbar-shadow-color:orange;
+    scrollbar-3dlight-color:orange;
+    scrollbar-darkshadow-color:orange;
+}
+</style>
+<head>
+<script type="text/javascript">
+var intUnitSquareSize=10;
+var lstColors=[[255,255,255,255],  
+			[0,0,0,255],
+			[255,60,0,255],
+ 			[255,255,0,255],
+ 			[0,255,0,255],
+ 			[255,0,0,255],
+ 			[255,50,150,255],
+ 			[128,0,128,255],
+ 			[100,50,0,255],
+ 			[0,0,255,255]
+]; 
+var aEq=function(int0,int1){
+	var precision=5;
+	if(Math.abs(int1-int0)<precision)return true;
+		return false;
+	};
+var estimateColorNumber=function(theColor){
+	var precision=0.0001;
+	var intR,intG,intB,intAlpha;
+	[intR,intG,intB,intAlpha]=theColor;
+	if(aEq(intR,intG)&&aEq(intG,intB)&&(intR>0)&&(intG>0)&&(intB>0))return 0;
+	if(aEq(0,intR)&&aEq(0,intG)&&aEq(0,intB))return 1;
+	if((Math.abs(intG/intR-lstColors[2][1]/255.)<precision)&&(aEq(0,intB)))return 2;
+	if(aEq(intR,intG)&&aEq(0,intB))return 3;
+	if(aEq(0,intR)&&(0<intG)&&aEq(0,intB))return 4;
+	if((0<intR)&&aEq(0,intG)&&aEq(0,intB))return 5;
+	if((Math.abs(intG/intR-lstColors[6][1]/255.)<precision)&&(Math.abs(intG/intB-lstColors[6][1]/(1.*lstColors[6][2]))<precision))return 6;
+	if(aEq(intR,intB)&&aEq(0,intG))return 7;
+	if((Math.abs(intG/intR-lstColors[8][1]/(1.*lstColors[8][0]))<precision)&&(aEq(0,intB)))return 8;
+	if(aEq(0,intR)&&aEq(0,intG)&&(0<intB))return 9;
+	for(var ii=60;ii<=100;ii++)
+		if((Math.abs(intG/intR-ii/255.)<precision)&&(aEq(0,intB)))return 2;
+	for(var i=25;i<=75;i++)
+		for(j=125;j<=175;j++)
+			if((Math.abs(intG/intR-i/255.)<precision)&&(Math.abs(intG/intB-i/(1.*j))<precision))return 6;
+	for(var i=50;i<=80;i++)
+		for(j=75;j<=125;j++)
+			if((Math.abs(intG/intR-i/(1.*j))<precision)&&(aEq(0,intB)))return 8;
+	return -1;
+};
+var Epsilon=10**(-10);
+var imageData=null;
+var glbPreviewCanvas=null;
+var glbPreviewCanvasImage=null;
+	function openFile(func,objArgs){
+		if(null!=objArgs){
+		}
+		readFile=function(e) {
+			var file=e.target.files[0];
+			var strFilename=document.getElementById("txtFilename");
+			if('name' in file) 
+				strFilename.value=file.name;
+				arrNames=file.name.split(".");	
+			if(!file){
+				return;
+			};
+			var reader0=new FileReader();
+			var reader=new FileReader();
+			reader0.onload=function(e) {
+				nonUnicode(e.target.result,function(exists){
+					if (exists){blnNonUnicode=true;}
+					else{blnNonUnicode=false;}
+				},objArgs);
+
+			};
+			reader0.readAsDataURL(file);
+			reader.onload=function(e) {
+				var contents=e.target.result;
+				fileInput.func(contents);
+				document.body.removeChild(fileInput);
+			};
+			function previewText(){
+					reader.readAsText(file);
+					return;
+			}
+			function checkText(){
+				if (blnNonUnicode==false){
+					reader.readAsText(file);
+					retrun;
+				}
+				if (blnNonUnicode==-1){
+					setTimeout(checkText,1000);
+				}
+			}
+		};
+		fileInput=document.createElement("input");
+		fileInput.type='file';
+		fileInput.style.display='none';
+		fileInput.onchange=readFile;
+		fileInput.func=func;
+		document.body.appendChild(fileInput);
+		clickComponent(fileInput);
+	}
+		function previewFile(contents) {
+			document.getElementById('txtImpresionismPreview').value=contents;
+		}
+	function nonUnicode(url, callback,objArgs){
+		var img=new Image();
+		img.onload=function(){callback(true)};
+		img.onerror=function(){callback(false)};
+		img.src=url;
+		addImage(url,objArgs);
+	}
+	function addImage(theSrc,objArgs){
+		var previewImage=document.createElement("img");
+		previewImage.onload=function(){
+			var previewCanvas=document.createElement('canvas');
+			previewCanvas.id="previewCanvas";
+			previewCanvas.width=previewImage.width;
+			previewCanvas.height=previewImage.height;
+			var divPreview=document.getElementById("divPreview");
+			var divPreviewControls=document.getElementById("divPreviewControls");
+			previewContext=previewCanvas.getContext('2d');
+  			previewContext.drawImage(previewImage,0,0,previewImage.width,previewImage.height);
+			var imageData=previewContext.getImageData(0,0,previewImage.width,previewImage.height);
+			var secondCanvas=null;
+			var textureImage=null;
+			[secondCanvas,textureImage]=createTexture(imageData,previewImage.width,previewImage.height);
+			secondCanvas.theImageData=imageData;
+			divPreview.appendChild(secondCanvas);
+			var strColors=recognizePattern(secondCanvas,intUnitSquareSize);
+			strColors=divideComma3(strColors);
+			document.getElementById("txtImpresionismArts").value=strColors;
+			if(null==objArgs)
+				btnDecodePressed();	
+			else{
+				var btnLinesDone=document.createElement("button");
+				var btnLinesFromRectangle=document.createElement("button");
+				glbPreviewCanvas=secondCanvas;
+				glbPreviewCanvasImage=textureImage;
+				var btnCanvasKeyboard=document.createElement("button");
+				btnCanvasKeyboard.id="btnCanvasKeyboard";
+				btnCanvasKeyboard.innerHTML="Canvas Keyboard On";
+				btnCanvasKeyboard.style="width:200px;height:50px";
+				divPreviewControls.appendChild(btnCanvasKeyboard);
+				btnCanvasKeyboard.onclick=function(){
+					if(true==secondCanvas.blnCanvasKeyboard){
+						secondCanvas.blnCanvasKeyboard=false;
+						btnCanvasKeyboard.innerHTML="Canvas Keyboard Off";
+					}
+					else{
+						btnCanvasKeyboard.innerHTML="Canvas Keyboard On";
+						secondCanvas.blnCanvasKeyboard=true;
+					}
+				};
+				btnLinesDone.id="btnLinesDone";
+				btnLinesDone.innerHTML="Lines Done";
+				btnLinesDone.style=style="width:200px;height:50px";
+				btnLinesDone.onclick=function(){
+					if(false==secondCanvas.blnLinesFromRectangle){
+						redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+						glbPreviewCanvas=null;
+						glbPreviewCanvasImage=null;
+						btnDecodePressed();
+					}else{
+						alert("Lines ready, decoding points");
+						secondCanvas.middlePointCoordsFromRectangle();
+						redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+						secondCanvas.middlePointColorsFromRectangle();
+						redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+						document.getElementById("txtImpresionismArts").value=divideComma3(secondCanvas.strColors);
+						btnDecodePressed();	
+					}
+				};
+				btnLinesFromRectangle.id="btnLinesFromRectangle";
+				btnLinesFromRectangle.innerHTML="Lines From Rectangle in reading direction";
+				btnLinesFromRectangle.style=style="width:200px;height:50px";
+				btnLinesFromRectangle.onclick=function(){
+					secondCanvas.blnLinesFromRectangle=true;
+					alert("Please click four points by drawing a border rectangle in a reading direction. Click points inside most outer squares, so that the line can read color transitions. You can always remove last incorrect line by pressing backspace and cancel all by pressing esc in all the modes.");
+					divPreviewControls.removeChild(btnLinesFromRectangle);
+					var btnCorrectLines=document.createElement("button");
+					btnCorrectLines.id="btnCorrectLines";
+					btnCorrectLines.innerHTML="Correct Points";
+					btnCorrectLines.style=style="width:200px;height:50px";
+					btnCorrectLines.onclick=function(){
+						if("Correct Points"==btnCorrectLines.innerHTML)
+						{
+							btnDrawAveragedPoints=document.createElement("button");
+							btnDrawAveragedPoints.id="btnDrawAveragedPoints";
+							btnDrawAveragedPoints.innerHTML="Draw Estimated Points [1,n-1]";
+							btnDrawAveragedPoints.style=style="width:200px;height:50px";
+							btnDrawAveragedPoints.onclick=function(){
+								secondCanvas.computeAveragedPointsLines();	
+							};
+							if(null==document.getElementById("btnDrawAveragedPoints"))
+								divPreviewControls.appendChild(btnDrawAveragedPoints);
+							alert("Correct the border points. Click on the point to remove it, click on the empty space to put the point there. Remember, these are the border points to compute the border lines - the point should be placed exactly on the the adjecent squares border");
+							var btnFinishCorrectingPoints=document.createElement("button");
+							divPreviewControls.removeChild(btnCorrectLines);
+							btnFinishCorrectingPoints.id="btnFinishCorrectingPoints";
+							btnFinishCorrectingPoints.innerHTML="Finish correcting points and compute inner lines";
+							btnFinishCorrectingPoints.style=style="width:200px;height:50px";
+							divPreviewControls.appendChild(btnFinishCorrectingPoints);
+							btnFinishCorrectingPoints.onclick=function(){
+								divPreviewControls.removeChild(btnFinishCorrectingPoints);
+								divPreviewControls.appendChild(btnCorrectLines);
+								btnCorrectLines.innerHTML="Correct Lines";
+								secondCanvas.linesFromRectangleAndPoints();
+							};
+							secondCanvas.blnCorrectPoints=true;
+						}else{
+							var btnFinishCorrectingLines=document.createElement("button");
+							divPreviewControls.removeChild(btnCorrectLines);
+							btnFinishCorrectingLines.id="btnFinishCorrectingLines";
+							btnFinishCorrectingLines.innerHTML="Go back to line add mode";
+							btnFinishCorrectingLines.style=style="width:200px;height:50px";
+							divPreviewControls.appendChild(btnFinishCorrectingLines);
+							btnFinishCorrectingLines.onclick=function(){
+								divPreviewControls.removeChild(btnFinishCorrectingLines);
+								divPreviewControls.appendChild(btnCorrectLines);
+							};
+							secondCanvas.lineNumberToCorrect=-1;
+							secondCanvas.blnCorrectLines=true;
+							secondCanvas.blnLinesFromRectangle=false;
+							secondCanvas.blnLineDrawing=false;
+							alert("Press button and drag the line to move it. To move only the line starting, ending point press near that point");
+						}
+					};
+					divPreviewControls.appendChild(btnCorrectLines);
+				};
+				divPreviewControls.appendChild(btnLinesDone);
+				divPreviewControls.appendChild(btnLinesFromRectangle);
+				secondCanvas.strLinesStyle="rgba(0,0,0,255)";
+				secondCanvas.strLinesHighlightStyle="rgba(255,100,0,255)";
+				secondCanvas.blnLineDrawing=false;
+				secondCanvas.blnLinesFromRectangle=false;
+				secondCanvas.blnDrawPerspectiveLines=false;
+				secondCanvas.blnCorrectLines=false;
+				secondCanvas.blnCorrectPoints=false;
+				secondCanvas.lineNumberToCorrect=-1;
+				secondCanvas.intX0=null;
+				secondCanvas.intY0=null;
+				secondCanvas.arrRowLines=[];
+				secondCanvas.arrColLines=[];
+				secondCanvas.lineToCorrect=null;
+				secondCanvas.endpointToCorrect=-1;
+				secondCanvas.arrMiddlePoints=[];
+				secondCanvas.theZoom=1.;
+				secondCanvas.theZoomFactor=0.01;
+				secondCanvas.theZoomTranslate=[0,0];
+				secondCanvas.decodeTriples=null;
+				secondCanvas.antialiasingPrecision=1.;
+				secondCanvas.pixelPrecision=1.;
+				secondCanvas.clickPrecision=3.;
+				secondCanvas.strColors="";
+				secondCanvas.debugCircles=[];
+				secondCanvas.debugLines=[];
+				secondCanvas.l0Points=null;
+				secondCanvas.l1Points=null;
+				secondCanvas.l2Points=null;
+				secondCanvas.l3Points=null;
+				secondCanvas.arrRectangle=[];
+				secondCanvas.correctedPoints=null;
+				secondCanvas.scanCallbackArgs=null;
+				secondCanvas.arrColorRelations=null;
+				secondCanvas.colorRelationsPrecision=0.0001;
+				secondCanvas.EuclidianDistancePrecision=5;
+				secondCanvas.EuclidianDistancePrecision2=1;
+				secondCanvas.blnBackwardTried=false;
+				secondCanvas.lstNotRecognizedColors=null;
+				secondCanvas.tmpNotRecognizedColors=null;
+				secondCanvas.blnCanvasKeyboard=true;
+				secondCanvas.decodeTriple=null;
+				secondCanvas.middlePointColorsFromRectangle=function(){
+					var pnt=null;
+					var intRowLines=secondCanvas.arrRowLines.length;
+					var intColLines=secondCanvas.arrColLines.length;
+					var textureWidth=secondCanvas.width;
+					var textureHeight=secondCanvas.height;
+        				var secondContext =secondCanvas.getContext("2d");
+					var imageData=secondCanvas.theImageData;
+					var index=null;
+					var intR,intG,intB,intAlpha,intColorNumber;
+					for (var j=0;j<secondCanvas.arrRowLines.length-1;j++)
+						for (var i=0;i<secondCanvas.arrColLines.length-1;i++){
+							pnt=secondCanvas.arrMiddlePoints[ij_(secondCanvas.arrColLines.length-1-1-i,j,secondCanvas.arrColLines.length-1,secondCanvas.arrRowLines.length-1)];
+                   					index=(parseInt(pnt[1])*textureWidth+parseInt(pnt[0]))*4;
+                   					intR=imageData.data[index+0];
+                   					intG=imageData.data[index+1];
+                   					intB=imageData.data[index+2];
+                   					intAlpha=imageData.data[index+3];
+							intColorNumber=estimateColorNumber([intR,intG,intB,intAlpha]);
+							if(-1!=intColorNumber)
+								secondCanvas.strColors+=intColorNumber;
+							else{
+								if(null!=secondCanvas.lstNotRecognizedColors){
+									intColorNumber=secondCanvas.estimateColorNumberTryAgain([intR,intG,intB,intAlpha],secondCanvas.lstNotRecognizedColors);
+							}
+							if(-1==intColorNumber){
+								secondCanvas.strColors+="'";
+								var strText=txtImpresionismPreview.value;
+								if(null==secondCanvas.tmpNotRecognizedColors)secondCanvas.tmpNotRecognizedColors=[];
+								if(false==secondCanvas.colorInList([intR,intG,intB,intAlpha],secondCanvas.tmpNotRecognizedColors)){
+									secondCanvas.tmpNotRecognizedColors.push([[intR,intG,intB,intAlpha],-1]);
+									txtImpresionismPreview.value+=String.fromCharCode(10)+("["+intR+","+intG+","+intB+","+intAlpha+"]=");
+								}
+								var btnTryAgain=document.createElement("button");
+								btnTryAgain.id="btnTryAgain";
+								btnTryAgain.innerHTML="Try Again";
+								btnTryAgain.style=style="width:200px;height:50px";
+								if(null==document.getElementById("btnTryAgain"))
+									divPreviewControls.appendChild(btnTryAgain);
+								btnTryAgain.onclick=function(){
+									secondCanvas.strColors="";
+									var strText=document.getElementById("txtImpresionismPreview").value;
+									secondCanvas.lstNotRecognizedColors=secondCanvas.notRecognizedColorsTextToList(strText);
+									secondCanvas.middlePointColorsFromRectangle();
+									redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+									document.getElementById("txtImpresionismArts").value=divideComma3(secondCanvas.strColors);
+									btnDecodePressed();	
+								}
+							}
+								else secondCanvas.strColors+=intColorNumber;
+							}
+						}
+				};
+				secondCanvas.notRecognizedColorsTextToList=function(strText){
+					var lstList=[];
+					var lstColor=[];
+					var intTable=strText.indexOf("[");
+					if(-1==intTable)return lstList;
+					strText=strText.substring(intTable);
+					var lstTxt=strText.split(String.fromCharCode(10));
+					secondCanvas.lstNotRecognizedColors=[];
+					var lstColor,intColor;
+					for(var i=0;i<lstTxt.length;i++){
+						intColor=parseInt(lstTxt[i].split("=")[1]);	
+						if(true==Number.isNaN(intColor)){
+							continue;
+						}
+						tmpTxt=lstTxt[i].split("=")[0];
+						tmpTxt=tmpTxt.substring(tmpTxt.indexOf("[")+1,tmpTxt.indexOf("]"));
+						tmpLstTxt=tmpTxt.split(",");
+						lstColor=[];
+						for(var j=0;j<tmpLstTxt.length;j++) lstColor.push(parseInt(tmpLstTxt[j]));
+						if(false==secondCanvas.colorInList(lstColor,lstList))lstList.push([lstColor,intColor]);
+						}
+					return lstList;
+				};
+				secondCanvas.colorInList=function(lstColor,lstList){
+					var tmpColor=null;
+					for(var i=0;i<lstList.length;i++){
+						tmpColor=lstList[i][0];
+						if((lstColor[0]==tmpColor[0])&&(lstColor[1]==tmpColor[1])&(lstColor[2]==tmpColor[2])&&(lstColor[3]==tmpColor[3])) return true;
+					}
+					return false;
+
+				};
+				secondCanvas.estimateColorNumberTryAgain=function(theColor,lstAdditionalColors){
+					var intColor=estimateColorNumber(theColor);
+					if (-1!=intColor) return intColor;
+					for(var ii=0;ii<lstAdditionalColors.length;ii++)
+						if((theColor[0]==lstAdditionalColors[ii][0][0])&&(theColor[1]==lstAdditionalColors[ii][0][1])&&(theColor[2]==lstAdditionalColors[ii][0][2])) return lstAdditionalColors[ii][1];
+					return -1;
+
+
+				};
+				secondCanvas.linesIntersectionPoint=function(line0,line1){
+					var a0,a1,b0,b1;
+					if(Math.abs(line0[0]-line0[2])<Epsilon){
+						if(Math.abs(line1[0]-line1[2])<Epsilon){
+							if(Math.abs(line0[0]-line1[0])<Epsilon)
+								return "allpoints";
+							else return "nopoints";
+						}
+						
+						a1=(line1[3]-line1[1])/(line1[2]-line1[0]);
+						b1=line1[1]-line1[0]*a1;
+						return[line0[0],a1*line0[0]+b1];
+					}
+					if(Math.abs(line1[0]-line1[2])<Epsilon){
+						if(Math.abs(line0[0]-line0[2])<Epsilon){
+							if(Math.abs(line1[0]-line0[0])<Epsilon)
+								return "allpoints";
+							else return "nopoints";
+						}
+						
+						a0=(line0[3]-line0[1])/(line0[2]-line0[0]);
+						b0=line0[1]-line0[0]*a0;
+						return[line1[0],a0*line1[0]+b0];
+					}
+					a0=(line0[3]-line0[1])/(line0[2]-line0[0]);
+					b0=line0[1]-line0[0]*a0;
+					a1=(line1[3]-line1[1])/(line1[2]-line1[0]);
+					b1=line1[1]-line1[0]*a1;
+					if(Math.abs(a1-a0)<Epsilon)
+						if(Math.abs(b1-b0)<Epsilon) return "allpoints";
+						else return "nopoints";
+					return [(b1-b0)/(a0-a1),a0*((b1-b0)/(a0-a1))+b0];
+				};
+				secondCanvas.middlePointCoordsFromRectangle=function(){
+					var intRowLines=secondCanvas.arrRowLines.length;
+					var intColLines=secondCanvas.arrColLines.length;
+					secondCanvas.arrMiddlePoints=[];
+					var lx0,lx1,ly0,ly1;
+					var intX0,intY0,intX1,intY1;
+					var intX0bis,intY0bis,intX1bis,intY1bis;
+					for (var j=0;j<intRowLines-1;j++)
+						for (var i=0;i<intColLines-1;i++){
+							lx0=secondCanvas.arrColLines[intColLines-1-i];
+							lx1=secondCanvas.arrColLines[intColLines-1-(i+1)];
+							ly0=secondCanvas.arrRowLines[j];
+							ly1=secondCanvas.arrRowLines[j+1];
+							[intX0,intY0]=secondCanvas.linesIntersectionPoint(lx0,ly0);
+							[intX1,intY0bis]=secondCanvas.linesIntersectionPoint(lx1,ly0);
+							[intX1bis,intY1]=secondCanvas.linesIntersectionPoint(lx1,ly1);
+							[intX0bis,intY1bis]=secondCanvas.linesIntersectionPoint(lx0,ly1);
+							secondCanvas.intX0=0.5*(0.5*(intX0+intX0bis)+0.5*(intX1+intX1bis));
+							secondCanvas.intY0=0.5*(0.5*(intY0+intY0bis)+0.5*(intY1+intY1bis));
+							secondCanvas.arrMiddlePoints.push([secondCanvas.intX0,secondCanvas.intY0]);
+						}
+
+				};
+				secondCanvas.computeLineAB=function(theLine){
+					if(Math.abs(theLine[2]-theLine[0])<Epsilon){
+						return[null,null];
+					}
+					a=(theLine[3]-theLine[1])/(theLine[2]-theLine[0]);	
+					b=theLine[1]-theLine[0]*a;
+					return [a,b];
+				};
+				secondCanvas.computeLineY=function(theLine,x){
+					var a,b;
+					[a,b]=secondCanvas.computeLineAB(theLine);
+					return secondCanvas.computeLineABY(a,b,x);
+				};
+				secondCanvas.computeLineABY=function(a,b,x){
+					if(null==a)return null;
+					return a*x+b;
+				};
+
+				secondCanvas.getColorAtXY=function(x,y){
+					var textureWidth=secondCanvas.width;
+					var textureHeight=secondCanvas.height;
+        				var secondContext =secondCanvas.getContext("2d");
+					var imageData=secondContext.getImageData(0,0,textureWidth,textureHeight);
+					var intR,intG,intB,intAlpha;
+					var index=0;
+                   			index=(y*textureWidth+x)*4;
+					return [imageData.data[index+0],imageData.data[index+1],imageData.data[index+2],imageData.data[index+3]];
+				};
+				secondCanvas.relationCloseTo=function(theRelation1,theRelation2){
+					if((true==Number.isNaN(theRelation1))&&(true==Number.isNaN(theRelation2)))
+						return true;
+					if(theRelation1==theRelation2){
+						alert("theRelation1==theRelation2");
+						return true;
+					}
+					if(Math.abs(theRelation1-theRelation2)<secondCanvas.colorRelationPrecision){
+
+						return true;
+					}
+					return false;
+				};
+				secondCanvas.getMaxStat=function(theColorsStats){
+					var prevStat=0;
+					var intMaxII=-1;
+					var fltStat;
+					for(var ii=0;ii<theColorsStats.length;ii++){
+						fltStat=theColorsStats[ii][1];
+						if(fltStat>=prevStat){
+							intMaxII=ii;
+							fltStat=prevStat;
+						}
+					}
+					return intMaxII;
+				};
+				secondCanvas.findColorStat=function(theColor,theColorsStats){
+					for(var ii=0;ii<theColorsStats.length;ii++){
+						if(theColor==theColorsStats[ii][0]){
+							return ii;
+						}
+					}
+					return -1;
+				};
+				secondCanvas.computeColorsStatistics=function(intColors){
+					var theColor=null;
+					var theColorCount=0;
+					var theColorsStats=[];
+					var ii=-1;
+					for(var j=0;j<intColors.length;j++){
+						theColor=intColors[j];
+						theColorCount=0;
+						for(var i=0;i<intColors.length;i++)
+						{
+							if(theColor==intColors[i])
+								theColorCount++;
+						}
+						ii=secondCanvas.findColorStat(theColor,theColorsStats);
+						if(-1==ii){
+							theColorsStats.push([theColor,theColorCount]);
+						}
+					}
+					var statsSize=theColorsStats.length;
+					for(var ii=0;ii<statsSize;ii++)
+						theColorsStats[ii][1]/=statsSize;
+					return theColorsStats;
+				};
+				secondCanvas.averagedColor=function(scannedColors){
+					var lstColor=[];
+					var fltAverage=0.;
+					for(var j=0;j<3;j++){
+						fltAverage=0.;
+						for(var i=0;i<scannedColors.length;i++){
+							fltAverage+=(1.0)*scannedColors[i][j];
+						}
+						fltAverage/=scannedColors.length;
+						lstColor.push(fltAverage);
+					}
+					return lstColor;
+				};
+				secondCanvas.scanCallbackPlusAverage=function(x,y,scannedColors){
+					var lstColor=null;
+					var intColor=null;
+					lstColor=secondCanvas.averagedColor(scannedColors);
+					intColor=estimateColorNumber(lstColor);
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+						}
+					}
+				};
+				secondCanvas.EuclidianDistance=function(pnt0,pnt1){
+					return Math.sqrt((pnt1[0]-pnt0[0])*(pnt1[0]-pnt0[0])+(pnt1[1]-pnt0[1])*(pnt1[1]-pnt0[1]));
+				};
+				secondCanvas.scanCallbackPlusAverageDistaceFilterPrecomputedInterval=function(x,y,scannedColors){
+					var precomputedLine=secondCanvas.scanCallbackArgs.lstPrecomputedLines[secondCanvas.scanCallbackArgs.intLineNumber];
+					var lstColor=null;
+					var intColor=null;
+					var index=null;
+					for(var ii=1;ii<2;ii++){
+						index=secondCanvas.scanCallbackArgs.intLineCounter+ii;
+						if(index<precomputedLine.length)
+							scannedColors.push(precomputedLine[index]);
+					}
+					lstColor=secondCanvas.averagedColor(scannedColors);
+					intColor=estimateColorNumber(lstColor);
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							prevPoint=secondCanvas.scanCallbackArgs.lPoints[secondCanvas.scanCallbackArgs.lPoints.length-1];
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							if(secondCanvas.EuclidianDistance(prevPoint,[x,y])>secondCanvas.clickPrecision){
+								secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+							}
+						}
+					}
+
+				};
+				secondCanvas.scanCallbackPlusAverageDistaceFilter=function(x,y,scannedColors){
+					var lstColor=null;
+					var intColor=null;
+					lstColor=secondCanvas.averagedColor(scannedColors);
+					intColor=estimateColorNumber(lstColor);
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							prevPoint=secondCanvas.scanCallbackArgs.lPoints[secondCanvas.scanCallbackArgs.lPoints.length-1];
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							if(secondCanvas.EuclidianDistance(prevPoint,[x,y])>secondCanvas.clickPrecision){
+								secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+							}
+						}
+					}
+				};
+				secondCanvas.scanCallbackPlusDistaceFilter=function(x,y,scannedColors){
+					var intColors=[];
+					var intColor=null;
+					var prevPoint=null;
+					for(var ii=0;ii<scannedColors.length;ii++){
+						intColor=estimateColorNumber(scannedColors[ii]);
+						if(null!=intColor)
+							intColors.push(intColor);
+					}
+					var theColorsStats=secondCanvas.computeColorsStatistics(intColors);
+					var intMaxII=secondCanvas.getMaxStat(theColorsStats);
+					intColor=intColors[intMaxII];
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							prevPoint=secondCanvas.scanCallbackArgs.lPoints[secondCanvas.scanCallbackArgs.lPoints.length-1];
+								secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+								secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+						}
+					}
+				};
+				secondCanvas.scanCallbackPlus=function(x,y,scannedColors){
+					var intColors=[];
+					var intColor=null;
+					for(var ii=0;ii<scannedColors.length;ii++){
+						intColor=estimateColorNumber(scannedColors[ii]);
+						if(null!=intColor)
+							intColors.push(intColor);
+					}
+					var theColorsStats=secondCanvas.computeColorsStatistics(intColors);
+					var intMaxII=secondCanvas.getMaxStat(theColorsStats);
+					intColor=intColors[intMaxII];
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+						secondCanvas.scanCallbackArgs.lPoints.push[[x,y]];
+					}else{
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+						}
+					}
+
+				};
+				secondCanvas.readLine=function(x,y,scannedColor){
+					secondCanvas.scanCallbackArgs.lPoints.push(scannedColor[0]);
+				};
+				secondCanvas.scanCallbackPointDistance=function(x,y,scannedColor){
+					var intR,intG,intB,intAlpha;
+					var prevPoint;
+					[intR,intG,intB,intAlpha]=scannedColor[0];
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=estimateColorNumber([intR,intG,intB,intAlpha]);
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						var intColor=estimateColorNumber([intR,intG,intB,intAlpha]);
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							prevPoint=secondCanvas.scanCallbackArgs.lPoints[secondCanvas.scanCallbackArgs.lPoints.length-1];
+							if(secondCanvas.EuclidianDistance(prevPoint,[x,y])>=secondCanvas.EuclidianDistancePrecision){
+							secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+							}
+						}
+					}
+				};
+				secondCanvas.scanCallbackPoint=function(x,y,scannedColor){
+					var intR,intG,intB,intAlpha;
+					[intR,intG,intB,intAlpha]=scannedColor[0];
+					if(null==secondCanvas.scanCallbackArgs.scanPreviousColor)
+					{
+						secondCanvas.scanCallbackArgs.scanPreviousColor=estimateColorNumber([intR,intG,intB,intAlpha]);
+						secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+					}else{
+						var intColor=estimateColorNumber([intR,intG,intB,intAlpha]);
+						if(secondCanvas.scanCallbackArgs.scanPreviousColor!=intColor){
+							secondCanvas.scanCallbackArgs.scanPreviousColor=intColor;
+							secondCanvas.scanCallbackArgs.lPoints.push([x,y]);
+						}
+					}
+				};
+				secondCanvas.computeColorRelations=function(){
+					var theRG, theRB, theGB;
+					var theColor;
+					secondCanvas.arrColorRelations=[];
+					for(var ii=0;ii<10;ii++){
+						theColor=lstColors[ii];
+						theRG=theColor[0]/theColor[1];
+						theRB=theColor[0]/theColor[2];
+						theGB=theColor[1]/theColor[2];
+						secondCanvas.arrColorRelations.push([theRG,theRB,theGB]);
+					}
+				};
+				secondCanvas.precomputeLines=function(l0,l1,l2,l3){
+					var lstPrecomputedLines=[];
+					var lstPrecomputedLine=[];
+					secondCanvas.scanCallbackArgs.theScanRadius=1;
+					var scanCallback_=secondCanvas.readLine;
+					secondCanvas.scanCallbackArgs.theScanRadius=1;
+					secondCanvas.scanCallbackArgs.lPoints=lstPrecomputedLine;
+					secondCanvas.scanLine(l0[0],l0[1],l0[2],l0[3],secondCanvas.strLinesStyle,scanCallback_);
+					lstPrecomputedLines.push(lstPrecomputedLine);
+					lstPrecomputedLine=[];
+					secondCanvas.scanCallbackArgs.lPoints=lstPrecomputedLine;
+					secondCanvas.scanLine(l1[0],l1[1],l1[2],l1[3],secondCanvas.strLinesStyle,scanCallback_);
+					lstPrecomputedLines.push(lstPrecomputedLine);
+					lstPrecomputedLine=[];
+					secondCanvas.scanCallbackArgs.lPoints=lstPrecomputedLine;
+					secondCanvas.scanLine(l2[0],l2[1],l2[2],l2[3],secondCanvas.strLinesStyle,scanCallback_);
+					lstPrecomputedLines.push(lstPrecomputedLine);
+					lstPrecomputedLine=[];
+					secondCanvas.scanCallbackArgs.lPoints=lstPrecomputedLine;
+					secondCanvas.scanLine(l3[0],l3[1],l3[2],l3[3],secondCanvas.strLinesStyle,scanCallback_);
+					lstPrecomputedLines.push(lstPrecomputedLine);
+					return lstPrecomputedLines;
+				};
+				secondCanvas.findPointEuclidianDistance=function(pnt,lstPoints,fltDistance){
+					for(var ii=0;ii<lstPoints.length;ii++)
+						if(secondCanvas.EuclidianDistance(pnt,lstPoints[ii])<=fltDistance) return ii;
+					return -1;
+				};
+				secondCanvas.scanRectangle=function(){
+					var arrRectangle=secondCanvas.arrRectangle;
+					secondCanvas.computeColorRelations();
+					secondCanvas.scanCallbackArgs={};
+					secondCanvas.l0Points=[];
+					secondCanvas.l1Points=[];
+					secondCanvas.l2Points=[];
+					secondCanvas.l3Points=[];
+					secondCanvas.correctedPoints=[];
+					var l0=arrRectangle[0];
+					var l1=arrRectangle[1];
+					var l2=arrRectangle[2];
+					var l3=arrRectangle[3];
+					secondCanvas.scanCallbackArgs.scanPreviousColor=null;
+					/*var scanCallback_=secondCanvas.scanCallbackPoint;*/
+					var scanCallback_=secondCanvas.scanCallbackPointDistance;
+					/*var scanCallback_=secondCanvas.scanCallbackPlus;*/
+					/*var scanCallback_=secondCanvas.scanCallbackPlusAverage;*/
+					/*var scanCallback_=secondCanvas.scanCallbackPlusAverageDistaceFilter;*/
+					/*var scanCallback_=secondCanvas.scanCallbackPlusAverageDistaceFilterPrecomputedInterval;*/
+					secondCanvas.scanCallbackArgs.lstPrecomputedLines=secondCanvas.precomputeLines(l0,l1,l2,l3);
+					secondCanvas.scanCallbackArgs.theScanRadius=1;
+					/*secondCanvas.scanCallbackArgs.theScanRadius="plus";*/
+					/*secondCanvas.scanCallbackArgs.theScanRadius="bigplus";*/
+					/*secondCanvas.scanCallbackArgs.theScanRadius="square";*/
+					/*secondCanvas.scanCallbackArgs.theScanRadius="square";*/
+					/*secondCanvas.scanCallbackArgs.squareRadius="precomputedInterval";*/
+					secondCanvas.scanCallbackArgs.intLineCounter=0;
+					secondCanvas.scanCallbackArgs.intLineNumber=0;
+					secondCanvas.scanCallbackArgs.lPoints=secondCanvas.l0Points;
+					secondCanvas.scanLine(l0[0],l0[1],l0[2],l0[3],secondCanvas.strLinesStyle,scanCallback_);
+					secondCanvas.scanCallbackArgs.intLineCounter=0;
+					secondCanvas.scanCallbackArgs.intLineNumber=1;
+					secondCanvas.scanCallbackArgs.scanPreviousColor=null;
+					secondCanvas.scanCallbackArgs.lPoints=secondCanvas.l1Points;
+					secondCanvas.scanLine(l1[0],l1[1],l1[2],l1[3],secondCanvas.strLinesStyle,scanCallback_);
+					secondCanvas.scanCallbackArgs.intLineCounter=0;
+					secondCanvas.scanCallbackArgs.intLineNumber=2;
+					secondCanvas.scanCallbackArgs.scanPreviousColor=null;
+					secondCanvas.scanCallbackArgs.lPoints=secondCanvas.l2Points;
+					secondCanvas.scanLine(l2[0],l2[1],l2[2],l2[3],secondCanvas.strLinesStyle,scanCallback_);
+					secondCanvas.scanCallbackArgs.intLineCounter=0;
+					secondCanvas.scanCallbackArgs.intLineNumber=3;
+					secondCanvas.scanCallbackArgs.scanPreviousColor=null;
+					secondCanvas.scanCallbackArgs.lPoints=secondCanvas.l3Points;
+					secondCanvas.scanLine(l3[0],l3[1],l3[2],l3[3],secondCanvas.strLinesStyle,scanCallback_);
+					secondCanvas.scanCallbackArgs.scanPreviousColor=null;
+					secondCanvas.scanCallbackArgs.lPoints=null;
+					redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+					var ii=-1;
+					var theLine=null;
+					var thePointsLists=[secondCanvas.l0Points,secondCanvas.l1Points,secondCanvas.l2Points,secondCanvas.l3Points];
+					for(var j=0;j<4;j++)
+						for(var i=0;i<4;i++){
+						theLine=arrRectangle[i];
+						ii=secondCanvas.findPointEuclidianDistance([theLine[0],theLine[1]],thePointsLists[j],secondCanvas.EuclidianDistancePrecision);
+						if(-1!=ii)thePointsLists[j].splice(ii,1);
+						ii=secondCanvas.findPointEuclidianDistance([theLine[2],theLine[3]],thePointsLists[j],secondCanvas.EuclidianDistancePrecision);
+						if(-1!=ii)thePointsLists[j].splice(ii,1);
+					}
+					var btnCorrectLines=document.getElementById("btnCorrectLines");
+					clickComponent(btnCorrectLines);
+				};
+				secondCanvas.computeAverages=function(theLine,theLinePoints){
+					var realLinePoints=[];
+					var lineLength=theLinePoints.length;
+					var lineEuclidianLength;
+					realLinePoints.push([theLine[0],theLine[1]]);
+					for(var ii=0;ii<lineLength;ii++){
+						realLinePoints.push(theLinePoints[ii]);
+					}
+					realLinePoints.push([theLine[2],theLine[3]]);
+					var realLineLength=realLinePoints.length;
+					secondCanvas.quicklySortLine(realLinePoints,[theLine[0],theLine[1]]);
+					var dxLineAverage=0,dyLineAverage=0;
+					var averagesCounter=0;
+					for(var ii=2;ii<realLineLength-1;ii++){
+						dxLineAverage+=Math.abs(realLinePoints[ii][0]-realLinePoints[ii-1][0])+secondCanvas.clickPrecision;
+						dyLineAverage+=Math.abs(realLinePoints[ii][1]-realLinePoints[ii-1][1])+secondCanvas.clickPrecision;
+						averagesCounter++;
+					}
+					lineEuclidianLength=secondCanvas.EuclidianDistance([theLine[0],theLine[1]],[theLine[2],theLine[3]]);
+					dxLineAverage/=(averagesCounter);
+					dyLineAverage/=(averagesCounter);
+					return [[dxLineAverage,dyLineAverage],realLinePoints];
+				};
+				secondCanvas.computeAveragedPointsBackward=function(theLine,realLinePoints,lstAverages){
+					if(false==secondCanvas.blnBackwardTried){
+						secondCanvas.blnBackwardTried=true;
+						secondCanvas.flipTheLinesAndPoints(theLine,realLinePoints,lstAverages);
+						return secondCanvas.computeAveragedPointsForward(theLine,realLinePoints,lstAverages);
+					}
+					return;
+				};
+				secondCanvas.flipTheLinesAndPoints=function(theLine,realLinePoints,lstAverages){
+					theLine=[theLine[2],theLine[3],theLine[0],theLine[1]];
+					var realLineLength=realLinePoints.length;
+					var lstAveragesLength=lstAverages.length;
+					var tmpLinePoints=[],tmpAverages=[];
+					for(var ii=0;ii<realLineLength;ii++)
+						tmpLinePoints.push(realLinePoints[ii]);
+					for(var ii=0;ii<realLineLength;ii++)
+						realLinePoints[ii]=tmpLinePoints[realLineLength-1-ii];
+					return [theLine,realLinePoints,lstAverages];
+
+				};
+				secondCanvas.findPrevDxDy=function(ii,theLine,realLinePoints,lstAverages){
+					var prevDx,prevDy;
+					var dxLineAverage,dyLineAverage;
+					var retLst=null;
+					[dxLineAverage,dyLineAverage]=lstAverages;
+					if(0>ii-2) {
+						secondCanvas.computeAveragedPointsBackward(theLine,realLinePoints,lstAverages);		
+						return null;
+					}
+					prevDx=realLinePoints[ii-1][0]-realLinePoints[ii-2][0];
+					prevDy=realLinePoints[ii-1][1]-realLinePoints[ii-2][1];
+					if(Math.sqrt(prevDx**2+prevDy**2)>Math.sqrt(dxLineAverage**2+dyLineAverage**2)){
+						retLst=secondCanvas.findPrevDxDy(ii-1,theLine,realLinePoints,lstAverages);
+					}else retLst=[prevDx,prevDy,ii];
+					return retLst;
+				};
+				secondCanvas.computeAveragedPointsForward=function(theLine,realLinePoints,lstAverages){
+					var dxLineAverage,dyLineAverage;
+					[dxLineAverage,dyLineAverage]=lstAverages;
+					var pDx,pDy;
+					var lDx,lDy;
+					var prevPointX=theLine[0];
+					var prevPointY=theLine[1];
+					var prevDx=-1,prevDy=-1;
+					var lstPrevs,prevII;
+					var realLineLength=realLinePoints.length;
+					for(var ii=1;ii<realLineLength;ii++){
+						pDx=realLinePoints[ii][0]-realLinePoints[ii-1][0];
+						pDy=realLinePoints[ii][1]-realLinePoints[ii-1][1];
+						if(Math.sqrt(pDx**2+pDy**2)>Math.sqrt(dxLineAverage**2+dyLineAverage**2)){
+							lDx=0;lDy=0;
+							lstPrevs=secondCanvas.findPrevDxDy(ii,theLine,realLinePoints,lstAverages);
+							if(null==lstPrevs)
+								return;
+							[prevDx,prevDy,prevII]=lstPrevs;
+							lDx=0;lDy=0;
+							while(Math.sqrt(lDx**2+lDy**2)<Math.sqrt(pDx**2+pDy**2)){
+								lDx+=prevDx;
+								lDy+=prevDy;
+								if(Math.sqrt(lDx**2+lDy**2)<Math.sqrt(pDx**2+pDy**2)){
+									realLinePoints.push([realLinePoints[ii-1][0]+lDx,realLinePoints[ii-1][1]+lDy]);
+								}
+							}
+
+						}
+					}
+
+				};
+
+				secondCanvas.computeAveragedPointsLines=function(){
+					var l0=secondCanvas.arrRectangle[0];
+					var l1=secondCanvas.arrRectangle[1];
+					var l2=secondCanvas.arrRectangle[2];
+					var l3=secondCanvas.arrRectangle[3];
+					var l0Points=secondCanvas.l0Points;
+					var l1Points=secondCanvas.l1Points;
+					var l2Points=secondCanvas.l2Points;
+					var l3Points=secondCanvas.l3Points;
+					var [l0averages,realL0points]=secondCanvas.computeAverages(l0,l0Points);
+					var [l1averages,realL1points]=secondCanvas.computeAverages(l1,l1Points);
+					var [l2averages,realL2points]=secondCanvas.computeAverages(l2,l2Points);
+					var [l3averages,realL3points]=secondCanvas.computeAverages(l3,l3Points);
+					secondCanvas.blnBackwardTried=false;
+					secondCanvas.computeAveragedPointsForward(l0,realL0points,l0averages);
+					secondCanvas.blnBackwardTried=false;
+					secondCanvas.computeAveragedPointsForward(l1,realL1points,l1averages);
+					secondCanvas.blnBackwardTried=false;
+					secondCanvas.computeAveragedPointsForward(l2,realL2points,l2averages);
+					secondCanvas.blnBackwardTried=false;
+					secondCanvas.computeAveragedPointsForward(l3,realL3points,l3averages);
+					secondCanvas.quicksortRemoveDuplicatesAndCopyList(l0Points,realL0points,1,realL0points.length-2,[l0[0],l0[1]]);
+					secondCanvas.quicksortRemoveDuplicatesAndCopyList(l1Points,realL1points,1,realL1points.length-2,[l1[0],l1[1]]);
+					secondCanvas.quicksortRemoveDuplicatesAndCopyList(l2Points,realL2points,1,realL2points.length-2,[l2[0],l2[1]]);
+					secondCanvas.quicksortRemoveDuplicatesAndCopyList(l3Points,realL3points,1,realL3points.length-2,[l3[0],l3[1]]);
+					redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+				};
+				secondCanvas.quicksortRemoveDuplicatesAndCopyList=function(list0,list1,list1aprev,list1bprev,pnt0){
+					var listUnique=[];
+					var blnPntFound=false;
+					for(var i=0;i<list1.length;i++){
+						blnPntFound=false;
+						for(var j=0;j<listUnique.length;j++)
+							if(secondCanvas.EuclidianDistance(list1[i],listUnique[j])<secondCanvas.clickPrecision)blnPntFound=true;
+						if(false==blnPntFound)listUnique.push(list1[i]);
+					}
+					secondCanvas.quicklySortLine(listUnique,pnt0);
+					var list1a=1;
+					var list1b=listUnique.length-1;	
+					/*mov list0,list1*/
+					var jj=0;
+					for(var ii=list1a;ii<list1b;ii++)
+					{
+						list0[jj]=listUnique[ii];jj++;
+					}
+				};
+				secondCanvas.linesFromRectangleAndPoints=function(){
+					var arrRectangle=secondCanvas.arrRectangle;
+					var l0=arrRectangle[0];
+					var l1=arrRectangle[1];
+					var l2=arrRectangle[2];
+					var l3=arrRectangle[3];
+					secondCanvas.quicklySortLine(secondCanvas.l0Points,[l0[0],l0[1]]);
+					secondCanvas.quicklySortLine(secondCanvas.l1Points,[l1[0],l1[1]]);
+					secondCanvas.quicklySortLine(secondCanvas.l2Points,[l2[0],l2[1]]);
+					secondCanvas.quicklySortLine(secondCanvas.l3Points,[l3[0],l3[1]]);
+					var len0,len1,len2,len3;
+					var btnCorrectLines=document.getElementById("btnCorrectLines");
+					len0=secondCanvas.l0Points.length;
+					len2=secondCanvas.l2Points.length;
+					if(len0!=len2){
+						alert("On line 0 there are "+len0+ " points and on line 2 there are "+len2+ " points. Impossible to draw the inner square lines. Shifting to point correct mode.");
+					}
+					len1=secondCanvas.l1Points.length;
+					len3=secondCanvas.l3Points.length;
+					if(len1!=len3){
+						alert("On line 1 there are "+len1+ " points and on line 3 there are "+len3+ " points. Impossible to draw the inner square lines. Shifting to point correct mode.");
+					}
+					if((len0!=len2)||(len1!=len3)){
+						secondCanvas.blnCorrectPoints=true;
+						btnCorrectLines.innerHTML="Correct Points";
+						clickComponent(btnCorrectLines);
+						return;
+					}
+					var l1l3length=secondCanvas.l1Points.length;
+					if (l1l3length!=secondCanvas.l3Points.length){
+						alert("Something is still wrong - l1.length!=l3.length");
+						return;
+					}
+					var theX0,theY0,theX1,theY1;
+					secondCanvas.arrRowLines=[];
+					secondCanvas.arrRowLines.push(l0);
+					for(var ii=0;ii<(l1l3length);ii++){
+						theX0=secondCanvas.l3Points[secondCanvas.l3Points.length-1-ii][0];
+						theY0=secondCanvas.l3Points[secondCanvas.l3Points.length-1-ii][1];
+						theX1=secondCanvas.l1Points[ii][0];
+						theY1=secondCanvas.l1Points[ii][1];
+						secondCanvas.arrRowLines.push([theX0,theY0,theX1,theY1]);
+					}
+					secondCanvas.arrRowLines.push(l2);
+					var l0l2length=secondCanvas.l0Points.length;
+					if (l0l2length!=secondCanvas.l2Points.length){
+						alert("Something is still wrong - l0.length!=l2.length");
+						return;
+					}
+					var theX0,theY0,theX1,theY1;
+					secondCanvas.arrColLines=[];
+					secondCanvas.arrColLines.push(l3);
+					for(var ii=0;ii<(l0l2length);ii++){
+						theX0=secondCanvas.l0Points[ii][0];
+						theY0=secondCanvas.l0Points[ii][1];
+						theX1=secondCanvas.l2Points[secondCanvas.l2Points.length-1-ii][0];
+						theY1=secondCanvas.l2Points[secondCanvas.l2Points.length-1-ii][1];
+						secondCanvas.arrColLines.push([theX0,theY0,theX1,theY1]);
+					}
+					secondCanvas.arrColLines.push(l1);
+					redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+
+				};
+				secondCanvas.xchg=function(el0,el1){ 
+					return [el1,el0];
+				};
+				secondCanvas.lineQSdivision=function(lst,down,up,pnt0){
+    					var pivot = lst[up];
+    					var i=(down-1);
+    					for (var j=down;j<=up-1;j++){	 
+						if(secondCanvas.EuclidianDistance(lst[j],pnt0)<=secondCanvas.EuclidianDistance(pivot,pnt0)){ 
+            						i++;
+            						[lst[i],lst[j]]=secondCanvas.xchg(lst[i],lst[j]); 
+        					} 
+    					} 
+    					[lst[i+1],lst[up]]=secondCanvas.xchg(lst[i+1],lst[up]); 
+    					return (i+1); 
+				};
+				secondCanvas.lineQSquickSort=function(lst,down,up,pnt0){ 
+    					if (down<up){ 
+        					var pivot=secondCanvas.lineQSdivision(lst, down, up,pnt0); 
+        					secondCanvas.lineQSquickSort(lst, down, pivot-1,pnt0); 
+        					secondCanvas.lineQSquickSort(lst, pivot+1, up,pnt0); 
+    					} 
+				};
+				secondCanvas.quicklySortLine=function(lst,pnt0){ 
+    					var n=lst.length;
+    					secondCanvas.lineQSquickSort(lst, 0, n-1,pnt0); 
+				};
+				secondCanvas.linesFromRectangle=function(){
+					var arrRectangle=secondCanvas.arrRowLines;
+					var l0,l1,l2,l3;
+					l0=arrRectangle[0];
+					l1=arrRectangle[1];
+					l2=arrRectangle[2];
+					l3=[l2[2],l2[3],l0[0],l0[1]];
+					arrRectangle.push(l3);
+					l3=arrRectangle[3];
+					secondCanvas.drawLine(l3[0],l3[1],l3[2],l3[3],secondCanvas.strLinesStyle);	
+					secondCanvas.arrRectangle=arrRectangle;
+					alert("Rectangle done;");
+					secondCanvas.scanRectangle();
+				};
+				secondCanvas.drawCircle=function(intX,intY,intR,strColorStyle){
+
+					var secondContext=secondCanvas.getContext('2d');
+					secondContext.beginPath();
+					secondContext.arc(intX, intY, intR, 0, 2 * Math.PI, false);
+					secondContext.fillStyle=strColorStyle;
+					secondContext.fill();
+				};
+				secondCanvas.putpixel=function(intX,intY,strColorStyle){
+					var secondContext=secondCanvas.getContext('2d');
+					var intR,intG,intB,intAlpha;
+					var imageData=secondCanvas.theImageData;
+					var textureWidth=secondCanvas.width;
+					var textureHeight=secondCanvas.height;
+					[intR,intG,intB,intAlpha]=secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight);
+					if((0==intR)&&(0==intG)&&(0==intB))
+						secondContext.fillStyle=secondCanvas.strLinesHighlightStyle;
+					else secondContext.fillStyle=strColorStyle;
+					secondContext.fillRect(intX,intY,1,1);
+				};
+				secondCanvas.drawLine0=function(intX0,intY0,intX1,intY1,strColorStyle){
+    					var dX=intX1-intX0;
+    					var dY=intY1-intY0;
+    					var intYi=1;
+    					if(dY<0){
+        					intYi=-1;
+        					dY=-dY;
+    					}
+    					var d=2*dY-dX;
+    					var intY =intY0;
+
+					for(var intX=intX0;intX<=intX1;intX++){
+						secondCanvas.putpixel(intX,intY,strColorStyle);
+        				if(d>0){
+               					intY=intY+intYi;
+               					d=d-2*dX;
+					}
+        				d=d+2*dY;
+					}
+				};
+				secondCanvas.drawLine1=function(intX0,intY0,intX1,intY1,strColorStyle){
+    					var dX=intX1-intX0;
+    					var dY=intY1-intY0;
+    					var intXi=1;
+    					if(dX<0){
+        					intXi=-1;
+        					dX=-dX;
+    					}
+    					var d=2*dX-dY;
+    					var intX=intX0;
+
+					for(var intY=intY0;intY<=intY1;intY++){
+						secondCanvas.putpixel(intX,intY,strColorStyle);
+        					if(d>0){
+               						intX=intX+intXi;
+               						d=d-2*dY;
+						}
+        					d=d+2*dX;
+						}
+				};
+				secondCanvas.drawLine=function(intX0,intY0,intX1,intY1,strColorStyle){
+					if(Math.abs(intY1-intY0)<=Math.abs(intX1-intX0)){
+        					if(intX0>=intX1)
+            						secondCanvas.drawLine0(intX1,intY1,intX0,intY0,strColorStyle);
+        					else secondCanvas.drawLine0(intX0,intY0,intX1,intY1,strColorStyle);
+					}else{
+							if(intY0>=intY1)
+            						secondCanvas.drawLine1(intX1,intY1,intX0,intY0,strColorStyle);
+        					else secondCanvas.drawLine1(intX0,intY0,intX1,intY1,strColorStyle);
+					}
+				};
+				secondCanvas.scanpixelCore=function(intX,intY,imageData,textureWidth,textureHeight){
+					var intR,intG,intB,intAlpha;
+					var index=0;
+                   			index=(intY*textureWidth+intX)*4;
+                   			intR=imageData.data[index+0];
+                   			intG=imageData.data[index+1];
+                   			intB=imageData.data[index+2];
+                   			intAlpha = imageData.data[index+3];
+					return [intR,intG,intB,intAlpha];
+				};
+				secondCanvas.scanpixel=function(intX,intY,strColorStyle,callback){
+					var secondContext=secondCanvas.getContext('2d');
+					var textureWidth=secondCanvas.width;
+					var textureHeight=secondCanvas.height;
+					var imageData=secondCanvas.theImageData;
+					switch(secondCanvas.scanCallbackArgs.theScanRadius){
+						case 1:
+						callback(intX,intY,[secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight)]);
+						break;
+
+						case "lineInterval":
+						callback(intX,intY,[secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight)]);
+						secondCanvas.scanCallbackArgs.intLineCounter++;
+
+						break;
+						case "square":
+						var scannedColors=[];
+						for(var j=-secondCanvas.scanCallbackArgs.squareRadius;j<secondCanvas.scanCallbackArgs.squareRadius;j++){
+							for(var i=-secondCanvas.scanCallbackArgs.squareRadius;i<secondCanvas.scanCallbackArgs.squareRadius;i++){
+
+
+								scannedColors.push(secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight));
+								if(intY-j>=0)
+									scannedColors.push(secondCanvas.scanpixelCore(intX,intY-j,imageData,textureWidth,textureHeight));
+								else scannedColors.push(null);
+								if((intX+i)<=textureWidth)
+									scannedColors.push(secondCanvas.scanpixelCore(intX+i,intY,imageData,textureWidth,textureHeight));
+								else scannedColors.push(null);
+
+								if((intY+i)<=textureHeight)
+									scannedColors.push(secondCanvas.scanpixelCore(intX,intY+j,imageData,textureWidth,textureHeight));
+								else scannedColors.push(null);
+								if(intX+i>=0)
+									scannedColors.push(secondCanvas.scanpixelCore(intX-i,intY,imageData,textureWidth,textureHeight));
+								else scannedColors.push(null);
+
+							}
+
+						}
+						callback(intX,intY,scannedColors);
+						break;
+						case "plus":
+						var scannedColors=[];
+						scannedColors.push(secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight));
+						if(intY>0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY-1,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+						if((intX+1)<=textureWidth)
+							scannedColors.push(secondCanvas.scanpixelCore(intX+1,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if((intY+1)<=textureHeight)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY+1,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+						if(x>0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX-1,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						callback(intX,intY,scannedColors);
+						break;
+						case "bigplus":
+						var scannedColors=[];
+						scannedColors.push(secondCanvas.scanpixelCore(intX,intY,imageData,textureWidth,textureHeight));
+
+						if(intY-2>=0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY-2,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if(intY-1>=0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY-1,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if((intX+1)<=textureWidth)
+							scannedColors.push(secondCanvas.scanpixelCore(intX+1,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if((intX+2)<=textureWidth)
+							scannedColors.push(secondCanvas.scanpixelCore(intX+2,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if((intY+1)<=textureHeight)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY+1,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						if((intY+2)<=textureHeight)
+							scannedColors.push(secondCanvas.scanpixelCore(intX,intY+2,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+						if(intX-1>=0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX-1,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+						if(intX-2>=0)
+							scannedColors.push(secondCanvas.scanpixelCore(intX-2,intY,imageData,textureWidth,textureHeight));
+						else scannedColors.push(null);
+
+						callback(intX,intY,scannedColors);
+						break;
+					}
+				};
+				secondCanvas.scanLine0=function(intX0,intY0,intX1,intY1,strColorStyle,callback){
+    					var dX=intX1-intX0;
+    					var dY=intY1-intY0;
+    					var intYi=1;
+    					if(dY<0){
+        					intYi=-1;
+        					dY=-dY;
+    					}
+    					var d=2*dY-dX;
+    					var intY=intY0;
+
+					for(var intX=intX0;intX<=intX1;intX++){
+						secondCanvas.scanpixel(intX,intY,strColorStyle,callback);
+        				if(d>0){
+               					intY=intY+intYi;
+               					d=d-2*dX;
+					}
+        				d=d+2*dY;
+					}
+
+				};
+				secondCanvas.scanLine1=function(intX0,intY0,intX1,intY1,strColorStyle,callback){
+    					var dX=intX1-intX0;
+    					var dY=intY1-intY0;
+    					var intXi=1;
+    					if(dX<0){
+        					intXi=-1;
+        					dX=-dX;
+    					}
+    					var d=2*dX-dY;
+    					var intX=intX0;
+
+					for(var intY=intY0;intY<=intY1;intY++){
+						secondCanvas.scanpixel(intX,intY,strColorStyle,callback);
+        					if(d>0){
+               						intX=intX+intXi;
+               						d =d-2*dY;
+						}
+        					d=d+2*dX;
+						}
+				};
+				secondCanvas.scanLine=function(intX0,intY0,intX1,intY1,strColorStyle,callback){
+					if(Math.abs(intY1-intY0)<=Math.abs(intX1-intX0)){
+        					if(intX0>=intX1)
+            						secondCanvas.scanLine0(intX1,intY1,intX0,intY0,strColorStyle,callback);
+        					else secondCanvas.scanLine0(intX0,intY0,intX1,intY1,strColorStyle,callback);
+					}else{
+							if(intY0>=intY1)
+            						secondCanvas.scanLine1(intX1,intY1,intX0,intY0,strColorStyle,callback);
+        					else secondCanvas.scanLine1(intX0,intY0,intX1,intY1,strColorStyle,callback);
+					}
+				};
+				secondCanvas.lineLength=function(intX0,intY0,intX1,intY1){
+					return Math.sqrt((intX1-intX0)*(intX1-intX0)+(intY1-intY0)*(intY1-intY0));
+				};
+				secondCanvas.pointOnLine=function(varX,varY,varLine){
+					var varX0,varY0,varX1,varY1;
+					varX0=varLine[0];
+					varY0=varLine[1];
+					varX1=varLine[2];
+					varY1=varLine[3];
+					var clickPrecision=secondCanvas.clickPrecision;
+					if(((Math.abs(varX-varX0)<clickPrecision)||(Math.abs(varX-varX1)<clickPrecision))&&(true==secondCanvas.inInterval(varY,[varY0,varY1])) ) return true;
+					if(Math.abs(varX0-varX1)>clickPrecision){
+						var diff=Math.abs(varY -
+							((varY1-varY0)/(varX1-varX0))*(varX-varX0)-varY0);
+						if(diff<clickPrecision){
+							return true;
+						}
+					}else{
+						if((Math.abs(varX-varX0)<clickPrecision)&&(true==secondCanvas.inInterval(varY,[varY0,varY1])) ) return true;
+					}
+					return false;
+				};
+				secondCanvas.minimum=function(a,b){
+					if(a<=b)return a;
+					return b;
+				};
+				secondCanvas.maximum=function(a,b){
+					if(a>=b)return a;
+					return b;
+				};
+				secondCanvas.inInterval=function(varY,[varY0,varY1]){
+					var minCoord=secondCanvas.minimum(varY0,varY1);
+					var maxCoord=secondCanvas.maximum(varY0,varY1);
+					if((varY>=minCoord)&&(varY<=maxCoord))return true;
+					return false;
+				};
+				secondCanvas.pointOnLines=function(varX,varY){
+					var varLine=null;
+					for (var ii=0;ii<secondCanvas.arrRowLines.length;ii++){
+						varLine=secondCanvas.arrRowLines[ii];
+						if (true==secondCanvas.pointOnLine(varX,varY,varLine)){
+							return ii;
+						}
+					}
+					return -1;
+				};
+				secondCanvas.pointOnLineEndpoint=function(varX,varY,lineII){
+					var clickPrecision=secondCanvas.clickPrecision;
+					var theLine=secondCanvas.arrRowLines[lineII];
+					if((Math.abs(theLine[0]-varX)<2*clickPrecision)&&(Math.abs(theLine[1]-varY)<2*clickPrecision)){
+						return 0;}
+					if((Math.abs(theLine[2]-varX)<2*clickPrecision)&&(Math.abs(theLine[3]-varY)<2*clickPrecision)){
+						return 1;}
+					return -1;
+				};
+				secondCanvas.onmousemove=function(ev){
+					document.title=[ev.offsetX,ev.offsetY];
+					if ((true==secondCanvas.blnLineDrawing)&&(false==secondCanvas.blnCorrectLines)){
+						redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+						secondCanvas.drawLine(secondCanvas.intX0,secondCanvas.intY0,ev.offsetX,ev.offsetY,secondCanvas.strLinesStyle);
+					}
+					if(true==secondCanvas.blnCorrectLines){
+						if(secondCanvas.lineNumberToCorrect>-1){
+							var varDx=ev.offsetX-secondCanvas.intX0;
+							var varDy=ev.offsetY-secondCanvas.intY0;
+							var l=secondCanvas.arrRowLines[secondCanvas.lineNumberToCorrect];
+							secondCanvas.lineToCorrect=[l[0],l[1],l[2],l[3]];
+							if(secondCanvas.endpointToCorrect<0){
+								secondCanvas.lineToCorrect[0]+=varDx;
+								secondCanvas.lineToCorrect[1]+=varDy;
+								secondCanvas.lineToCorrect[2]+=varDx;
+								secondCanvas.lineToCorrect[3]+=varDy;
+							}else{
+								if(0==secondCanvas.endpointToCorrect){
+									secondCanvas.lineToCorrect[0]+=varDx;
+									secondCanvas.lineToCorrect[1]+=varDy;
+								}
+								if(1==secondCanvas.endpointToCorrect){
+									secondCanvas.lineToCorrect[2]+=varDx;
+									secondCanvas.lineToCorrect[3]+=varDy;
+								}
+							}
+							redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							secondCanvas.drawLine(secondCanvas.lineToCorrect[0],secondCanvas.lineToCorrect[1],secondCanvas.lineToCorrect[2],secondCanvas.lineToCorrect[3],secondCanvas.strLinesHighlightStyle);
+						}
+					}
+				};
+				secondCanvas.onclick=function(ev){
+					redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+					if(true==secondCanvas.blnLinesFromRectangle){
+						if(false==secondCanvas.blnCorrectPoints){
+							if((null==secondCanvas.intX0)||(null==secondCanvas.intY0)){
+								secondCanvas.intX0=ev.offsetX;
+								secondCanvas.intY0=ev.offsetY;
+								secondCanvas.blnLineDrawing=true;
+							}else{
+								if(secondCanvas.arrRowLines.length<3){
+									secondCanvas.arrRowLines.push([secondCanvas.intX0,secondCanvas.intY0,ev.offsetX,ev.offsetY]);
+									if(secondCanvas.arrRowLines.length<3){
+										secondCanvas.blnLineDrawing=true;
+										secondCanvas.intX0=ev.offsetX;
+										secondCanvas.intY0=ev.offsetY;
+										secondCanvas.blnLinesFromRectangle=true;
+									}else{
+										secondCanvas.blnLineDrawing=false;
+										secondCanvas.intX0=null;
+										secondCanvas.intY0=null;
+										secondCanvas.linesFromRectangle();
+										redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+										return;
+
+									}
+								}else{
+
+								}
+							}
+
+
+						}
+						else{
+							var pnt=[ev.offsetX,ev.offsetY];
+							var blnPntFound=false;
+							var index=secondCanvas.findPointEuclidianDistance(pnt,secondCanvas.l0Points,secondCanvas.clickPrecision);
+
+							if(-1!=index){
+								secondCanvas.l0Points.splice(index,1);
+								blnPntFound=true;
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+							index=secondCanvas.findPointEuclidianDistance(pnt,secondCanvas.l1Points,secondCanvas.clickPrecision);
+							if(-1!=index){
+								secondCanvas.l1Points.splice(index,1);
+								blnPntFound=true;
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+							index=secondCanvas.findPointEuclidianDistance(pnt,secondCanvas.l2Points,secondCanvas.clickPrecision);
+							if(-1!=index){
+								secondCanvas.l2Points.splice(index,1);
+								blnPntFound=true;
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+							index=secondCanvas.findPointEuclidianDistance(pnt,secondCanvas.l3Points,secondCanvas.clickPrecision);
+							if(-1!=index){
+								secondCanvas.l3Points.splice(index,1);
+								blnPntFound=true;
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+							index=secondCanvas.findPointEuclidianDistance(pnt,secondCanvas.correctedPoints,secondCanvas.clickPrecision);
+							if(-1!=index){
+								secondCanvas.correctedPoints.splice(index,1);
+								blnPntFound=true;
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+							if(false==blnPntFound){
+								secondCanvas.correctedPoints.push(pnt);
+								secondCanvas.movePointToRectangleLines(pnt);
+								redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+							}
+						}
+					}
+				};
+				secondCanvas.movePointToRectangleLines=function(pnt_){
+					var ii=-1;
+					ii=secondCanvas.pointOnLines(pnt_[0],pnt_[1]);
+					if(-1==ii)
+						alert("Couldn't determine on what line to put point - remove point and point it on of of the rectangle border lines, so that the internal square lines can be drawn");	
+					else{
+						if(0==ii){
+								secondCanvas.l0Points.push(pnt_);
+								secondCanvas.correctedPoints.splice(secondCanvas.correctedPoints.indexOf(pnt_),1);
+						}
+						if(1==ii){
+								secondCanvas.l1Points.push(pnt_);
+								secondCanvas.correctedPoints.splice(secondCanvas.correctedPoints.indexOf(pnt_),1);
+						}
+						if(2==ii){
+								secondCanvas.l2Points.push(pnt_);
+								secondCanvas.correctedPoints.splice(secondCanvas.correctedPoints.indexOf(pnt_),1);
+						}
+						if(3==ii){
+								secondCanvas.l3Points.push(pnt_);
+								secondCanvas.correctedPoints.splice(secondCanvas.correctedPoints.indexOf(pnt_),1);
+						}
+					}
+				};
+				secondCanvas.onmousedown=function(ev){
+					if((false==secondCanvas.blnLinesFromRectangle)&&(false==secondCanvas.blnCorrectLines)){
+						secondCanvas.blnLineDrawing=true;
+						secondCanvas.intX0=ev.offsetX;
+						secondCanvas.intY0=ev.offsetY;
+					}if(true==secondCanvas.blnCorrectLines){
+						secondCanvas.intX0=ev.offsetX;
+						secondCanvas.intY0=ev.offsetY;
+						var ii=secondCanvas.pointOnLines(secondCanvas.intX0,secondCanvas.intY0);
+						if(ii>-1){
+							secondCanvas.lineNumberToCorrect=ii;
+							secondCanvas.endpointToCorrect=secondCanvas.pointOnLineEndpoint(secondCanvas.intX0,secondCanvas.intY0,secondCanvas.lineNumberToCorrect);
+						}
+					}
+				};
+				secondCanvas.onmouseup=function(ev){
+					if((true==secondCanvas.blnLineDrawing)&&(false==secondCanvas.blnLinesFromRectangle)&&(false==secondCanvas.blnCorrectLines)){
+						secondCanvas.blnLineDrawing=false;
+						secondCanvas.arrRowLines.push([secondCanvas.intX0,secondCanvas.intY0,ev.offsetX,ev.offsetY]);
+						secondCanvas.intX0=null;
+						secondCanvas.intY0=null;
+					}if(true==secondCanvas.blnCorrectLines){
+						if((-1!=secondCanvas.lineNumberToCorrect)&&(null!=secondCanvas.lineToCorrect))
+							secondCanvas.arrRowLines[secondCanvas.lineNumberToCorrect]=secondCanvas.lineToCorrect;
+
+						redrawCanvas(secondCanvas,textureImage,previewImage.width,previewImage.height);
+						secondCanvas.lineNumberToCorrect=-1;	
+					}
+				};
+			}
+
+		};
+		previewImage.id="testimg";
+		previewImage.src=theSrc;
+	}
+	function divideComma3(strColors){
+		var intNotFound=216;
+		var strNotFound="'";
+		var strComma3="";
+		var strComponent="";
+		for (var ii=0;ii<strColors.length;ii+=3){
+			strComponent=strColors.substring(ii,ii+3);
+			if((strNotFound==strComponent.substring(0,1))||
+			   (strNotFound==strComponent.substring(1,2))||
+			   (strNotFound==strComponent.substring(2,3))
+			){
+				strComponent="216";
+			}
+			strComma3+=strComponent+",";
+		}
+		return strComma3;
+	}
+
+
+	function recognizePattern(textureCanvas,elementSize){
+		var textureWidth=textureCanvas.width;
+		var textureHeight=textureCanvas.height;
+        	var textureContext =textureCanvas.getContext("2d");
+		var imageData=textureContext.getImageData(0,0,textureWidth,textureHeight);
+		var intR,intG,intB,intAlpha;
+		var intColorNumber=0;
+		var strColors="";
+		var index=0;
+                for (var j=0;j<textureHeight;j+=elementSize){
+        		for(var i=0;i<textureWidth;i+=elementSize) {
+                   	index=(j*textureWidth+i)*4;
+                   	intR=imageData.data[index+0];
+                   	intG=imageData.data[index+1];
+                   	intB=imageData.data[index+2];
+                   	intAlpha=imageData.data[index+3];
+			intColorNumber=estimateColorNumber([intR,intG,intB,intAlpha]);
+			if(-1!=intColorNumber)
+				strColors+=intColorNumber;
+                   }
+                }
+		return strColors;
+}
+	function removeImage(){
+		var previewImage=document.getElementById("testimg");
+		document.getElementById("divtestimg").removeChild(previewImage);
+	}
+
+function clickComponent(cmp){
+	var mouseEvent=document.createEvent("MouseEvents");
+	mouseEvent.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	cmp.dispatchEvent(mouseEvent);
+}
+
+function btnLoadQRcodePressed(){
+			openFile(previewFile,null);
+}
+function btnLoadQRcodeManualPressed(){
+			var objArgs={};
+			var varArgs=document.getElementById("txtImpresionismArts").value.split(",");
+			objArgs.varCols=null;
+			objArgs.varRows=null;
+			openFile(previewFile,objArgs);
+}
+function setInSandcorn(txtColors,intWidth,intHeight){
+	var txtColorsLength=txtColors.length;
+      	var varCols,varRows;
+      	if(-1==intWidth){
+		varCols=Math.ceil(Math.sqrt(txtColorsLength));
+		varRows=Math.ceil(Math.sqrt(txtColorsLength));
+      	}else{
+      		varCols=intWidth;
+      		varRows=Math.ceil(txtColorsLength/intWidth);
+      		if(intHeight>varRows)
+			varRows=intHeight;
+      	}
+	alert("Sandcorn dimensions="+[varCols,varRows]);
+	var qrcode=initQRcode(txtColors,varCols,varRows);
+	var intCanvasX=varCols*intUnitSquareSize;
+	var intCanvasY=varRows*intUnitSquareSize;
+	drawQR(qrcode,intCanvasX,intCanvasY, varCols, varRows);
+}
+
+function initQRcode(imageData,varCols,varRows){
+	var qrcode=new Array(varCols*varRows);
+	var intColor=undefined;
+	for(j=0;j<varRows;j++){
+		for(i=0;i<varCols;i++){ 
+			try{
+				intColor=(ij_(i,j,varCols,varRows)<=imageData.length)?imageData[ij_(i,j,varCols,varRows)]:0;
+				if(intColor!=undefined)
+					qrcode[ij_(i,j,varCols,varRows)]=intColor;
+				else qrcode[ij_(i,j,varCols,varRows)]=0;
+			}catch(xcp){
+				qrcode[ij_(i,j,varCols,varRows)]=0;
+			}
+		} 		 
+	}
+	return qrcode;
+}
+function drawQR(qrcode,intCanvasX,intCanvasY,varCols,varRows){
+      	var theCanvas=document.createElement("canvas");
+     	var theContext=theCanvas.getContext('2d');
+        theCanvas.width=intCanvasX;
+	theCanvas.height=intCanvasY;
+	theContext.clearRect(0,0,intCanvasX, intCanvasY);
+	theContext.strokeRect(0,0,intCanvasX, intCanvasY);
+      	var divPreview=document.getElementById("divPreview");
+	divPreview.appendChild(theCanvas);
+	var intDx=intCanvasX/varCols;
+ 	var intDy=intCanvasY/varRows;
+	var intX=0,intY=0;
+	var intColor=0;
+	for (j=0;j<varRows;j++){
+		for (i=0;i<varCols;i++){ 
+			intColor=qrcode[ij_(i,j,varCols,varRows)];
+			theContext.fillStyle=getFillStyle(intColor);
+			theContext.fillRect(intX,intY,intDx+1,intDy+1);
+		intX=intX+intDx;
+		} 
+ 
+		intX=0;
+	    intY=intY+intDy;
+	}
+ 
+}
+function getFillStyle(intColor){
+	return "rgba("+lstColors[intColor][0]+","+lstColors[intColor][1]+","+lstColors[intColor][2]+","+lstColors[intColor][3]+")";
+}
+function redrawCanvas(textureCanvas,textureImage,textureWidth,textureHeight){
+	textureCanvas.width=textureWidth;
+	textureCanvas.height=textureHeight;
+        var textureContext = textureCanvas.getContext("2d");
+        textureContext.putImageData(textureImage, 0, 0);
+	var theLine=null;
+	for (var ii=0;ii<textureCanvas.arrRowLines.length;ii++){
+		theLine=textureCanvas.arrRowLines[ii];
+		textureCanvas.drawLine(theLine[0],theLine[1],theLine[2],theLine[3],textureCanvas.strLinesStyle);
+	}
+	theLine=null;
+	for (var ii=0;ii<textureCanvas.arrColLines.length;ii++){
+		theLine=textureCanvas.arrColLines[ii];
+		textureCanvas.drawLine(theLine[0],theLine[1],theLine[2],theLine[3],textureCanvas.strLinesStyle);
+	}
+	theLine=null;
+	for (var ii=0;ii<textureCanvas.debugLines.length;ii++){
+		theLine=textureCanvas.debugLines[ii];
+		textureCanvas.drawLine(theLine[0],theLine[1],theLine[2],theLine[3],textureCanvas.strLinesHighlightStyle);
+	}
+	var theCircle=null;
+	for (var ii=0;ii<textureCanvas.debugCircles.length;ii++){
+		theCircle=textureCanvas.debugCircles[ii];
+		textureCanvas.drawCircle(theCircle[0],theCircle[1],theCircle[2],textureCanvas.strLinesStyle);
+	}
+	if(null!=textureCanvas.l0Points)
+		for (var ii=0;ii<textureCanvas.l0Points.length;ii++){
+			thePoint=textureCanvas.l0Points[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	if(null!=textureCanvas.l1Points)
+		for (var ii=0;ii<textureCanvas.l1Points.length;ii++){
+			thePoint=textureCanvas.l1Points[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	if(null!=textureCanvas.l2Points)
+		for (var ii=0;ii<textureCanvas.l2Points.length;ii++){
+			thePoint=textureCanvas.l2Points[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	if(null!=textureCanvas.l3Points)
+		for (var ii=0;ii<textureCanvas.l3Points.length;ii++){
+			thePoint=textureCanvas.l3Points[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	if(null!=textureCanvas.correctedPoints)
+		for (var ii=0;ii<textureCanvas.correctedPoints.length;ii++){
+			thePoint=textureCanvas.correctedPoints[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	if((null!=textureCanvas.arrMiddlePoints)){
+		for (var ii=0;ii<textureCanvas.arrMiddlePoints.length;ii++){
+			thePoint=textureCanvas.arrMiddlePoints[ii];
+			textureCanvas.drawCircle(thePoint[0],thePoint[1],textureCanvas.clickPrecision,textureCanvas.strLinesHighlightStyle);
+		}
+	}
+}
+function createTexture(imageData,textureWidth,textureHeight){
+	var textureCanvas = document.createElement("canvas");
+	textureCanvas.width=textureWidth;
+	textureCanvas.height=textureHeight;
+        var textureContext = textureCanvas.getContext("2d");
+	var index=0;
+        var textureImage=textureContext.createImageData(textureWidth,textureHeight);
+        for (var j=0;j<textureHeight;j+=1){
+        	for (var i=0;i<textureWidth;i+=1) {
+                   index=(j*textureWidth+i)*4;
+                   textureImage.data[index+0]=imageData.data[index+0];
+                   textureImage.data[index+1]=imageData.data[index+1];
+                   textureImage.data[index+2]=imageData.data[index+2];
+                   textureImage.data[index+3]=imageData.data[index+3];
+                   }
+                }
+                textureContext.putImageData(textureImage,0,0);
+	return [textureCanvas,textureImage];
+}
+function ij_(i,j,varCols,varRows){
+		return j*varCols+i;
+}
+function btnSetInSandcornPressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split('');
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if(true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (true==blnFlushChecked)
+			addToQueryHistory(varArray[ii],varComment);
+		if (ii<(varArray.length-1))
+			txtText+=',';
+		}
+	document.getElementById("responseData").innerHTML="<textarea cols='30' rows='10' >"+txtText+"</textarea>";
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	}
+	var txtColors="";
+	var arrText=txtText.split(",");
+	for (ii=0; ii<arrText.length;ii++)
+		txtColors+=flush(arrText[ii],3);
+     	var strWidthHeight=prompt("Enter sandcorn width height in width,height format. If text will be left empty, or width will be entered -1, then width=heigth=Math.sqrt(length) will be computed. If height will be too small, it will be ignored and computed based on width. If it will be too big white space will be left, so e.x. width,0 will compute optimal sizes.");
+	var intWidth=-1,intHeight=-1;
+	var lstArgs;
+	if(strWidthHeight.length>0){
+		lstArgs=strWidthHeight.split(",");
+		intWidth=parseInt(lstArgs[0]);
+		intHeight=parseInt(lstArgs[1]);
+	}
+	setInSandcorn(txtColors,intWidth,intHeight);
+}
+function keyDownPressed(){
+	if(null==glbPreviewCanvas){
+	if(theHighlightedI<theCols-1)
+		theHighlightedI++;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+	}else{
+		if(true==glbPreviewCanvas.blnCanvasKeyboard){
+			if(glbPreviewCanvas.arrRowLines.length>1){
+				var l1,l2,l0;
+				l1=glbPreviewCanvas.arrRowLines[glbPreviewCanvas.arrRowLines.length-1];
+				l2=glbPreviewCanvas.arrRowLines[glbPreviewCanvas.arrRowLines.length-2];
+				var shiftX0=l1[0]-l2[0];
+				var shiftY0=l1[1]-l2[1];
+				var shiftX1=l1[2]-l2[2];
+				var shiftY1=l1[3]-l2[3];
+				l0=[l1[0]+shiftX0,l1[1]+shiftY0,l1[2]+shiftX1,l1[3]+shiftY1];
+				glbPreviewCanvas.arrRowLines.push([l0[0],l0[1],l0[2],l0[3]]);
+				glbPreviewCanvas.drawLine(l0[0],l0[1],l0[2],l0[3],glbPreviewCanvas.strLinesStyle);
+			}
+		}
+	}
+}
+function keyBackspacePressed(){
+	if(null!=glbPreviewCanvas){
+		if(true==glbPreviewCanvas.blnCanvasKeyboard){
+			if (glbPreviewCanvas.arrRowLines.length>0)
+			{
+				glbPreviewCanvas.arrRowLines.pop();
+				redrawCanvas(glbPreviewCanvas,glbPreviewCanvasImage,glbPreviewCanvas.width,glbPreviewCanvas.height);
+			}
+		}
+	}
+}
+function keyEscPressed(){
+	if(glbPreviewCanvas!=null){
+		if(true==glbPreviewCanvas.blnCanvasKeyboard){
+			if(true==glbPreviewCanvas.blnLinesFromRectangle){
+				glbPreviewCanvas.blnLineDrawing=false;
+				glbPreviewCanvas.intX0=null;
+				glbPreviewCanvas.intY0=null;
+				glbPreviewCanvas.arrRowLines=[];
+				redrawCanvas(glbPreviewCanvas,glbPreviewCanvasImage,glbPreviewCanvasImage.width,glbPreviewCanvasImage.height);
+			}
+			if(true==glbPreviewCanvas.blnCorrectLines){
+				glbPreviewCanvas.lineNumberToCorrect=-1;
+				glbPreviewCanvas.endpointToCorrect=-1;
+				glbPreviewCanvas.lineToCorrect=null;
+			}
+	 	}
+	}
+}
+function keyCallback(ev){
+	        var theKeyCode=ev.which; 
+		if(27==theKeyCode)
+			keyEscPressed();
+		if (37==theKeyCode)
+			keyLeftPressed();
+		if (38==theKeyCode)
+			keyUpPressed();
+		if (39==theKeyCode)
+			keyRightPressed();
+		if (40==theKeyCode)
+			keyDownPressed();
+		if(8==theKeyCode)
+			keyBackspacePressed();
+}
+var currnet_hour=0;var current_minute=0,current_second=0; 
+var intTimeDiff=0;
+var theCharmingOffset=0;
+var theHighlightedI=0, theHighlightedJ=0;
+var theRows=10, theCols=30;
+var theQueryLength=0;
+var arrQueryHistory=new Array(0);
+var maxRandomChar=2459;
+var randomChar=Math.floor(Math.random()*maxRandomChar);
+var epsilon=0.00001;
+function ij(i, j){
+		return j*theCols+i;
+}
+function addToQueryHistory(chrChar, varComment){
+	arrQueryHistory[arrQueryHistory.length]=chrChar;
+	arrQueryHistory[arrQueryHistory.length]=varComment;
+}
+function writeQueryHistory(){
+	var txtText="";
+	var theCharCode=0;
+	for (theCounter=0; theCounter<arrQueryHistory.length;theCounter+=2){
+		theCharCode=arrQueryHistory[theCounter].charCodeAt(0);
+		txtText+= arrQueryHistory[theCounter]+" &#9 "+parseInt(theCharCode)+" &#9 0x"+ finalizeDec2Hex(theCharCode)+"h &#9 "+arrQueryHistory[theCounter+1]+"&#10";
+	}
+	document.getElementById("queryHistory").innerHTML="<textarea style='font-size: 23pt' cols='50' rows='15' >"+txtText+"</textarea>";
+}
+function btnEncodePressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split('');
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0; ii<varArray.length; ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (true==blnFlushChecked)
+			addToQueryHistory(varArray[ii], varComment);
+		if (ii<(varArray.length-1))
+			txtText+=',';
+		}
+	document.getElementById("responseData").innerHTML="<textarea cols='30' rows='10' >"+txtText+"</textarea>";
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	}
+}
+function decodeCharCode(varNumber){
+	if (varNumber.length<10)
+		return String.fromCharCode(varNumber);
+	else return String.fromCharCode(encode_dB_number(varNumber)[0]);
+}
+function btnDecodePressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		txtText+=decodeCharCode(varArray[ii]);
+		if (true==blnFlushChecked)
+			addToQueryHistory(String.fromCharCode(varArray[ii]),varComment);
+	}
+	document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+""+"</textarea>";
+	document.getElementById("txtResponse").innerText=txtText;
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	} 
+}
+function encodeData(varString){
+	var ii;
+	var varArray=varString.split('');
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (ii<(varArray.length-1))
+			txtText+='';
+		}
+	return txtText;
+}
+function decodeString(varNumber){
+	var varInput=encodeData(varNumber);
+	if (varNumber.length<10)
+		return String.fromCharCode(varInput);
+	else return String.fromCharCode(encode_dB_number(varInput)[0]);
+}
+function btnDeencodeStringPressed(){
+	var ii;
+	var blnFlushChecked=document.getElementById("chkFlush").checked;
+	var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+	var varDeencodedInput;
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	if (true==blnFlushChecked)
+		var varComment=document.getElementById("txtComment").value;
+	var txtText="";
+	for (ii=0;ii<varArray.length;ii++){
+		varDeencodedInput=decodeString(varArray[ii]);
+		txtText+=varDeencodedInput;
+		if (true==blnFlushChecked)
+			addToQueryHistory(varDeencodedInput, varComment);
+	}
+	document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+txtText+"</textarea>";
+	if (true==blnFlushChecked){
+		document.getElementById("txtImpresionismArts").value="";
+		writeQueryHistory();
+	} 
+}
+function initCharsTable(){
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function calculateOffset(theCharmingOffset, theHighlightedI,theHighlightedJ, theRows, theCols){
+	return theCharmingOffset+theHighlightedJ+theHighlightedI*(theRows);
+}
+function flush (input, max) {
+  return (input.length<max)?flush("0"+input, max):input;
+}
+function getFloor(fltNumber){
+	var intNumber=Math.round(fltNumber);
+	var sign=1;
+	if (Math.abs(intNumber)>Math.abs(fltNumber)){
+		sign=(intNumber>=0)?1:-1;	
+		return sign*(Math.abs(intNumber)-1);
+	}
+	else return intNumber;
+}
+function cellClicked(i,j){
+	theHighlightedI=i;
+	theHighlightedJ=j;
+	writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ);
+}
+function writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ){
+	var thePrevCharmingOffset=theCharmingOffset;
+	var txtInnerHTML="<table border='1' style='border-collapse: collapse'>";
+	var charsTable=document.getElementById("charsTable");
+	var theCharsCharmingOffset=0;
+	var blnHighlightedChecked=document.getElementById("chkHighlighted").checked;
+	for (j=-1;j<theRows;j++){
+		if (-1==j)
+			txtInnerHTML+="<th>"+" &#32 "+"</th>";
+		else txtInnerHTML+="<th>"+flush(""+j,1)+"</th>";
+	}
+	for (i=0;i<theCols;i++){
+		txtInnerHTML+="<tr><th>"+(thePrevCharmingOffset+i*theRows)+"</th>";
+		for (j=0;j<theRows;j++){
+			if ((i==theHighlightedI)&&(j==theHighlightedJ))
+				if (true==blnHighlightedChecked)
+					txtInnerHTML+="<td bgcolor='ff6400' onclick='cellClicked("+i+", "+j+")'>"+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+				else txtInnerHTML+="<td onclick='cellClicked("+i+","+j+")'> "+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+			else txtInnerHTML+="<td onclick='cellClicked("+i+","+j+")'> "+flush(""+theCharmingOffset,1)+" &#32 "+String.fromCharCode(theCharmingOffset)+"</td>";
+			theCharmingOffset++;
+			
+		}
+		txtInnerHTML+="<th>"+(thePrevCharmingOffset+i*theRows+j-1)+"</th>";
+		txtInnerHTML+="</tr>";
+	}
+	for (j=-1;j<theRows;j++){
+		if (-1==j)
+			txtInnerHTML+="<th>"+" &#32 "+"</th>";
+		else txtInnerHTML+="<th>"+flush(""+j,1)+"</th>";
+	}
+	txtInnerHTML+="</table>";
+	theCharsCharmingOffset=calculateOffset(thePrevCharmingOffset, theHighlightedI, theHighlightedJ, theRows, theCols);	
+	txtInnerHTML+=" <font size='5'> &#13 &#13 &#13 Offset= "+theCharsCharmingOffset+" = 0x"+finalizeDec2Hex(theCharsCharmingOffset)+"h"+ " &nbsp "+String.fromCharCode(theCharsCharmingOffset);
+	var d = new Date();
+	current_hour = d.getHours();
+	current_minute = d.getMinutes();
+	current_second = d.getSeconds();
+	var current_hour_extra40=current_hour;
+	var current_minute_extra40=current_minute;
+	var current_hour_prev=current_hour;
+	var current_minute_prev=current_minute;
+	var intMinutesDiff=0,intHoursDiff=0;
+	if (intTimeDiff!=0){
+		intHoursDiff=getFloor(intTimeDiff/60);
+		intMinutesDiff=intTimeDiff%60;
+		current_hour+=intHoursDiff;
+		current_minute+=intMinutesDiff;
+		current_hour+=getFloor(current_minute/60);
+		current_minute=current_minute%60;
+		if (current_minute<0){
+			current_hour--;
+			current_minute=60+current_minute;
+		}
+	}
+	current_hour=current_hour%24;
+	if (current_hour<0) current_hour=24+current_hour;
+	current_hour_extra40=current_hour;
+	current_minute_extra40=current_minute;
+	if (current_minute<40){
+		current_hour_extra40--;
+		current_minute_extra40=current_minute+60;
+	}
+	current_hour_extra40=current_hour_extra40%24;
+	if (current_hour_extra40<0) current_hour_extra40 = 23;
+	txtInnerHTML+=" &nbsp &nbsp &nbsp Watch: "+flush(""+current_hour_prev,2)+" : "+flush(""+current_minute_prev,2)+" &nbsp &nbsp &nbsp "+String.fromCharCode(100*current_hour_prev+current_minute_prev)+ " Random char: "+ randomChar+String.fromCharCode(randomChar) +" </font> ";
+	charsTable.innerHTML=txtInnerHTML;
+	var divWatch = document.getElementById("divWatch");
+	var tmpStrHex=finalizeDec2Hex(100*current_hour+current_minute);
+	var tmpStrHexExtra40=finalizeDec2Hex(100*current_hour_extra40+current_minute_extra40);
+	var strHex=tmpStrHex;
+	var strHexExtra40=tmpStrHexExtra40;
+	if (tmpStrHex.length==1) 
+		strHex="000"+tmpStrHex;
+	if (tmpStrHexExtra40.length==1) 
+		strHexExtra40="000"+tmpStrHexExtra40;
+	if (tmpStrHex.length==2) 
+		strHex="00"+tmpStrHex;
+	if (tmpStrHexExtra40.length==2) 
+		strHexExtra40="00"+tmpStrHexExtra40;
+	if (tmpStrHex.length==3) 
+		strHex='0'+tmpStrHex;
+	if (tmpStrHexExtra40.length==3) 
+		strHexExtra40='0'+tmpStrHexExtra40;
+	var strTableHex="<table rows=2 cols=2 border = 1> <tr><td>"+ strHex[0] +"</td> <td>"+ strHex[1]+ "</td></tr><tr><td>"+ strHex[2] +"</td> <td>"+ strHex[3] +"</td> </tr> </table> 0x" + strHex+"h";
+	var strTableHexExtra40="<table rows=2 cols=2 border = 1> <tr><td>"+ strHexExtra40[0] +"</td> <td>"+ strHexExtra40[1]+ "</td></tr><tr><td>"+ strHexExtra40[2] +"</td> <td>"+ strHexExtra40[3] +"</td> </tr> </table> 0x"+strHexExtra40+"h";
+	var strWatch="";	
+	strWatch+="<table rows=1 cols=2> <tr><td> <font size = '9'> "+flush(""+current_hour,2)+" : "+flush(""+current_minute,2)+"<font size ='3'> : "+flush(""+current_second,2)+"</font> &nbsp "+String.fromCharCode(100*current_hour+current_minute)+ " &nbsp "+" </font></td><td align='center'>"+strTableHex+"</td></tr></table>"; 
+	strWatch+="<br/> <table rows=1 cols=2> <tr><td align='center'> <font size = '9'> "+flush(""+current_hour_extra40,2)+" : "+flush(""+current_minute_extra40,2)+"<font size ='3'> : "+flush(""+current_second,2)+"</font> &nbsp "+String.fromCharCode(100*current_hour_extra40+current_minute_extra40)+ " &nbsp "+ " </font></td><td align='center'>"+strTableHexExtra40 +"</td></tr></table>";  
+	strWatch+="<br/> Random char: "+ randomChar+ " &nbsp " +String.fromCharCode(randomChar)+" &nbsp 0x"+finalizeDec2Hex(randomChar)+"h";
+	divWatch.innerHTML=strWatch;
+}	
+function btnTimeDiffPressed(){
+	var strTimeDiff=prompt("time diff -+ in minutes");
+	try{	
+		intTimeDiff=parseInt(strTimeDiff);
+	}catch(xcp){}
+	if (true==isNaN(intTimeDiff)) intTimeDiff=0;
+}
+function btnTimeDiffMMPressed(){
+	intTimeDiff--;
+}
+function btnTimeDiffPPPressed(){
+	intTimeDiff++;
+}
+function finalizeDec2Hex(number){
+	if (number < 0)
+	{
+		number = 0xFFFFFFFF + number + 1;
+	}
+	return number.toString(16).toUpperCase();
+}
+function btnPrevCharsSidePressed(){
+	theCharmingOffset-=(theRows*theCols);
+	if (theCharmingOffset<0) theCharmingOffset=0;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function btnNextCharsSidePressed(){
+	theCharmingOffset+=(theRows*theCols);
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyLeftPressed(){
+	if (theHighlightedJ>0)
+		theHighlightedJ--;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyUpPressed(){
+	if (theHighlightedI>0)
+		theHighlightedI--;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function keyRightPressed(){
+	if (theHighlightedJ<theRows-1)
+		theHighlightedJ++;
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function searchChar(charSearch){
+	var ii;
+	for (ii=0;ii<65535+1;ii++){
+		if (charSearch==String.fromCharCode(ii)){
+			theCharmingOffset=ii;
+			theHighlightedI=0;
+			theHighlightedJ=0;	
+			writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+			return charSearch;
+		}
+	}
+	alert("Char not found");
+}
+function btnSearchDecPressed(){
+	var theUnicodeCode=parseInt(prompt("Unicode decimal code to serach:"));
+	if (theUnicodeCode>0){
+		searchChar(String.fromCharCode(theUnicodeCode));
+	}
+}	
+function btnSearchHexPressed(){
+	var theUnicodeCode=parseInt(prompt("Unicode hexadecimal code to serach:"),16);
+	if (theUnicodeCode>0){
+		searchChar(String.fromCharCode(theUnicodeCode));
+	}
+}	
+function btnSearchCharPressed(){
+	var chrSearch=prompt("Char to serach:");
+	if ((chrSearch!="")&&(chrSearch!=null)){
+		searchChar(chrSearch);
+	}
+}	
+function btnResetPressed(){
+	theCharmingOffset=0;
+	theHighlightedI=0;
+	theHighlightedJ=0;	
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function extractStrings(varNumber){
+	var discreetBreacket=new Array(Math.ceil((varNumber.length-1)/2));
+	var theCounter=(varNumber.length)-2;
+	for (theInternalCounter=Math.floor((varNumber.length-1)/2); theInternalCounter>=0; theInternalCounter--){
+		discreetBreacket[theInternalCounter]=parseInt(varNumber.substring(theCounter,theCounter+2));
+		theCounter-=2;
+	}
+	return discreetBreacket;
+}
+function dec2Bin(dvar){
+	return secondStage(extractStrings(dvar));
+}
+function finalizeBin2Dec(bvar){
+	return parseInt((bvar+'').replace(/[^01]/gi, ''),2);
+}
+function dec2Bin(dvar){
+	return secondStage(extractStrings(dvar));
+}
+function maxValue(dB){
+	var theMaxValue=0;
+	for (theCounter=0;theCounter<dB.length; theCounter++)
+	{
+		if (dB[theCounter]>theMaxValue){
+			theMaxValue=dB[theCounter];
+		}
+	}
+	return theMaxValue;
+}
+function flushBraecket(dB, dBrests){
+	var fltRest=0.;
+	for (theCounter=0;theCounter<dB.length; theCounter++){
+		fltRest=dB[theCounter]-Math.floor(dB[theCounter]);
+		if (fltRest>epsilon)
+		{
+			if (theCounter<dB.length-1){
+				dB[theCounter+1]=dB[theCounter+1]+10*Math.pow(10,2-1)*(fltRest);
+				dB[theCounter]=Math.floor(dB[theCounter]);
+
+			}else{
+				dBrests[dBrests.length]=(10*fltRest)%2;
+				dB[theCounter]=Math.floor(dB[theCounter]);
+
+			}
+		}
+		if(fltRest<=epsilon){
+			if (theCounter>=dB.length-1){
+				dBrests[dBrests.length]=0;
+			}
+		}
+	}
+}
+function secondStage(dB){
+	var shiftsBreacket=new Array(0);	
+	var varResult="";
+	var pow1, pow2;
+	var theCounter;
+	pow1=1;
+	pow2=Math.pow(10,2-1);
+	var dBrests=new Array(0);
+	while (maxValue(dB)>epsilon){
+		for (theCounter=0;theCounter<dB.length; theCounter++)
+			dB[theCounter]=dB[theCounter]/2.;
+		flushBraecket(dB, dBrests);
+		for (theCounter=0;theCounter<dB.length; theCounter++){
+			if (theCounter>=dB.length-1){
+				varResult=dBrests[dBrests.length-1]+varResult;
+				dB[theCounter]=(Math.floor(pow1*dB[theCounter]))/pow1;
+			}
+			dB[theCounter]=(Math.floor(pow2*dB[theCounter]))/pow2;
+		}
+
+	}	
+	return varResult;
+}
+function watch(){
+	writeCharsTable(theCharmingOffset, theHighlightedI, theHighlightedJ);
+}
+function chkFlushChanged(){
+	var blnChecked = document.getElementById("chkFlush").checked;
+	if (true==blnChecked)
+		document.getElementById("divFlush").innerHTML="<input type='text' id='txtComment'></input>";
+	else document.getElementById("divFlush").innerHTML="";
+}
+function encode_dB_number(varNumber){
+	varResult=secondStage(extractStrings(varNumber));
+	var varInput=varResult.substring((varResult.length<16)?0:varResult.length-16,varResult.length);
+	var arrReturn = new Array(0);
+	arrReturn[0]= parseInt((varInput+'').replace(/[^01]/gi, ''),2);	
+	arrReturn[1]=varResult.length;
+	return arrReturn;
+}
+function btndBNumberPressed(){
+	var varNumber=prompt("Enter discreetBreacket number: ");
+	var decNumber= encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	prompt("Result: ", decNumber[0]+" = "+varInput+ " binary length: "+ decNumber[1]);
+}
+function encode_get(strEncode){
+	var lstEncode=strEncode.split('"');
+	if(1==lstEncode.length)strEncode=lstEncode[0];
+	if(3==lstEncode.length)strEncode=lstEncode[1];
+	var txtImpresionismArts=document.getElementById("txtImpresionismArts");
+	txtImpresionismArts.value=strEncode;
+	btnEncodePressed();
+}
+function decode_get(strDecode){
+	var lstEncode=strDecode.split('"');
+	if(1==lstEncode.length)strDecode=lstEncode[0];
+	if(3==lstEncode.length)strDecode=lstEncode[1];
+	var txtImpresionismArts=document.getElementById("txtImpresionismArts");
+	txtImpresionismArts.value=strDecode;
+	btnDecodePressed();
+}
+function discreetBreacket_get(strDiscreetBreacket){
+	var lstDiscreetBreacket=strDiscreetBreacket.split('"');
+	if(1==lstDiscreetBreacket.length)strDiscreetBreacket=lstDiscreetBreacket[0];
+	if(3==lstDiscreetBreacket.length)strDiscreetBreacket=lstDiscreetBreacket[1];
+	var varInput=encodeData(strDiscreetBreacket);
+	var varNumber=varInput;
+	var decNumber=encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	var txtImpresionismArts=document.getElementById("txtImpresionismArts");
+	txtImpresionismArts.value=decNumber[0]+","+decNumber[1];
+	btnDecodePressed();
+}
+function setInSandcorn_get(strSetInSandcorn){
+	var txtImpresionismArts=document.getElementById("txtImpresionismArts");
+	txtImpresionismArts.value=strSetInSandcorn;
+	btnSetInSandcornPressed();
+}
+function discreetBreacketAndSetInSandcorn_get(strDiscreetBreacketAndSetInSandcorn){
+	var txtImpresionismArts=document.getElementById("txtImpresionismArts");
+	txtImpresionismArts.value=strDiscreetBreacketAndSetInSandcorn;
+	btnSetInSandcornPressed();
+	var lstDiscreetBreacketAndSetInSandcorn=strDiscreetBreacketAndSetInSandcorn.split('"');
+	if(1==lstDiscreetBreacketAndSetInSandcorn.length)strDiscreetBreacketAndSetInSandcorn=lstDiscreetBreacketAndSetInSandcorn[0];
+	if(3==lstDiscreetBreacketAndSetInSandcorn.length)strDiscreetBreacketAndSetInSandcorn=lstDiscreetBreacketAndSetInSandcorn[1];
+	var varInput=encodeData(strDiscreetBreacketAndSetInSandcorn);
+	var varNumber=varInput;
+	var decNumber=encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	txtImpresionismArts.value=decNumber[0]+","+decNumber[1];
+	btnDecodePressed();
+}
+function btndBStringPressed(){
+	var varInput=encodeData(prompt("Enter discreetBreacket string: "));
+	var varNumber=prompt("discreetBreacket numbers: ", varInput);
+	var decNumber=encode_dB_number(varNumber);
+	var varInput=String.fromCharCode(decNumber[0]);
+	prompt("Result: ", decNumber[0]+" = "+varInput+ " binary length: "+ decNumber[1]);
+}
+function btnBinarishBindings(){
+	var strBinarish=document.getElementById("txtBinarish").value;	
+	var strDecimal=finalizeBin2Dec(strBinarish);
+	var strChar=String.fromCharCode(strDecimal);	
+	document.getElementById("divBinarish").innerHTML="<font size='15'>"+strBinarish+ " "+ strDecimal +" "+ strChar+ " </font>";
+}
+function btnToBinarishBindings(){
+	var strDecimal=document.getElementById("txtToBinarish").value;	
+	var strBinarish=dec2Bin(strDecimal);
+	var strChar=String.fromCharCode(strDecimal);	
+	document.getElementById("divBinarish").innerHTML="<font size='15'>"+strBinarish+ " "+ strDecimal +" "+ strChar+ " </font>";
+}
+function htmlGet(){
+	var strGet=window.location.search.substring(1);
+	if(strGet.length>0){
+
+	}else return;
+	var urlParams=new URLSearchParams(strGet);
+	if(true==urlParams.has("encode")){
+		var strEncode=urlParams.get("encode");
+		encode_get(strEncode);
+	}
+	if(true==urlParams.has("decode")){
+		var strDecode=urlParams.get("decode");
+		decode_get(strDecode);
+	}
+	if(true==urlParams.has("discreetBreacket")){
+		var strDiscreetBreacket=urlParams.get("discreetBreacket");
+		discreetBreacket_get(strDiscreetBreacket);
+	}
+	if(true==urlParams.has("setInSandcorn")){
+		var strSetInSandcorn=urlParams.get("setInSandcorn");
+		setInSandcorn_get(strSetInSandcorn);
+	}
+	if(true==urlParams.has("discreetBreacketAndSetInSandcorn")){
+		var strDiscreetBreacketAndSetInSandcorn=urlParams.get("discreetBreacketAndSetInSandcorn");
+		discreetBreacketAndSetInSandcorn_get(strDiscreetBreacketAndSetInSandcorn);
+	}
+
+}
+function init(){
+	document.getElementById("btnSetInSandcorn").onclick=btnSetInSandcornPressed;
+	document.getElementById("loadQRcode").onclick=btnLoadQRcodePressed;
+	document.getElementById("loadQRcodeManual").onclick=btnLoadQRcodeManualPressed;
+	document.getElementById("btnEncode").onclick=btnEncodePressed;
+	document.getElementById("btnDecode").onclick=btnDecodePressed;
+	document.getElementById("btnDeencodeString").onclick=btnDeencodeStringPressed;
+	document.getElementById("txtImpresionismArts").focus();
+	document.getElementById("btnPrevCharsSide").onclick=btnPrevCharsSidePressed;
+	document.getElementById("btnNextCharsSide").onclick=btnNextCharsSidePressed;
+	document.getElementById("btnSearchDec").onclick=btnSearchDecPressed;
+	document.getElementById("btnSearchHex").onclick=btnSearchHexPressed;
+	document.getElementById("btnSearchChar").onclick=btnSearchCharPressed;
+	document.getElementById("btnReset").onclick=btnResetPressed;
+	document.getElementById("btndBNumber").onclick=btndBNumberPressed;
+	document.getElementById("btndBString").onclick=btndBStringPressed;
+	document.getElementById("btnCharTableUp").onclick=keyUpPressed;
+	document.getElementById("btnCharTableLeft").onclick=keyLeftPressed;
+	document.getElementById("btnCharTableDown").onclick=keyDownPressed;
+	document.getElementById("btnCharTableRight").onclick=keyRightPressed;
+	document.getElementById("btnTimeDiff").onclick=btnTimeDiffPressed;
+	document.getElementById("btnTimeDiffMM").onclick=btnTimeDiffMMPressed;
+	document.getElementById("btnTimeDiffPP").onclick=btnTimeDiffPPPressed;
+	document.getElementById("btnBinarish").onclick=btnBinarishBindings;
+	document.getElementById("btnToBinarish").onclick=btnToBinarishBindings;
+	window.onkeydown=keyCallback;
+	document.getElementById("chkFlush").onchange=chkFlushChanged;
+	initCharsTable();
+	setInterval(watch , 1000);
+	htmlGet();
+}
+window.onload=init
+	</script>
+</head>
+<body style="background-color:black; color:grey; ">
+<div id="divBinarish"></div><br/>
+<input type="text" id="txtBinarish"> </input> <input type="button" id="btnBinarish" value="Binarish ->"> <br/>
+<input type="text" id="txtToBinarish"> </input> <input type="button" id="btnToBinarish" value="Binarish <-"> <br/>
+ <table rows=1 cols=3> <tr><td><input type="button" class="button button" id="btnTimeDiffMM" value="<" style="height:200px; width:50px"> </td><td>
+<div id="divWatch">
+</div>
+</td><td><input type="button" id="btnTimeDiffPP" value=">" style="height:200px; width:50px"> </td></tr></table>
+<div id="timeDiff">
+	<input type="button" value="time diff" id="btnTimeDiff" />
+	<button id="loadQRcode">Load ideal sandcorn QR code</button>
+	<button id="loadQRcodeManual">Load QR code manually</button>
+</div>
+<div id="divHiddenDiv" >
+	 <div id="caption"></div>
+	<table><tr><td>	
+	<table>	
+		<tr><td><textarea id="txtImpresionismArts" cols="30" rows="10">Impresionism arts </textarea></td></tr>
+		<tr><td><table><tr><td><button id="btnDecode">Decode</button> </td><td><div id="divFlush"> </div></td><td><button id="btnDeencodeString">|{[(%Deencode string,s,%)]}| </button> </td><td> <input type="checkbox" id="chkFlush" value="Flush"> Flush to queries </input> </td><td><button id="btnEncode">Encode</button><button id="btnSetInSandcorn">Set in sandcorn</button></td></tr></table></td></tr>
+</table>
+</td></tr> 
+<td><tr> 
+ 	 <div id="responseData"></div>
+</td></tr> 
+</table>
+<table><tr><td>
+<div id="charsTable"></div>
+</td><td>
+<table><tr><td></td><td><button id="btnCharTableUp" style="width:50px;height:50px"> &#94 </button><td></td></tr><tr><td><button id="btnCharTableLeft" style="width:50px;height:50px"> &#60 </button> </td><td><button id="btnCharTableDown" style="width:50px;height:50px"> &#118 </button></td><td><button id="btnCharTableRight" style="width:50px;height:50px"> &#62 </button></td></tr></table>
+</td></tr></table>
+<table><tr><td><button id="btnPrevCharsSide" style="width:200px;height:50px">Prev</button></td><td><button id="btnNextCharsSide" style="width:200px;height:50px">Next</button></td><td><button id="btnSearchDec" style="width:200px;height:50px">Search dec</button></td><td><button id="btnSearchHex" style="width:200px;height:50px">Search hex</button></td><td><button id="btnSearchChar" style="width:200px;height:50px">Search char</button></td><td><button id="btnReset" style="width:200px;height:50px">Reset</button></td><td><input type="checkbox" id="chkHighlighted" checked="true">Highlighted active char </input> </td></tr>
+	<tr><td>discreet Breackets: </td> <td><button id="btndBNumber" style="width:200px;height:50px"> |{[(%big number in dB%)]}| </button> </td> 
+		<td><button id="btndBString" style="width:200px;height:50px"> |{[(%big string in dB%)]}| </button></td><td> </td><td> </td> <td> </td> <td> </td> </tr>
+</table>
+ 	 <div id="queryHistory">
+	 </div>
+</div>
+<div id="divPreview">
+	<br/>
+        name: <input type="text" id="txtFilename"></input>
+        <br/>
+	preview: 
+	<textarea id="txtImpresionismPreview" cols="30" rows="10">Unrecognized colors:  </textarea>
+</div>
+<div id="divPreviewControls">
+</div>
+</body>
+</html>
