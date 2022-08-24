@@ -51,6 +51,7 @@ void clipboard_callback(GtkClipboard* clipboard,const gchar* gtext,gpointer data
 	char* strTextSystemLog;
 	size_t intStrTextSystemLength=0;
 	size_t intStrTextSystemLogLength=0;
+	char chrQuotationMark='"';
 	char strPrefix[]="google-chrome file:///home/user/soft/TheNetspaces/TheNetspaces-master/UnicodeBookfyHtmlget.html?";
 	size_t intStrPrefix=strlen(strPrefix);
 	int intParseInt=atoi(strText);
@@ -58,45 +59,45 @@ void clipboard_callback(GtkClipboard* clipboard,const gchar* gtext,gpointer data
 	snprintf(strParseInt,intStrTextLen,"%d",intParseInt);
 	int blnRecognized=0;
 	if(1==strlen(strText)){
-		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("encode=");
-		intStrTextSystemLogLength=intStrTextLen+strlen("encode=");
+		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("encode=")+2;
+		intStrTextSystemLogLength=intStrTextLen+strlen("encode=")+2;
 		strTextSystem=(char*)malloc(intStrTextSystemLength*sizeof(char));
 		strTextSystemLog=(char*)malloc(intStrTextSystemLogLength*sizeof(char));
-		snprintf(strTextSystem,intStrTextSystemLength,"%sencode=%s",strPrefix,strText);
-		snprintf(strTextSystemLog,intStrTextSystemLogLength,"encode=%s",strText);
+		snprintf(strTextSystem,intStrTextSystemLength,"%sencode=%c%s%c",strPrefix,chrQuotationMark,strText,chrQuotationMark);
+		snprintf(strTextSystemLog,intStrTextSystemLogLength,"encode=%c%s%c",chrQuotationMark,strText,chrQuotationMark);
 		blnRecognized=1;
 	}
 	size_t wcslen;
 	wcslen=mbstowcs(NULL,strText,0);
 	if(0==blnRecognized&&1==wcslen){
-		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("encode=");
-		intStrTextSystemLogLength=intStrTextLen+strlen("encode=");
+		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("encode=")+2;
+		intStrTextSystemLogLength=intStrTextLen+strlen("encode=")+2;
 		strTextSystem=(char*)malloc(intStrTextSystemLength*sizeof(char));
 		strTextSystemLog=(char*)malloc(intStrTextSystemLogLength*sizeof(char));
-		snprintf(strTextSystem,intStrTextSystemLength,"%sencode=%s",strPrefix,strText);
-		snprintf(strTextSystemLog,intStrTextSystemLogLength,"encode=%s",strText);
+		snprintf(strTextSystem,intStrTextSystemLength,"%sencode=%c%s%c",strPrefix,chrQuotationMark,strText,chrQuotationMark);
+		snprintf(strTextSystemLog,intStrTextSystemLogLength,"encode=%c%s%c",chrQuotationMark,strText,chrQuotationMark);
 		blnRecognized=1;
 	}
 	if(0==blnRecognized&&0==strcmp(strText,strParseInt)){
-		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("decode=");
-		intStrTextSystemLogLength=intStrTextLen+strlen("decode=");
+		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("decode=")+2;
+		intStrTextSystemLogLength=intStrTextLen+strlen("decode=")+2;
 		strTextSystem=(char*)malloc(intStrTextSystemLength*sizeof(char));
 		strTextSystemLog=(char*)malloc(intStrTextSystemLogLength*sizeof(char));
-		snprintf(strTextSystem,intStrTextSystemLength,"%sdecode=%s",strPrefix,strText);
-		snprintf(strTextSystemLog,intStrTextSystemLogLength,"decode=%s",strText);
+		snprintf(strTextSystem,intStrTextSystemLength,"%sdecode=%c%s%c",strPrefix,chrQuotationMark,strText,chrQuotationMark);
+		snprintf(strTextSystemLog,intStrTextSystemLogLength,"decode=%c%s%c",chrQuotationMark,strText,chrQuotationMark);
 		blnRecognized=1;
 	}
 	if(0==blnRecognized){
-		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("discreetBreacketAndSetIntSandcorn=");
-		intStrTextSystemLogLength=intStrTextLen+strlen("discreetBreacketAndSetInSandcorn=");
-		//intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("discreetBreacket=");
-		//intStrTextSystemLogLength=intStrTextLen+strlen("discreetBreacket=");
+		intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("discreetBreacketAndSetIntSandcorn=")+2;
+		intStrTextSystemLogLength=intStrTextLen+strlen("discreetBreacketAndSetInSandcorn=")+2;
+		//intStrTextSystemLength=intStrTextLen+intStrPrefix+strlen("discreetBreacket=")+2;
+		//intStrTextSystemLogLength=intStrTextLen+strlen("discreetBreacket=")+2;
 		strTextSystem=(char*)malloc(intStrTextSystemLength*sizeof(char));
 		strTextSystemLog=(char*)malloc(intStrTextSystemLogLength*sizeof(char));
-		snprintf(strTextSystem,intStrTextSystemLength,"%sdiscreetBreacketAndSetInSandcorn=%s",strPrefix,strText);
-		//snprintf(strTextSystem,intStrTextSystemLength,"%sdiscreetBreacket=%s",strPrefix,strText);
-		snprintf(strTextSystemLog,intStrTextSystemLogLength,"discreetBreacketAndSetInSandcorn=%s",strText);
-		//snprintf(strTextSystemLog,intStrTextSystemLogLength,"discreetBreacket=%s",strText);
+		snprintf(strTextSystem,intStrTextSystemLength,"%sdiscreetBreacketAndSetInSandcorn=%c%s%c",strPrefix,chrQuotationMark,strText,chrQuotationMark);
+		//snprintf(strTextSystem,intStrTextSystemLength,"%sdiscreetBreacket=%c%s%c",strPrefix,chrQuotationMark,strText,chrQuotationMark);
+		snprintf(strTextSystemLog,intStrTextSystemLogLength,"discreetBreacketAndSetInSandcorn=%c%s%c",chrQuotationMark,strText,chrQuotationMark);
+		//snprintf(strTextSystemLog,intStrTextSystemLogLength,"discreetBreacket=%c%s%c",chrQuotationMark,strText,chrQuotationMark);
 	}
 #ifdef SHOWSECONDS
 	GtkWidget* grid=gtk_grid_new();
@@ -156,9 +157,10 @@ static void handlerHide(int sig, siginfo_t *si, void *uc){
 	signal(sig, SIG_IGN);
 }
 static void handlerClose(int sig, siginfo_t *si, void *uc){
-	gtk_window_close(GTK_WINDOW(window));
 	signal(sig, SIG_IGN);
+	gtk_widget_hide(window);
 	system(strTextSystem);
+	gtk_window_close(GTK_WINDOW(window));
 	free(strTextSystem);
 }
 #endif
