@@ -24,6 +24,72 @@ static void activate(GtkApplication* app,gpointer user_data){
 	gtk_widget_show_all(window);
 #endif
 }
+char* escapeCharacters(char* strText,size_t intStrTextLen,size_t* intStrNewTextLen){
+	unsigned int intOccurences=0;
+	for(unsigned int ii=0;ii<intStrTextLen;ii++){
+		if('\t'==strText[ii])intOccurences++;
+		if('\n'==strText[ii])intOccurences++;
+		if('"'==strText[ii])intOccurences++;
+		if('#'==strText[ii])intOccurences++;
+		if('&'==strText[ii])intOccurences++;
+		if('('==strText[ii])intOccurences++;
+		if(')'==strText[ii])intOccurences++;
+		if('`'==strText[ii])intOccurences++;
+	}
+	*intStrNewTextLen=intStrTextLen+intOccurences*2;
+	char* strNewText=(char*)malloc((*intStrNewTextLen)*sizeof(char));
+	unsigned int jj=0;
+	for(unsigned int ii=0;ii<intStrTextLen;ii++){
+		if(('\t'==strText[ii])||('\n'==strText[ii])||('"'==strText[ii])||('#'==strText[ii])||('&'==strText[ii])||('('==strText[ii])||(')'==strText[ii])||('`'==strText[ii])){
+			switch(strText[ii]){
+			case '\t':
+				strNewText[jj++]='%';
+				strNewText[jj++]='0';
+				strNewText[jj++]='9';
+				break;
+			case '\n':
+				strNewText[jj++]='%';
+				strNewText[jj++]='0';
+				strNewText[jj++]='A';
+				break;
+			case '"':
+				strNewText[jj++]='%';
+				strNewText[jj++]='2';
+				strNewText[jj++]='2';
+				break;
+			case '#':
+				strNewText[jj++]='%';
+				strNewText[jj++]='2';
+				strNewText[jj++]='3';
+				break;
+			case '&':
+				strNewText[jj++]='%';
+				strNewText[jj++]='2';
+				strNewText[jj++]='6';
+				break;
+			case '(':
+				strNewText[jj++]='%';
+				strNewText[jj++]='2';
+				strNewText[jj++]='8';
+				break;
+			case ')':
+				strNewText[jj++]='%';
+				strNewText[jj++]='2';
+				strNewText[jj++]='9';
+				break;
+			case '`':
+				strNewText[jj++]='%';
+				strNewText[jj++]='6';
+				strNewText[jj++]='0';
+				break;
+			}
+		}else{
+			strNewText[jj++]=strText[ii];
+		}
+	}
+	free(strText);
+	return strNewText;
+}
 void clipboard_callback(GtkClipboard* clipboard,const gchar* gtext,gpointer data){
 	size_t intStrTextLen;
 	char* strText;
@@ -44,7 +110,7 @@ void clipboard_callback(GtkClipboard* clipboard,const gchar* gtext,gpointer data
 			strText[intStrTextLen-1]=0;
 		}
 	}
-
+	strText=escapeCharacters(strText,intStrTextLen,&intStrTextLen);
 #ifndef SHOWSECONDS
 	char* strTextSystem;
 #endif
