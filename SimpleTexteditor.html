@@ -1,0 +1,165 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Simple Texteditor</title>
+<style>
+input,button,a{background-color:rgba(255,60,0,255);
+	border:none;
+	color: black;}
+textarea{background-color:black;
+	border-color:rgba(255,60,0,255);
+	color:grey;
+	scrollbar-face-color:black;
+	scrollbar-track-color:rgba(255,60,0,255);
+	scrollbar-arrow-color:black;
+	scrollbar-highlight-color:orange;
+	scrollbar-shadow-color:orange;
+	scrollbar-3dlight-color:orange;
+	scrollbar-darkshadow-color:orange;
+}
+</style>
+<script type-"text/javascript">
+function setContents(contents){
+	var txtText=document.getElementById("txtText");
+	txtText.value=contents;
+	document.getElementById("txtLineNumber").value="1";
+}
+function openFile(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var strFilename=document.getElementById("txtFilename");
+		strFilename.value=file.name;
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			setContents(contents);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsText(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function click(elem){
+	var eventMouse=document.createEvent("MouseEvents");
+	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	elem.dispatchEvent(eventMouse);
+}
+function prepareFileToSave(contents,fileName){
+	var a=document.getElementById("save");
+	if(fileName)a.setAttribute("download",fileName);
+	var blob=new Blob([contents],{type:"text/plain;charset=utf-8"});
+	var downloadUrl=URL.createObjectURL(blob);
+	a.setAttribute("href",downloadUrl);
+}
+function btnOpenPressed(){
+	openFile();
+}
+function btnSavePressed(){
+	var txtText=document.getElementById("txtText");
+	var strFilename=document.getElementById("txtFilename").value;
+	if (0==strFilename.length)strFilename="text.txt";
+	prepareFileToSave(txtText.value,strFilename);
+	alert("File ready for saving. After modifying again, prepare the file for saving again.");
+}
+function gotoLine(line){
+	alert("Scroll will be estimated and the line number is usually not exact.");
+
+	var txtText=document.getElementById("txtText");
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	var scrollTop=(line-1)*(lineHeight);
+	txtText.scrollTop=scrollTop;
+}
+function btnGotoLinenumber(){
+	gotoLine(parseInt(document.getElementById("txtLineNumber").value));	
+}
+function chkLineWrapClicked(){
+	var chkLineWrap=document.getElementById("chkLineWrap");
+	var txtText=document.getElementById("txtText");
+	if (true==chkLineWrap.checked)txtText.wrap="on";
+	if (false==chkLineWrap.checked)txtText.wrap="off";
+}
+function fullScreenSize(){
+	var txtText=document.getElementById("txtText");
+	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
+	var lineWidth=txtText.clientWidth/txtText.cols;
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	txtText.cols=window.innerWidth/lineWidth;
+	txtText.rows=(window.innerHeight-100)/lineHeight;
+}
+function btnResizePressed(){
+	var txtText=document.getElementById("txtText");
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	txtText.cols=intWidth;
+	txtText.rows=intHeight;
+}
+function btnFindPressed(){
+	alert("Use the webbrowser functionality to search on the webpage.");
+}
+function init(){
+	document.getElementById("btnOpen").onclick=btnOpenPressed;
+	document.getElementById("btnSave").onclick=btnSavePressed;
+	document.getElementById("btnGoto").onclick=btnGotoLinenumber;
+	document.getElementById("chkLineWrap").onclick=chkLineWrapClicked;
+	document.getElementById("btnResize").onclick=btnResizePressed;
+	document.getElementById("btnFind").onclick=btnFindPressed;
+}
+window.onload=init;
+</script>
+</head>
+<body style="background-color:black;color:grey;">
+	<table><tr>	
+		<td><button id="btnOpen">Open...</button></td>
+		<td><button id="btnSave">Prepare for saving</button></td>
+		<td><a id="save" download="text.txt" href='data:text/plain,"Prepare for saving" first.&#10;'>Save as:</a></td>
+		<td><input type="text" id="txtFilename"></input></td>
+		<td><button id="btnResize">Resize...</button></td>
+		</tr>
+	</table>
+	<table><tr>
+		<td><button id="btnGoto">Goto line number:</button></td>
+		<td><input type="text" id="txtLineNumber"></input></td>
+		<td><input type="checkbox" id="chkLineWrap" checked="true" >Line wrap</input></td>
+		<td><button id="btnFind">Find...</button></td>
+		</tr>
+	</table>
+<textarea id="txtText" cols="60" rows="30"></textarea>
+</body>
+</html>
