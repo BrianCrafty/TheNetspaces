@@ -1,0 +1,638 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>Robotic Pen</title>
+<style>
+input,button,a{background-color:rgba(255,60,0,255);
+	border:none;
+	color: black;}
+textarea{background-color:black;
+	border-color:rgba(255,60,0,255);
+	color:grey;
+	scrollbar-face-color:black;
+	scrollbar-track-color:rgba(255,60,0,255);
+	scrollbar-arrow-color:black;
+	scrollbar-highlight-color:orange;
+	scrollbar-shadow-color:orange;
+	scrollbar-3dlight-color:orange;
+	scrollbar-darkshadow-color:orange;
+}
+</style>
+<script type-"text/javascript">
+function setContents(contents){
+	var txtText=document.getElementById("txtText");
+	txtText.value=contents;
+	document.getElementById("txtLineNumber").value="1";
+}
+function openFile(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var strFilename=document.getElementById("txtFilename");
+		strFilename.value=file.name;
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			setContents(contents);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsText(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function click(elem){
+	var eventMouse=document.createEvent("MouseEvents");
+	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	elem.dispatchEvent(eventMouse);
+}
+function prepareFileToSave(contents,fileName){
+	var a=document.getElementById("save");
+	if(fileName)a.setAttribute("download",fileName);
+	var blob=new Blob([contents],{type:"text/plain;charset=utf-8"});
+	var downloadUrl=URL.createObjectURL(blob);
+	a.setAttribute("href",downloadUrl);
+}
+function btnOpenPressed(){
+	openFile();
+}
+function btnSavePressed(){
+	var txtText=document.getElementById("txtText");
+	var strFilename=document.getElementById("txtFilename").value;
+	if (0==strFilename.length)strFilename="text.txt";
+	prepareFileToSave(txtText.value,strFilename);
+	alert("File ready for saving. After modifying again, prepare the file for saving again.");
+}
+function gotoLine(line){
+	alert("Scroll will be estimated and the line number is usually not exact.");
+
+	var txtText=document.getElementById("txtText");
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	var scrollTop=(line-1)*(lineHeight);
+	txtText.scrollTop=scrollTop;
+}
+function btnGotoLinenumber(){
+	gotoLine(parseInt(document.getElementById("txtLineNumber").value));	
+}
+function chkLineWrapClicked(){
+	var chkLineWrap=document.getElementById("chkLineWrap");
+	var txtText=document.getElementById("txtText");
+	if (true==chkLineWrap.checked)txtText.wrap="on";
+	if (false==chkLineWrap.checked)txtText.wrap="off";
+}
+function fullScreenSize(){
+	var txtText=document.getElementById("txtText");
+	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
+	var lineWidth=txtText.clientWidth/txtText.cols;
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	txtText.cols=window.innerWidth/lineWidth;
+	txtText.rows=(window.innerHeight-100)/lineHeight;
+}
+function btnResizePressed(){
+	var txtText=document.getElementById("txtText");
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	txtText.cols=intWidth;
+	txtText.rows=intHeight;
+}
+function btnFindPressed(){
+	alert("Use the webbrowser functionality to search on the webpage.");
+}
+function init(){
+	document.getElementById("btnOpen").onclick=btnOpenPressed;
+	document.getElementById("btnSave").onclick=btnSavePressed;
+	document.getElementById("btnGoto").onclick=btnGotoLinenumber;
+	document.getElementById("chkLineWrap").onclick=chkLineWrapClicked;
+	document.getElementById("btnResize").onclick=btnResizePressed;
+	document.getElementById("btnFind").onclick=btnFindPressed;
+	document.getElementById("btnResetAndDraw").onclick=btnResetAndDrawPressed;
+	document.getElementById("btnReset").onclick=btnResetPressed;
+	document.getElementById("btnDraw").onclick=btnDrawPressed;
+	document.getElementById("btnClear").onclick=btnClearPressed;
+	document.getElementById("btnResizeRoboticCanvas").onclick=btnResizeRoboticCanvasPressed;
+	document.getElementById("btnLoadBackgroundImage").onclick=btnLoadBackgroundImagePressed;
+	document.getElementById("btnExportToAsciiArtText").onclick=btnExportToAsciiArtTextPressed;
+	document.getElementById("chkShowBackgroundImage").onchange=chkShowBackgroundImageChanged;
+	var penCanvas=document.getElementById("RoboticPenCanvas");
+	window.roboticPen=new RoboticPen(penCanvas);
+}
+window.onload=init;
+RoboticPenConstructor=function(that,roboticPenCanvas){
+	that.blnPenDown=true;
+	that.roboticPenCanvas=roboticPenCanvas;
+	that.intScreenWidth=that.roboticPenCanvas.width;
+	that.intScreenHeight=that.roboticPenCanvas.height;
+	that.intX0=Math.ceil(that.intScreenWidth/2.);
+	that.intY0=Math.ceil(that.intScreenHeight/2.);
+	that.intX=0;
+	that.intY=0;
+	that.angle=0;//watch convention
+	that.intSize=10;
+	that.lstFGcolor=[255,60,0,255];
+	//that.lstBGcolor=[255,255,255,255];
+	that.lstBGcolor=[0,0,0];
+	that.lstAvatarFGcolor=[255,60,0,255];
+	that.lstAvatarBGcolor=[255,60,0,0];
+	//that.screenCanvas=screenCanvas;
+	that.offlineCanvas=document.createElement("canvas");
+	that.offlineCanvas.width=that.intScreenWidth;
+	that.offlineCanvas.height=that.intScreenHeight;
+	that.backgroundImageCanvas=null;
+	that.strProgram="";
+	//that.strColor="rgba(255,60,0,255)";
+	that.intLineWidth=1;
+	that.blnVisible=true;
+	that.lstOpaqueColor=[0,0,0,0];
+	that.degree=Math.PI/180;
+};
+RoboticPenConstructor_strF=function(that){
+
+};
+RoboticPen=function(roboticPenCanvas){
+	RoboticPenConstructor(this,roboticPenCanvas);
+	RoboticPenConstructor_strF(this,roboticPenCanvas);
+};
+RoboticPen.prototype.resetPenState=function(){
+	this.intScreenWidth=this.roboticPenCanvas.width;
+	this.intScreenHeight=this.roboticPenCanvas.height;
+	this.intX0=Math.ceil(this.intScreenWidth/2.);
+	this.intY0=Math.ceil(this.intScreenHeight/2.);
+	this.intX=0;
+	this.intY=0;
+	this.angle=0;
+	this.pendown();
+	this.showpen();
+	this.clearScreen(0,0,0);
+};
+RoboticPen.prototype.resetpenstate=function(){
+	this.resetPenState();
+};
+RoboticPen.prototype.penUp=function(){
+	this.blnPenDown=false;
+};
+RoboticPen.prototype.penup=function(){
+	this.penUp();
+};
+RoboticPen.prototype.pu=function(){
+	this.penUp();
+};
+RoboticPen.prototype.penDown=function(){
+	this.blnPenDown=true;
+};
+RoboticPen.prototype.pendown=function(){
+	this.penDown();
+};
+RoboticPen.prototype.pd=function(){
+	this.penDown();
+};
+RoboticPen.prototype.down=function(){
+	this.penDown();
+};
+RoboticPen.prototype.setVisible=function(blnVisible){
+	this.blnVisible=blnVisible;
+};
+RoboticPen.prototype.setvisible=function(blnVisible){
+	this.setVisible(blnVisible);
+};
+RoboticPen.prototype.showPen=function(){
+	this.blnVisible=true;
+};
+RoboticPen.prototype.showpen=function(){
+	this.showPen();
+};
+RoboticPen.prototype.showturtle=function(){
+	this.showPen();
+};
+RoboticPen.prototype.showTurtle=function(){
+	this.showPen();
+};
+RoboticPen.prototype.sp=function(){
+	this.showpen();
+};
+RoboticPen.prototype.st=function(){
+	this.showpen();
+};
+RoboticPen.prototype.hidePen=function(){
+	this.blnVisible=false;
+};
+RoboticPen.prototype.hidepen=function(){
+	this.hidePen();
+};
+RoboticPen.prototype.hideturtle=function(){
+	this.hidePen();
+};
+RoboticPen.prototype.hideTurtle=function(){
+	this.hidePen();
+};
+RoboticPen.prototype.hp=function(){
+	this.hidePen();
+};
+RoboticPen.prototype.ht=function(){
+	this.hidePen();
+};
+RoboticPen.prototype.isVisible=function(){
+	return this.blnVisible;
+};
+RoboticPen.prototype.isvisible=function(){
+	return this.isVisible();
+};
+RoboticPen.prototype.drawLine=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
+	var theCanvasContext=theCanvas.getContext("2d");
+	theCanvasContext.beginPath();
+	var strColor="rgba("+lstColor[0]+","+lstColor[1]+","+lstColor[2]+","+lstColor[3]+")";
+	theCanvasContext.strokeStyle=strColor;
+	theCanvasContext.lineWidth=intLineWidth;
+	theCanvasContext.moveTo(this.intX0+intX0,this.intY0+intY0);
+	theCanvasContext.lineTo(this.intX0+intX1,this.intY0+intY1);
+	theCanvasContext.stroke();
+};
+RoboticPen.prototype.drawline=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
+	this.drawLine(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth);
+};
+RoboticPen.prototype.forward=function(intLength){
+	var fltSin=Math.sin(this.toRadian(this.angle));
+	var fltCos=Math.cos(this.toRadian(this.angle));
+	var intDX=intLength*fltSin;
+	var intDY=-intLength*fltCos;
+	if(true==this.blnPenDown){
+		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX+intDX,this.intY+intDY,this.lstFGcolor,this.intLineWidth);
+	}
+	this.intX=this.intX+=intDX;
+	this.intY=this.intY+=intDY;
+};
+RoboticPen.prototype.fd=function(intLength){
+	this.forward(intLength);
+};
+RoboticPen.prototype.backward=function(intLength){
+	var fltSin=Math.sin(this.toRadian(this.angle));
+	var fltCos=Math.cos(this.toRadian(this.angle));
+	var intDX=intLength*fltSin;
+	var intDY=-intLength*fltCos;
+	if(true==this.blnPenDown){
+		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX-intDX,this.intY-intDY,this.lstFGcolor,this.intLineWidth);
+	}
+	this.intX=this.intX-=intDX;
+	this.intY=this.intY-=intDY;
+};
+RoboticPen.prototype.bk=function(intLength){
+	this.backward(intLength);
+};
+RoboticPen.prototype.back=function(intLength){
+	this.backward(intLength);
+};
+RoboticPen.prototype.left=function(degrees){
+	this.angle-=degrees;
+};
+RoboticPen.prototype.lt=function(degrees){
+	this.left(degrees);
+};
+RoboticPen.prototype.right=function(degrees){
+	this.angle+=degrees;
+};
+RoboticPen.prototype.rt=function(degrees){
+	this.right(degrees);
+};
+RoboticPen.prototype.getIndex=function(i,j){
+	return (j*(this.intScreenWidth)+i)*4;
+};
+RoboticPen.prototype.getIndex_widthHeight=function(i,j,intWidth,intHeight){
+	return (j*(intWidth)+i)*4;
+};
+RoboticPen.prototype.updateScreen=function(blnOfflineCanvas){
+	var offlineContext=this.offlineCanvas.getContext("2d");
+	var intMinWidth,intMinHeight;
+	var offlineImage=offlineContext.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
+	var backgroundImage=null;
+	var chkShowBackgroundImage=document.getElementById("chkShowBackgroundImage");
+	if(null!=this.backgroundImageCanvas&&true==chkShowBackgroundImage.checked){
+		var backgroundImageContext=this.backgroundImageCanvas.getContext("2d");
+		backgroundImage=backgroundImageContext.getImageData(0,0,this.backgroundImageCanvas.width,this.backgroundImageCanvas.height);
+	}
+	var roboticPenCanvas=this.roboticPenCanvas;
+	var roboticPenContext=roboticPenCanvas.getContext("2d");
+	var roboticPenImage=roboticPenContext.createImageData(this.intScreenWidth,this.intScreenHeight);
+	var index=0;
+	var intR,intG,intB,intA;
+	var blnModiff=false;
+	if(null!=backgroundImage){
+		intMinWidth=(this.intScreenWidth<=this.backgroundImageCanvas.width)?this.intScreenWidth:this.backgroundImageCanvas.width;
+		intMinHeight=(this.intScreenHeight<=this.backgroundImageCanvas.height)?this.intScreenHeight:this.backgroundImageCanvas.height;
+		for(var i=0;i<intMinWidth;i++)
+			for(var j=0;j<intMinHeight;j++){
+				index0=this.getIndex_widthHeight(i,j,this.backgroundImageCanvas.width,this.backgroundImageCanvas.height);
+				index1=this.getIndex(i,j);
+				intR=backgroundImage.data[index0+0];
+				intG=backgroundImage.data[index0+1];
+				intB=backgroundImage.data[index0+2];
+				intA=backgroundImage.data[index0+3];
+				if(undefined!=intA&&this.lstOpaqueColor[0]!=intR||this.lstOpaqueColor[1]!=intG||this.lstOpaqueColor[2]!=intB){
+					roboticPenImage.data[index1+0]=intR;
+					roboticPenImage.data[index1+1]=intG;
+					roboticPenImage.data[index1+2]=intB;
+					roboticPenImage.data[index1+3]=intA;
+					blnModiff=true;
+				}
+			}
+
+	}
+	if(true==blnOfflineCanvas){
+		index=0;
+		for(var i=0;i<this.intScreenWidth;i++)
+			for(var j=0;j<this.intScreenHeight;j++){
+				index=this.getIndex(i,j);
+				intR=offlineImage.data[index+0];
+				intG=offlineImage.data[index+1];
+				intB=offlineImage.data[index+2];
+				intA=offlineImage.data[index+3];
+				if(undefined!=intA&&this.lstOpaqueColor[0]!=intR||this.lstOpaqueColor[1]!=intG||this.lstOpaqueColor[2]!=intB){
+					roboticPenImage.data[index+0]=intR;
+					roboticPenImage.data[index+1]=intG;
+					roboticPenImage.data[index+2]=intB;
+					roboticPenImage.data[index+3]=intA;
+					blnModiff=true;
+				}
+			}
+	}
+	if(true==blnModiff)
+		roboticPenContext.putImageData(roboticPenImage,0,0);
+	this.redraw();
+};
+RoboticPen.prototype.clearCanvas=function(theCanvas,intR,intG,intB){
+	var theCanvasContext=theCanvas.getContext("2d");
+	var intWidth=theCanvas.width;
+	var intHeight=theCanvas.height;
+	var theCanvasImage=theCanvasContext.createImageData(intWidth,intHeight);
+	for(var i=0;i<intWidth;i++)
+		for(var j=0;j<intHeight;j++){
+			intIndex=(j*intWidth+i)*4;	
+				theCanvasImage.data[intIndex+0]=intR;
+				theCanvasImage.data[intIndex+1]=intG;
+				theCanvasImage.data[intIndex+2]=intB;
+				theCanvasImage.data[intIndex+3]=255;
+				}
+	theCanvasContext.putImageData(theCanvasImage,0,0);
+};
+RoboticPen.prototype.clearScreen=function(intR,intG,intB){
+	this.clearCanvas(this.offlineCanvas,intR,intG,intB);
+	this.clearCanvas(this.roboticPenCanvas,intR,intG,intB);
+};
+function btnClearPressed(){
+	window.roboticPen.clearScreen(0,0,0);
+}
+function fullScreenRoboticPenCanvasSize(){
+	var intWidth=window.innerWidth;
+	var intHeight=(window.innerHeight-100);
+	window.roboticPen.roboticPenCanvas.width=intWidth;
+	window.roboticPen.intScreenWidth=intWidth;
+	window.roboticPen.roboticPenCanvas.height=intHeight;
+	window.roboticPen.intScreenHeight=intHeight;
+	window.roboticPen.offlineCanvas.width=intWidth;
+	window.roboticPen.offlineCanvas.height=intHeight;
+	window.roboticPen.updateScreen(true);
+}
+function btnResizeRoboticCanvasPressed(){
+	var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+window.roboticPen.intScreenWidth+","+window.roboticPen.intScreenHeight+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenRoboticPenCanvasSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenRoboticPenCanvasSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenRoboticPenCanvasSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenRoboticPenCanvasSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenRoboticPenCanvasSize();
+		return;
+	}
+	window.roboticPen.roboticPenCanvas.width=intWidth;
+	window.roboticPen.intScreenWidth=intWidth;
+	window.roboticPen.roboticPenCanvas.height=intHeight;
+	window.roboticPen.intScreenHeight=intHeight;
+	window.roboticPen.offlineCanvas.width=intWidth;
+	window.roboticPen.offlineCanvas.height=intHeight;
+	window.roboticPen.resetPenState();
+	window.roboticPen.updateScreen(true);
+}
+function btnResetPressed(){
+	window.roboticPen.resetPenState();
+	window.roboticPen.updateScreen(false);
+}
+function loadImage(url){
+	var img=new Image();
+	img.onload=function(evtLoad){
+		window.roboticPen.backgroundImageCanvas=document.createElement("canvas");
+		window.roboticPen.backgroundImageCanvas.id="backgroundImageCanvas";
+		window.roboticPen.backgroundImageCanvas.width=this.width;
+		window.roboticPen.backgroundImageCanvas.height=this.height;
+		backgroundImageContext=window.roboticPen.backgroundImageCanvas.getContext("2d");
+		backgroundImageContext.drawImage(this,0,0,this.width,this.height);
+		var divShowBackgroundImage=document.getElementById("divShowBackgroundImage");
+		divShowBackgroundImage.style.display="";
+		//btnDrawPressed();
+		btnResetPressed();
+	};
+	img.src=url;
+}
+function openFile2(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			loadImage(evtFile.target.result);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsDataURL(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function btnLoadBackgroundImagePressed(){
+	openFile2();
+}
+function btnExportToAsciiArtTextPressed(){
+	alert("Will be implemented in the future - future of the happy and easy paper copy book notes with the pencil margin scratching in the small, pure txt files...");
+}
+function btnDrawPressed(){
+	var strCode=document.getElementById("txtText").value;
+	strCode="var roboticPen=window.roboticPen;"+String.fromCharCode(10)+strCode;
+	eval(strCode);
+	window.roboticPen.updateScreen(true);
+}
+function chkShowBackgroundImageChanged(){
+	window.roboticPen.resetPenState();
+	btnDrawPressed();
+}
+function btnResetAndDrawPressed(){
+	window.roboticPen.resetPenState();
+	btnDrawPressed();
+}
+//TheNetspaces convention
+var degree=Math.PI/180;
+function toRadian(a){return a*degree;}
+RoboticPen.prototype.toRadian=function(a){return a*this.degree;}
+RoboticPen.prototype.redraw=function(){
+	if(true==this.blnVisible){
+		window.roboticPen.drawRoboticPen(window.roboticPen.intSize+1,window.roboticPen.lstAvatarFGcolor,false);
+	}
+};
+RoboticPen.prototype.drawRoboticPen=function(intSize,lstColor,blnExterior){
+	//in the future other avatars
+	this.drawRoboticPen_mouse(intSize,lstColor,blnExterior);
+};
+RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior){
+	var intX=this.intX0+this.intX;
+	var intY=this.intY0+this.intY;
+	var angle=this.angle;
+	var penCanvas=this.roboticPenCanvas;
+	var penCanvasContext=penCanvas.getContext("2d");
+	var fltInternalAngle=toRadian(45);
+	var intArrowWidth=Math.floor(intSize/2)-1;
+	var int_X1=Math.round(intX-intSize*Math.tan(fltInternalAngle));
+	var int_Y1=Math.round(intY+intSize);
+	var int_X2=Math.round(intX+intSize*Math.tan(fltInternalAngle));
+	var int_Y2=Math.round(intY+intSize);
+	var int_X3=Math.round(intX-intArrowWidth);
+	var int_Y3=Math.round(int_Y1);
+	var int_X4=Math.round(intX-intArrowWidth);
+	var int_Y4=Math.round(int_Y1+intSize);
+	var int_X5=Math.round(intX+intArrowWidth);
+	var int_Y5=Math.round(int_Y2+intSize);
+	var int_X6=Math.round(intX+intArrowWidth);
+	var int_Y6=Math.round(int_Y2);
+	var fltAngle=toRadian(angle);
+	var fltSin=Math.sin(fltAngle);
+	var fltCos=Math.cos(fltAngle);
+	var intX1=Math.round((int_X1-intX)*fltCos-(int_Y1-intY)*fltSin)+intX;
+	var intY1=Math.round((int_X1-intX)*fltSin+(int_Y1-intY)*fltCos)+intY;
+	var intX2=Math.round((int_X2-intX)*fltCos-(int_Y2-intY)*fltSin)+intX;
+	var intY2=Math.round((int_X2-intX)*fltSin+(int_Y2-intY)*fltCos)+intY;
+	var intX3=Math.round((int_X3-intX)*fltCos-(int_Y3-intY)*fltSin)+intX;
+	var intY3=Math.round((int_X3-intX)*fltSin+(int_Y3-intY)*fltCos)+intY;
+	var intX4=Math.round((int_X4-intX)*fltCos-(int_Y4-intY)*fltSin)+intX;
+	var intY4=Math.round((int_X4-intX)*fltSin+(int_Y4-intY)*fltCos)+intY;
+	var intX5=Math.round((int_X5-intX)*fltCos-(int_Y5-intY)*fltSin)+intX;
+	var intY5=Math.round((int_X5-intX)*fltSin+(int_Y5-intY)*fltCos)+intY;
+	var intX6=Math.round((int_X6-intX)*fltCos-(int_Y6-intY)*fltSin)+intX;
+	var intY6=Math.round((int_X6-intX)*fltSin+(int_Y6-intY)*fltCos)+intY;
+	penCanvasContext.beginPath();
+	var strColor="rgba("+lstColor[0]+","+lstColor[1]+","+lstColor[2]+","+lstColor[3]+")";
+	penCanvasContext.strokeStyle=strColor;
+	penCanvasContext.lineWidth=1;
+	penCanvasContext.moveTo(intX,intY);
+	penCanvasContext.lineTo(intX1,intY1);
+	penCanvasContext.lineTo(intX3,intY3);
+	penCanvasContext.lineTo(intX4,intY4);
+	penCanvasContext.lineTo(intX5,intY5);
+	penCanvasContext.lineTo(intX6,intY6);
+	penCanvasContext.lineTo(intX2,intY2);
+	penCanvasContext.lineTo(intX,intY);
+	penCanvasContext.stroke();
+	if(true==blnInterior){
+		penCanvasContext.beginPath();
+		strColor="rgba("+lstColor[0]+","+lstColor[1]+","+lstColor[2]+","+lstColor[3]+")";
+		penCanvasContext.fillStyle=strColor;
+		penCanvasContext.lineWidth=2;
+		penCanvasContext.moveTo(intX,intY);
+		penCanvasContext.lineTo(intX1,intY1);
+		penCanvasContext.lineTo(intX3,intY3);
+		penCanvasContext.lineTo(intX4,intY4);
+		penCanvasContext.lineTo(intX5,intY5);
+		penCanvasContext.lineTo(intX6,intY6);
+		penCanvasContext.lineTo(intX2,intY2);
+		penCanvasContext.lineTo(intX,intY);
+		penCanvasContext.fill();
+	}
+};
+</script>
+</head>
+<body style="background-color:black;color:grey;">
+	<table><tr>	
+		<td><button id="btnOpen">Open...</button></td>
+		<td><button id="btnSave">Prepare for saving</button></td>
+		<td><a id="save" download="text.txt" href='data:text/plain,"Prepare for saving" first.&#10;'>Save as:</a></td>
+		<td><input type="text" id="txtFilename"></input></td>
+		<td><button id="btnResize">Resize...</button></td>
+		</tr>
+	</table>
+	<table><tr>
+		<td><button id="btnGoto">Goto line number:</button></td>
+		<td><input type="text" id="txtLineNumber"></input></td>
+		<td><input type="checkbox" id="chkLineWrap" checked="true" >Line wrap</input></td>
+		<td><button id="btnFind">Find...</button></td>
+		</tr>
+	</table>
+<textarea id="txtText" cols="60" rows="30"></textarea>
+<br/>Quick first version - more commands to be implemented in the RoboticPen class...
+<table><tr>
+<td><button id="btnResetAndDraw">Reset & draw</button></td>
+<td><button id="btnReset">Reset</button></td>
+<td><button id="btnDraw">Draw</button></td>
+<td><button id="btnClear">Clear</button></td>
+<td><button id="btnResizeRoboticCanvas">Resize...</button></td>
+<td><button id="btnExportToAsciiArtText">Export to ascii art text</button></td>
+<td><button id="btnLoadBackgroundImage">Load background image</button></td>
+<td><div id="divShowBackgroundImage" style="display:none"><input type="checkbox" id="chkShowBackgroundImage" checked="true" >Show background image</input></div></td>
+</tr>
+</table>
+<canvas id="RoboticPenCanvas" width="500" height="500"></canvas>
+</body>
+</html>
