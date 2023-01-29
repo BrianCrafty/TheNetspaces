@@ -469,6 +469,7 @@ var The_NetspaceConstructor=function(that,canvas,gl,objStrFargs){
 		that.chkWallsPenetration=document.getElementById("chkWallsPenetration");	
 		chkWallsPenetration.checked=true;
 	}
+	TheNetspacesArtificialTextarea_blnInputDone=false;
 	netspace=that;
 };
 var The_NetspaceConstructor_strF=function(that,canvas,gl,objStrFargs){
@@ -1095,6 +1096,15 @@ The_Netspace.prototype.onResizeSquare=function(evtEvent){
 	netspace.camera.intHeight=intHeight;
 	netspace.camera.resizeScreen(netspace.camera.intWidth,netspace.camera.intHeight);
 };
+The_Netspace.prototype.TheNetspacesArtificialTextarea_emptyKeyEvent=function(){
+	var evtKey={};
+	evtKey.altKey=false;
+	evtKey.ctrlKey=false;
+	evtKey.shiftKey=false;
+	evtKey.key="";
+	evtKey.code="";
+	return evtKey;
+};
 The_Netspace.prototype.onKeyUp=function(evtEvent){
 	if(null==netspace)return;
 	switch(evtEvent.key){
@@ -1184,12 +1194,14 @@ The_Netspace.prototype.onKeyDown=function(evtEvent){
 			break;
 		case "Control":
 			if(1==evtEvent.location){
-				if(netspace.camera.blnMouseBlocked)
-					netspace.camera.blnMouseBlocked=false;
-				else{
-					netspace.camera.prevMouseX=null;
-					netspace.camera.prevMouseY=null;
-					netspace.camera.blnMouseBlocked=true;
+				if(true==blnLoad3dWorldsOnStart){
+					if(netspace.camera.blnMouseBlocked)
+						netspace.camera.blnMouseBlocked=false;
+					else{
+						netspace.camera.prevMouseX=null;
+						netspace.camera.prevMouseY=null;
+						netspace.camera.blnMouseBlocked=true;
+					}
 				}
 			}
 			break;
@@ -1218,8 +1230,10 @@ The_Netspace.prototype.onKeyDown=function(evtEvent){
 			netspace.intKeyboardClick|=2048;
 			break;
 		case "Home":
-			netspace.camera.vec3position=vec3.create(netspace.vec3homePosition);
-			netspace.camera.updateMouse();
+			if(true==blnLoad3dWorldsOnStart){
+				netspace.camera.vec3position=vec3.create(netspace.vec3homePosition);
+				netspace.camera.updateMouse();
+			}
 			break;
 		case "Insert":
 			var chkSubstituteClick=document.getElementById("chkSubstituteClick");
@@ -1339,13 +1353,17 @@ The_Netspace.prototype.blocksTexturesOnClick=function(evtEvent){
 	netspace.redrawBlocksCanvas();
 };
 The_Netspace.prototype.mouseWheelUp=function(){
-	netspace.intBlock=(netspace.intBlock+1)%(netspace.quickNetspacesObjectTypes.length+1);
-	netspace.redrawBlocksCanvas();
+	if(true==blnLoad3dWorldsOnStart){
+		netspace.intBlock=(netspace.intBlock+1)%(netspace.quickNetspacesObjectTypes.length+1);
+		netspace.redrawBlocksCanvas();
+	}
 };
 The_Netspace.prototype.mouseWheelDown=function(){
-	netspace.intBlock=(netspace.intBlock-1)%(netspace.quickNetspacesObjectTypes.length+1);
-	if(netspace.intBlock<0)netspace.intBlock=netspace.quickNetspacesObjectTypes.length;
-	netspace.redrawBlocksCanvas();
+	if(true==blnLoad3dWorldsOnStart){
+		netspace.intBlock=(netspace.intBlock-1)%(netspace.quickNetspacesObjectTypes.length+1);
+		if(netspace.intBlock<0)netspace.intBlock=netspace.quickNetspacesObjectTypes.length;
+		netspace.redrawBlocksCanvas();
+	}
 };
 The_Netspace.prototype.onMouseWheel=function(evtEvent){
 	if(null==netspace)return;
@@ -5817,6 +5835,9 @@ InjectionManager.prototype.btnInjectionManagerClicked=function(){
 	else divInjectionManager.style.display="none";
 };
 var loadMusicTools=function(){
+	try{_loadMusicTools();}catch(xcp){alert(xcp.stack.split("\n"));};
+};
+var _loadMusicTools=function(){
 PianoConstructor=function(that){
 	that.playingLoopState={fltMusicTimeStart:null,lstBlnPlaying:[],lstBuffer:[],lstMultitrackBuffers:[],lstIndices:[],blnLoopForever:false,lstFltPreviousNoteTimesStart:[],lstFltPreviousNoteTimesStop:[],lstIntPreviousInstrument:[]};
 	that.blnKeyboardOff=false;
@@ -5935,7 +5956,7 @@ PianoConstructor=function(that){
 	/*that.fltRoundNotesPrecision=1/32.;*/
 	that.fltRoundNotesPrecision=1/16.;
 	that.lstVeryOrange=[255,60,0,255];
-	that.createVarietyManifold3D();
+	if(true==blnLoad3dWorldsOnStart)that.createVarietyManifold3D();
 };
 PianoConstructor_strF=function(that){
 };
@@ -6146,7 +6167,7 @@ Piano.prototype.reconnectOscillator=function(intInstrument){
 Piano.prototype._keyboardCanvasNoteDown=function(intMidiNote){
 	this.keyboardCanvas.lstHighlightedKeys.push(intMidiNote);
 	this.drawKeyboard(netspace.piano.keyboardCanvas.lstHighlightedKeys);
-	this.updatePianoTexture();
+	if(true==blnLoad3dWorldsOnStart)this.updatePianoTexture();
 };
 Piano.prototype.keyboardCanvasNoteDown=function(lstMidiNotes){
 	for(var ii=0;ii<lstMidiNotes.length;ii++)
@@ -6159,7 +6180,7 @@ Piano.prototype._keyboardCanvasNoteUp=function(intMidiNote){
 		intIndex=this.keyboardCanvas.lstHighlightedKeys.indexOf(intMidiNote);
 	}
 	this.drawKeyboard(this.keyboardCanvas.lstHighlightedKeys);
-	this.updatePianoTexture();
+	if(true==blnLoad3dWorldsOnStart)this.updatePianoTexture();
 };
 Piano.prototype.keyboardCanvasNoteUp=function(lstMidiNotes){
 	for(var ii=0;ii<lstMidiNotes.length;ii++)
@@ -6230,6 +6251,11 @@ Piano.prototype.keyboardCanvasMouseEvent=function(evtMouse,theFunction,intEvent)
 
 };
 Piano.prototype.recomputeKeyboard=function(intFirstOctave,intLastOctave,intKeyboardWidth,intKeyboardHeight){
+	this.fivelineNotesCanvas=document.createElement("canvas");
+	this.lstTones=[36,38,40,41,43,45,47,48,50,52,53,55,57,59,60,62,64,65,67,69,71,72,74,76,77,79,81,83,84,86,88,89,91,93,95];
+	this.lstHalftones=[37,39,42,44,46,49,51,54,56,58,61,63,66,68,70,73,75,78,80,82,85,87,90,92,94];
+	this.fivelineNotesCanvas.width=100;
+	this.fivelineNotesCanvas.height=315;
 	this.keyboardCanvas=document.createElement("canvas");
 	this.keyboardCanvas.onmousedown=function(evtMouse){
 		netspace.piano.blnKeyboardCanvasMouseDown=true;
@@ -6278,7 +6304,80 @@ Piano.prototype.recomputeKeyboard=function(intFirstOctave,intLastOctave,intKeybo
 
 	this.drawKeyboard([]);
 };
+Piano.prototype.uniqueHighlights=function(lstHighlightedKeys){
+	var lstUniqueHighlights=[];
+	for(var ii=0;ii<lstHighlightedKeys.length;ii++){
+		if(-1==lstUniqueHighlights.indexOf(lstHighlightedKeys[ii]))lstUniqueHighlights.push(lstHighlightedKeys[ii]);
+	}
+	return lstUniqueHighlights;
+};
+Piano.prototype.drawFivelineNotes=function(lstHighlightedKeys){
+	var fivelineNotesContext=this.fivelineNotesCanvas.getContext("2d");
+	var fivelineNotesImage=fivelineNotesContext.createImageData(this.fivelineNotesCanvas.width,this.fivelineNotesCanvas.height);
+	var I=0,J=0;
+	var index=0;
+	for(var i=0;i<this.fivelineNotesCanvas.width;i+=1){
+			for(var j=0;j<this.fivelineNotesCanvas.height;j+=1){
+				var index=(j*this.fivelineNotesCanvas.width+i)*4;
+				fivelineNotesImage.data[index+0]=0;
+				fivelineNotesImage.data[index+1]=0;
+				fivelineNotesImage.data[index+2]=0;
+				fivelineNotesImage.data[index+3]=255;
+		}
+	}
+	fivelineNotesContext.putImageData(fivelineNotesImage,0,0);
+
+	var intNote=60;
+	var intNoteC4=61;
+	var intHeightF5=150;
+	var intHeightE4=200;
+	var intNoteA5=81;
+	var intNoteC4=60;
+	var intNoteE4=64;
+	var intNoteF5=77;
+	var intHeight=intHeightE4;
+	fivelineNotesContext.beginPath();
+	fivelineNotesContext.strokeStyle="rgba(255,60,0,255)";
+	fivelineNotesContext.rect(0,0,this.fivelineNotesCanvas.width,this.fivelineNotesCanvas.height);
+	for(var ii=0;ii<5;ii++){
+		intHeight=Math.round(intHeightE4+(ii/4.)*(intHeightF5-intHeightE4));
+		fivelineNotesContext.moveTo(0,intHeight);
+		fivelineNotesContext.lineTo(100,intHeight);
+	}
+	fivelineNotesContext.stroke();
+	for(var ii=0;ii<lstHighlightedKeys.length;ii++){
+		intNote=lstHighlightedKeys[ii];
+		intHeight=Math.round(intHeightE4+(intNote-intNoteE4)*(1.*intHeightF5-1.*intHeightE4)/(intNoteF5-intNoteE4));
+		fivelineNotesContext.beginPath();
+		fivelineNotesContext.arc(50,intHeight,5,0,2*Math.PI);
+		fivelineNotesContext.stroke();
+		if(-1!=this.lstHalftones.indexOf(intNote)){
+			fivelineNotesContext.fillStyle="rgba(255,60,0,255)";
+			/*fivelineNotesContext.fillText("#",35,intHeight+5);*/
+			fivelineNotesContext.fillText("#",35,intHeight+4);
+			if(intNote<=intNoteC4||intNote>=intNoteA5)
+				if(1==this.lstHalftones.indexOf(intNote)%2){
+					fivelineNotesContext.beginPath();
+					fivelineNotesContext.moveTo(40,intHeight);
+					fivelineNotesContext.lineTo(60,intHeight);
+					fivelineNotesContext.stroke();
+				}
+
+		}else{
+			if(intNote<=intNoteC4||intNote>=intNoteA5)
+				if(0==this.lstTones.indexOf(intNote)%2){
+					fivelineNotesContext.beginPath();
+					fivelineNotesContext.moveTo(40,intHeight);
+					fivelineNotesContext.lineTo(60,intHeight);
+					fivelineNotesContext.stroke();
+			}
+
+		}
+	}
+};
 Piano.prototype.drawKeyboard=function(lstHighlightedKeys){
+	lstHighlightedKeys=this.uniqueHighlights(lstHighlightedKeys);
+	if(null!=this.Piano_chkShowFivelineNotes&&true==this.Piano_chkShowFivelineNotes.checked)this.drawFivelineNotes(lstHighlightedKeys);
 	var lstHighlightedFG=[0,0,0,255];
 	var lstHighlightedBG=[255,255,255,255];
 	var lstFulltoneNormalFG=[this.lstVeryOrange[0],this.lstVeryOrange[1],this.lstVeryOrange[2],this.lstVeryOrange[3]];
@@ -7075,6 +7174,7 @@ Piano.prototype.startPlayingTxtFunFunFun=function(blnPlaying){
 		lstRest=strRest.split(",");
 		lstStrChord=strChord.split(",");
 		lstChord=[];
+		if(String.fromCharCode(10)==lstStrChord)break;
 		for(var jj=0;jj<lstStrChord.length;jj++){
 			intNumber0=parseInt(lstStrChord[jj]);
 			if(true==nonNumber(intNumber0)){
@@ -7369,6 +7469,22 @@ Piano.prototype.initExtensionInterface=function(){
 	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
  		netspace.extensionManager.appendChild("PianoExtension",Piano_divSelectSoundfont);	
 
+	var Piano_chkShowFivelineNotes=document.createElement("input");
+	Piano_chkShowFivelineNotes.type="checkbox";
+	Piano_chkShowFivelineNotes.id="Piano_chkFivelineNotes";
+	Piano_chkShowFivelineNotes.onchange=function(){
+		var Piano_chkShowTouchscreenKeyboard=document.getElementById("Piano_chkShowTouchscreenKeyboard");
+		var Piano_chkShowFivelineNotes=document.getElementById("Piano_chkShowFivelineNotes");
+		if(true==this.checked&&false==Piano_chkShowTouchscreenKeyboard.checked){
+			Piano_chkShowTouchscreenKeyboard.checked=true;
+			Piano_chkShowTouchscreenKeyboard.onchange();
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("PianoExtension",Piano_chkShowFivelineNotes);	
+		netspace.extensionManager.appendChild("PianoExtension",document.createTextNode("Show fiveline notes"));	
+	}
+	this.Piano_chkShowFivelineNotes=Piano_chkShowFivelineNotes;
 	var Piano_chkShowTouchscreenKeyboard=document.createElement("input");
 	Piano_chkShowTouchscreenKeyboard.type="checkbox";
 	Piano_chkShowTouchscreenKeyboard.id="Piano_chkShowTouchscreenKeyboard";
@@ -7377,9 +7493,14 @@ Piano.prototype.initExtensionInterface=function(){
 		var divTouchscreenKeys=document.getElementById("divTouchscreenKeys");
 		var chkTouchscreenKeys=document.getElementById("chkTouchscreenKeys");
 		chkTouchscreenKeys.checked=this.checked;
-		if(Piano_chkShowTouchscreenKeyboard.checked){divTouchscreenKeys.style.display="";
+		var Piano_chkShowFivelineNotes=document.getElementById("Piano_chkShowFivelineNotes");
+		if(false==this.checked&&true==Piano_chkShowFivelineNotes.checked)Piano_chkShowFivelineNotes.checked=false;
+		if(Piano_chkShowTouchscreenKeyboard.checked){
+			divTouchscreenKeys.style.display="";
 			Piano_chkShowTouchscreenKeyboard.strDivTouchscreenKeysInnerHTML=divTouchscreenKeys.innerHTML;
 			divTouchscreenKeys.innerHTML="<center></center>";
+			divTouchscreenKeys.firstElementChild.appendChild(netspace.piano.fivelineNotesCanvas);
+			divTouchscreenKeys.firstElementChild.appendChild(document.createElement("br"));
 			divTouchscreenKeys.firstElementChild.appendChild(netspace.piano.keyboardCanvas);
 		}
 		else{
@@ -7393,7 +7514,6 @@ Piano.prototype.initExtensionInterface=function(){
 		netspace.extensionManager.appendChild("PianoExtension",Piano_chkShowTouchscreenKeyboard);	
 		netspace.extensionManager.appendChild("PianoExtension",document.createTextNode("Show touchscreen keyboard"));	
 	}
-
 	var Piano_chkKeyboardOff=document.createElement("input");
 	Piano_chkKeyboardOff.type="checkbox";
 	Piano_chkKeyboardOff.id="Piano_chkKeyboardOff";
@@ -27500,6 +27620,133 @@ var loadChengfaChengseMatrix_input=function(){
 	};
 	netspace.additionalLoopFunction=additionalLoopFunction;
 };
+function chkShowDivTheNetspacesArtificialTextareaChanged(){
+	var divTheNetspacesArtificialTextarea=document.getElementById("divTheNetspacesArtificialTextarea");
+	if("none"==divTheNetspacesArtificialTextarea.style.display)
+		divTheNetspacesArtificialTextarea.style.display="";
+	else divTheNetspacesArtificialTextarea.style.display="none";
+}
+function btnTheNetspacesArtificialTextareaEscapePressed(){
+	var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+	newEvent.key="Escape";newEvent.code="Escape";
+	netspace.onKeyDown(newEvent);
+	TheNetspacesArtificialTextarea.value="";
+	netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+	netspace.onKeyUp(newEvent);
+}
+function TheNetspacesArtificialTextareaOnInput(evtKey){
+	var TheNetspacesArtificialTextarea=document.getElementById("TheNetspacesArtificialTextarea");
+	if(0==TheNetspacesArtificialTextarea.value.length||10==TheNetspacesArtificialTextarea.value.charCodeAt(0)||13==TheNetspacesArtificialTextarea.value.charCodeAt(0)){netspace.TheNetspacesArtificialTextarea_blnInputDone=false;TheNetspacesArtificialTextarea.value="";return;}
+	if(undefined!=chrValue)
+		alert(chrValue+":"+chrValue.charCodeAt(0));
+	netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+	var chrValue=TheNetspacesArtificialTextarea.value[0];
+	if(chrValue.charCodeAt(0)>255){
+		chrValue=TheNetspacesArtificialTextarea.value;/*inches from OS input systems*/
+	}
+	if(undefined!=chrValue&&null!=chrValue){
+		var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+		newEvent.key=chrValue;newEvent.code=chrValue;
+		var intCode=chrValue.charCodeAt(0);
+		if(intCode>=65&&intCode<=90)newEvent.shiftKey=true;
+		if("string"==typeof(chrValue)&&1==chrValue.length){
+			netspace.onKeyDown(newEvent);
+			netspace.onKeyUp(newEvent);
+			TheNetspacesArtificialTextarea.value="";
+			netspace.TheNetspacesArtificialTextarea_blnInputDone=true;
+		}
+		if("string"==typeof(chrValue)&&chrValue.length>1&&chrValue.charCodeAt(0)>255){
+			netspace.onKeyDown(newEvent);
+			netspace.onKeyUp(newEvent);
+			TheNetspacesArtificialTextarea.value="";
+			netspace.TheNetspacesArtificialTextarea_blnInputDone=true;
+		}
+	}
+}
+function TheNetspacesArtificialTextareaOnKeyUp(evtKey){
+	var TheNetspacesArtificialTextarea=document.getElementById("TheNetspacesArtificialTextarea");
+	var whichKeyCode=evtKey.keyCode||evtKey.which;
+	if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
+		var strKey;
+		switch(whichKeyCode){
+			case 8:strKey="Backspace";break;
+			case 13:strKey="Enter";break;
+			case 16:strKey="Shift";break;
+			case 20:strKey="CapsLock";break;
+			case 27:strKey="Escape";break;
+			case 37:strKey="ArrowLeft";break;
+			case 38:strKey="ArrowUp";break;
+			case 39:strKey="ArrowRight";break;
+			case 40:strKey="ArrowDown";break;
+			default:return;break;
+		}
+		var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+		newEvent.key=strKey;newEvent.code=strKey;
+		netspace.onKeyUp(newEvent);
+		netspace.TheNetspacesArtificialTextarea_blnInputDone=true;
+		TheNetspacesArtificialTextarea.value="";
+		return;
+	    }
+	if(undefined==whichKeyCode){netspace.TheNetspacesArtificialTextarea_blnInputDone=false;return;};
+	if(true==chkTheNetspacesArtificialTextareaBackspaceEmpty.checked&&(0==whichKeyCode||229==whichKeyCode)&&0==TheNetspacesArtificialTextarea.value.length&&false==netspace.TheNetspacesArtificialTextarea_blnInputDone){
+		var strKey;
+		strKey="Backspace";
+		var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+		newEvent.key=strKey;newEvent.code=strKey;
+		netspace.onKeyUp(newEvent);
+		
+		TheNetspacesArtificialTextarea.value="";
+		netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+		return;
+	}
+	netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+	TheNetspacesArtificialTextarea.value="";
+}
+function TheNetspacesArtificialTextareaOnKeyDown(evtKey){
+	var TheNetspacesArtificialTextarea=document.getElementById("TheNetspacesArtificialTextarea");
+	var whichKeyCode=evtKey.keyCode||evtKey.which;
+	if(undefined!=whichKeyCode&&0!=whichKeyCode&&229!=whichKeyCode){ 
+		var strKey;
+		switch(whichKeyCode){
+			case 8:strKey="Backspace";break;
+			case 13:strKey="Enter";break;
+			case 16:strKey="Shift";break;
+			case 20:strKey="CapsLock";break;
+			case 27:strKey="Escape";break;
+			case 37:strKey="ArrowLeft";break;
+			case 38:strKey="ArrowUp";break;
+			case 39:strKey="ArrowRight";break;
+			case 40:strKey="ArrowDown";break;
+			default:return;break;
+		}
+		var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+		newEvent.key=strKey;newEvent.code=strKey;
+		netspace.onKeyDown(newEvent);
+		netspace.TheNetspacesArtificialTextarea_blnInputDone=true;
+		TheNetspacesArtificialTextarea.value="";
+		return;
+	    }
+	if(undefined==whichKeyCode){netspace.TheNetspacesArtificialTextarea_blnInputDone=false;return;};
+	if(true==chkTheNetspacesArtificialTextareaBackspaceEmpty.checked&&(0==whichKeyCode||229==whichKeyCode)&&0==TheNetspacesArtificialTextarea.value.length&&false==netspace.TheNetspacesArtificialTextarea_blnInputDone){
+		var strKey;
+		strKey="Backspace";
+		var newEvent=netspace.TheNetspacesArtificialTextarea_emptyKeyEvent();
+		newEvent.key=strKey;newEvent.code=strKey;
+		netspace.onKeyDown(newEvent);
+		
+		TheNetspacesArtificialTextarea.value="";
+		netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+		return;
+	}
+	netspace.TheNetspacesArtificialTextarea_blnInputDone=false;
+	TheNetspacesArtificialTextarea.value="";
+}
+function TheNetspacesArtificialTextareaOnFocus(){
+	window.onkeydown=null;
+}
+function TheNetspacesArtificialTextareaOnBlur(){
+	window.onkeydown=netspace.onKeyDown;
+}
 function init(){
 	var chkTouchscreenKeys=document.getElementById("chkTouchscreenKeys");
 	chkTouchscreenKeys.onchange=chkTouchscreenKeysChanged;
@@ -27511,6 +27758,12 @@ function init(){
 	var chk3dMouseMode=document.getElementById("chk3dMouseMode");
 	chk3dMouseMode.checked=true;
 	var chkUseSelectedQuickTexture=document.getElementById("chkUseSelectedQuickTexture");
+	var TheNetspacesArtificialTextarea=document.getElementById("TheNetspacesArtificialTextarea");
+	TheNetspacesArtificialTextarea.oninput=TheNetspacesArtificialTextareaOnInput;
+	TheNetspacesArtificialTextarea.onkeyup=TheNetspacesArtificialTextareaOnKeyUp;
+	TheNetspacesArtificialTextarea.onkeydown=TheNetspacesArtificialTextareaOnKeyDown;
+	TheNetspacesArtificialTextarea.onfocus=TheNetspacesArtificialTextareaOnFocus;
+	TheNetspacesArtificialTextarea.onblur=TheNetspacesArtificialTextareaOnBlur;
 	if(true==blnLoad3dWorldsOnStart){
 		var chkDrawLookatCubyteEdges=document.getElementById("chkDrawLookatCubyteEdges");
 		chkDrawLookatCubyteEdges.checked=true;
@@ -27940,6 +28193,12 @@ textarea{background-color:black;
 		<button id="btnSaveTxtFunFunFunFromTextFile" onclick="btnSaveTxtFunFunFunFromTextFilePressed()"> Save txtFunFunFun to the text file</button>
 		<button id="btnLoadTxtFunFunFunFromPicture" onclick="btnLoadTxtFunFunFunFromPicture()">Load txtFunFunFun from the picture</button>
 		<button id="btnSaveTxtFunFunFunFromPicture" onclick="btnSaveTxtFunFunFunFromPicture()">Save txtFunFunFun to the picture</button>
+		<input type="checkbox" id="chkShowDivTheNetspacesArtificialTextarea" onchange="chkShowDivTheNetspacesArtificialTextareaChanged()">Show ArtificialTextarea</input>
+		<div id="divTheNetspacesArtificialTextarea"style="display:none">
+			<button id="btnTheNetspacesArtificialTextareaEscape" onclick="btnTheNetspacesArtificialTextareaEscapePressed()">Esc</button>
+			<textarea id="TheNetspacesArtificialTextarea"></textarea>
+			<input type="checkbox" id="chkTheNetspacesArtificialTextareaBackspaceEmpty">&#60&#45</input>
+		</div>
 	</div>
 	<textarea id="txtFunFunFun">
 	f(x)=
