@@ -168,17 +168,31 @@ RoboticPenConstructor=function(that,roboticPenCanvas){
 	that.lstBGcolor=[0,0,0];
 	that.lstAvatarFGcolor=[255,60,0,255];
 	that.lstAvatarBGcolor=[255,60,0,0];
-	//that.screenCanvas=screenCanvas;
 	that.offlineCanvas=document.createElement("canvas");
 	that.offlineCanvas.width=that.intScreenWidth;
 	that.offlineCanvas.height=that.intScreenHeight;
 	that.backgroundImageCanvas=null;
 	that.strProgram="";
-	//that.strColor="rgba(255,60,0,255)";
 	that.intLineWidth=1;
 	that.blnVisible=true;
 	that.lstOpaqueColor=[0,0,0,0];
 	that.degree=Math.PI/180;
+	that.lstColors=[[255,255,255,255],
+		[0,0,0,255],
+		[255,100,0,255],
+		[255,255,0,255],
+		[0,255,0,255],
+		[255,0,0,255],
+		[255,50,150,255],
+		[128,0,128,255],
+		[100,50,0,255],
+		[0,0,255,255]
+	];
+	that.charColors={}
+	that.charColors[that.lstOpaqueColor]=" ";
+	for(var ii=0;ii<that.lstColors.length;ii++)that.charColors[that.lstColors[ii]]="0";
+	that.charColors[that.lstColors[1]]=" ";
+	that.txtAsciiArt=null;
 };
 RoboticPenConstructor_strF=function(that){
 
@@ -403,13 +417,131 @@ RoboticPen.prototype.clearCanvas=function(theCanvas,intR,intG,intB){
 				theCanvasImage.data[intIndex+0]=intR;
 				theCanvasImage.data[intIndex+1]=intG;
 				theCanvasImage.data[intIndex+2]=intB;
-				theCanvasImage.data[intIndex+3]=255;
+				//theCanvasImage.data[intIndex+3]=255;
+				theCanvasImage.data[intIndex+3]=0;
 				}
 	theCanvasContext.putImageData(theCanvasImage,0,0);
 };
 RoboticPen.prototype.clearScreen=function(intR,intG,intB){
 	this.clearCanvas(this.offlineCanvas,intR,intG,intB);
 	this.clearCanvas(this.roboticPenCanvas,intR,intG,intB);
+};
+RoboticPen.prototype.computeAveragedColor=function(lstR,lstG,lstB,lstA){
+	var intLength=lstA.length;
+	if(lstR.length!=intLength||lstG.length!=intLength||lstB.length!=intLength){
+		return -1;
+	}
+	var intColors=0;
+	var intR=0,intG=0,intB=0,intA=0;
+	var intAveragedR=0,intAveragedG=0,intAveragedB=0,intAveragedA=0;
+	for(var ii=0;ii<intLength;ii++){
+		intR=lstR[ii];
+		intG=lstG[ii];
+		intB=lstB[ii];
+		intA=lstA[ii];
+		if(intR==this.lstOpaqueColor[0]&&intG==this.lstOpaqueColor[1]&&intB==this.lstOpaqueColor[2]&&intA==this.lstOpaqueColor[3]){
+		}else{
+			intAveragedR+=intR;
+			intAveragedG+=intG;
+			intAveragedB+=intB;
+			intAveragedA+=intA;
+			intColors++;
+		}
+	}
+	if(0==intColors)return this.lstOpaqueColor;
+	intAveragedR/=intColors;
+	intAveragedG/=intColors;
+	intAveragedB/=intColors;
+	intAveragedA/=intColors;
+	//antialiasing algorithm in drawLine draws with different alpha
+	if(intAveragedA>0)intAveragedA=255;
+	return [intAveragedR,intAveragedG,intAveragedB,intAveragedA];
+};
+RoboticPen.prototype.findNearestPredefinedColor=function(intR,intG,intB,intA){
+	var intMinDistance=-1;
+	var intMinColor=-1;
+	var intDistance;
+	var lstColors=[];
+	lstColors.push(this.lstOpaqueColor);
+	var ii;
+	for(ii=0;ii<this.lstColors.length;ii++){
+		lstColors.push(this.lstColors[ii]);
+	}
+	for(ii=0;ii<lstColors.length;ii++){
+		intDistance=Math.sqrt((intR-lstColors[ii][0])**2+(intG-lstColors[ii][1])**2+(intB-lstColors[ii][2])**2+(intA-lstColors[ii][3])**2);
+		if(intMinDistance<0||intDistance<intMinDistance){
+			intMinDistance=intDistance;
+			intMinColor=ii;
+		}
+	}
+	return lstColors[intMinColor];
+};
+RoboticPen.prototype.exportToAsciiArt=function(intWidth,intHeight,intMode){
+	var strAsciiArt="";
+	var context,image=null;
+	var intMinWidth,intMinHeight;
+	var lstAveragedR,lstAveragedG,lstAveragedB,lstAveragedA;
+	var intAveragedR,intAveragedG,intAveragedB,intAveragedA;
+	if(0==intMode){
+		context=this.offlineCanvas.getContext("2d");
+		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
+		intMinWidth=this.intScreenWidth;
+		intMinHeight=this.intScreenHeight;
+	}
+	if(1==intMode){
+		if(null!=this.backgroundImageCanvas){
+			context=this.backgroundImageCanvas.getContext("2d");
+			image=context.getImageData(0,0,this.backgroundImageCanvas.width,this.backgroundImageCanvas.height);
+			intMinWidth=this.backgroundImageCanvas.width;
+			intMinHeight=this.backgroundImageCanvas.height;
+		}
+	}
+	if(2==intMode){
+		context=this.roboticPenCanvas.getContext("2d");
+		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
+		intMinWidth=this.intScreenWidth;
+		intMinHeight=this.intScreenHeight;
+
+	}
+	if(null==image){
+		context=this.offlineCanvas.getContext("2d");
+		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
+		intMinWidth=this.intScreenWidth;
+		intMinHeight=this.intScreenHeight;
+	}
+	var lstAveragedColor,lstColor;
+	for(var J=0;J<Math.floor(intMinHeight/intHeight);J++){
+		for(var I=0;I<Math.floor(intMinWidth/intWidth);I++){
+			lstAveragedR=[];
+			lstAveragedG=[];
+			lstAveragedB=[];
+			lstAveragedA=[];
+			for(var i=0;i<intWidth;i++)
+				for(var j=0;j<intHeight;j++){
+					index=this.getIndex_widthHeight(I*intWidth+i,J*intHeight+j,intMinWidth,intMinHeight);
+					intR=image.data[index+0];
+					intG=image.data[index+1];
+					intB=image.data[index+2];
+					intA=image.data[index+3];
+					lstAveragedR.push(intR);
+					lstAveragedG.push(intG);
+					lstAveragedB.push(intB);
+					lstAveragedA.push(intA);
+				}
+			lstAveragedColor=this.computeAveragedColor(lstAveragedR,lstAveragedG,lstAveragedB,lstAveragedA);
+			lstColor=this.findNearestPredefinedColor(lstAveragedColor[0],lstAveragedColor[1],lstAveragedColor[2],lstAveragedColor[3]);
+			strAsciiArt+=this.charColors[lstColor];
+		}
+		strAsciiArt+=String.fromCharCode(10);
+	}
+	return strAsciiArt;
+};
+RoboticPen.prototype.btnSaveAsciiArtPressed=function(){
+	var txtText=document.getElementById("txtAsciiArt");
+	var strFilename=document.getElementById("txtAsciiArtFilename").value;
+	if (0==strFilename.length)strFilename="AsciiArt.txt";
+	prepareFileToSave(txtText.value,strFilename);
+	alert("File ready for downloading under the save link on top. After modifying again, prepare the file for saving again.");
 };
 function btnClearPressed(){
 	window.roboticPen.clearScreen(0,0,0);
@@ -425,8 +557,13 @@ function fullScreenRoboticPenCanvasSize(){
 	window.roboticPen.offlineCanvas.height=intHeight;
 	window.roboticPen.updateScreen(true);
 }
-function btnResizeRoboticCanvasPressed(){
-	var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+window.roboticPen.intScreenWidth+","+window.roboticPen.intScreenHeight+"]");
+function btnResizeRoboticCanvasPressed(evtMouse,theNewWidth,theNewHeight){
+	var intNewWidth,intNewHeigth;
+	if(undefined==theNewWidth)intNewWidth=window.roboticPen.intScreenWidth;
+	else intNewWidth=theNewWidth;
+	if(undefined==theNewHeight)intNewHeigth=window.roboticPen.intScreenHeight;
+	else intNewHeigth=theNewHeight;
+	var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+intNewWidth+","+intNewHeigth+"]");
 	if(null==strNewSize)return;
 	if(0==strNewSize.length){
 		fullScreenRoboticPenCanvasSize();
@@ -482,6 +619,10 @@ function loadImage(url){
 		divShowBackgroundImage.style.display="";
 		//btnDrawPressed();
 		btnResetPressed();
+		if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
+			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the roboticPenCanvas has size ["+[window.roboticPen.intScreenWidth,window.roboticPen.intScreenHeight]+"]. Resize the roboticPenCanvas?");
+			if(true==blnResize)btnResizeRoboticCanvasPressed(null,this.width,this.height);
+		}
 	};
 	img.src=url;
 }
@@ -509,7 +650,63 @@ function btnLoadBackgroundImagePressed(){
 	openFile2();
 }
 function btnExportToAsciiArtTextPressed(){
-	alert("Will be implemented in the future - future of the happy and easy paper copy book notes with the pencil margin scratching in the small, pure txt files...");
+	var strAsciiArtScheme=prompt("Actual screen size ==["+window.roboticPen.intScreenWidth+","+window.roboticPen.intScreenHeight+"]. Enter ascii art char size and mode. If non opaque color found in region, whole region will be marked from the predefined in code color <-> char scheme rounding to the closest color. Modes: 0 - the offline canvas drawn from the code, 1 - the background image if loaded, 2 - whole visible image.","["+Math.floor(window.roboticPen.intScreenWidth/100)+","+Math.floor(window.roboticPen.intScreenHeight/100)+",0]");
+	var strError="The new size is not in the [width,height,mode] format, where width, height and mode are numbers.";
+	if(null==strAsciiArtScheme)return;
+	if(0==strAsciiArtScheme.length){
+		alert(strError);
+		return;
+	}
+	if("["!=strAsciiArtScheme[0]||"]"!=strAsciiArtScheme.substring(strAsciiArtScheme.length-1,strAsciiArtScheme.length)){
+		alert(strError);
+		return;
+	}
+	var lstDimensions=strAsciiArtScheme.substring(1,strAsciiArtScheme.length-1).split(",");
+	if(3!=lstDimensions.length){
+		alert(strError);
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	var intMode=parseInt(lstDimensions[2]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		return;
+	}
+	if(true==Number.isNaN(intMode)){
+		alert(strError);
+		return;
+	}
+	var strAsciiArt=window.roboticPen.exportToAsciiArt(intWidth,intHeight,intMode);
+	if(null==window.roboticPen.txtAsciiArt){
+		var divAsciiArt=document.getElementById("divAsciiArt");
+		window.roboticPen.txtAsciiArt=document.createElement("textarea");
+		window.roboticPen.txtAsciiArt.id="txtAsciiArt";
+		window.roboticPen.txtAsciiArt.style="font-family:monospace;";
+		window.roboticPen.txtAsciiArt.rows=window.roboticPen.intScreenWidth/intWidth+1;
+		window.roboticPen.txtAsciiArt.cols=window.roboticPen.intScreenHeight/intHeight+1;
+		window.roboticPen.txtAsciiArt.value=strAsciiArt;
+		divAsciiArt.appendChild(window.roboticPen.txtAsciiArt);
+		window.roboticPen.btnSaveAsciiArt=document.createElement("button");
+		window.roboticPen.btnSaveAsciiArt.id="btnSaveAsciiArt";
+		window.roboticPen.btnSaveAsciiArt.innerText="Prepare the Ascii Art for saving";
+		window.roboticPen.btnSaveAsciiArt.onclick=window.roboticPen.btnSaveAsciiArtPressed;
+		divAsciiArt.appendChild(window.roboticPen.btnSaveAsciiArt);
+		divAsciiArt.appendChild(document.createTextNode("Ascii Art filename:"));
+		window.roboticPen.txtAsciiArtFilename=document.createElement("input");
+		window.roboticPen.txtAsciiArtFilename.type="text";
+		window.roboticPen.txtAsciiArtFilename.id="txtAsciiArtFilename";
+		window.roboticPen.txtAsciiArtFilename.value="AsciiArt.txt";
+		divAsciiArt.appendChild(window.roboticPen.txtAsciiArtFilename);
+	}else{
+		window.roboticPen.txtAsciiArt.rows=window.roboticPen.intScreenWidth/intWidth+1;
+		window.roboticPen.txtAsciiArt.cols=window.roboticPen.intScreenHeight/intHeight+1;
+		window.roboticPen.txtAsciiArt.value=strAsciiArt;
+	}
 }
 function btnDrawPressed(){
 	var strCode=document.getElementById("txtText").value;
@@ -525,7 +722,6 @@ function btnResetAndDrawPressed(){
 	window.roboticPen.resetPenState();
 	btnDrawPressed();
 }
-//TheNetspaces convention
 var degree=Math.PI/180;
 function toRadian(a){return a*degree;}
 RoboticPen.prototype.toRadian=function(a){return a*this.degree;}
@@ -535,7 +731,6 @@ RoboticPen.prototype.redraw=function(){
 	}
 };
 RoboticPen.prototype.drawRoboticPen=function(intSize,lstColor,blnExterior){
-	//in the future other avatars
 	this.drawRoboticPen_mouse(intSize,lstColor,blnExterior);
 };
 RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior){
@@ -634,5 +829,6 @@ RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior)
 </tr>
 </table>
 <canvas id="RoboticPenCanvas" width="500" height="500"></canvas>
+<div id="divAsciiArt"></div>
 </body>
 </html>
