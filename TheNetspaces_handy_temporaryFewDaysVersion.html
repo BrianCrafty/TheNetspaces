@@ -12804,6 +12804,7 @@ Computer.prototype.inits=function(){
 	this.installProgram(["txtFunFunFun",Program_txtFunFunFun]);
 	this.installProgram(["binarysnake",Program_BinarySnakeGame]);
 	this.installProgram(["dictionarytraining",Program_DictionaryTraining]);
+	this.installProgram(["tetris",Program_Tetris]);
 	this.installProgram(["texteditor",Program_TextEditor]);
 };
 Computer.prototype.loopFunction=function(currentFrameTime){
@@ -13592,7 +13593,7 @@ Program_SnakeGame.prototype.updateGame=function(){
 		this.addRandomApple();
 	}else this.moveSnake();
 };
-Program_SnakeGame.prototype.moveSnake=function(){
+Program_SnakeGame.prototype.moveSnake=function(){//gravitateBrick
 	for(var ii=this.theSnake.length-2;ii>=0;ii--){
 		this.theSnake[ii+1][0]=this.theSnake[ii][0];
 		this.theSnake[ii+1][1]=this.theSnake[ii][1];
@@ -15313,6 +15314,1328 @@ Program_DictionaryTraining.prototype.reloadStrArgs=function(){
 	this.intGameMode=4;
 };
 Program_DictionaryTraining.prototype.loopFunction=function(currentFrameTime){
+	switch(this.intGameMode){
+		case 0:this.gameModeGame(currentFrameTime);break;
+		case 1:this.gameModePause(currentFrameTime);break;
+		case 4:this.gameModeGameOver(currentFrameTime);break;
+	}
+};
+Program_TetrisConstructor=function(that,computer,base){
+	that.computer=computer;
+	that.base=base;
+	that.computer.clearScreen_text();
+	that.intPoints=0;
+	this.intAppleEaten=0;//
+	that.intGameMode=4;
+	that.fltMouseSpeed=0.5;
+	//that.intGameSpeed_ms=250;
+	that.intGameSpeed_ms=1000;
+	that.prevMouseX=null;
+	that.prevMouseY=null;
+	that.fltMouseX=0;
+	that.fltMouseY=0;
+	that.blnMouseBlocked=false;
+	that.intMinApple=1;//rename
+	that.intMaxApple=2350;//rename
+	that.blnScreensaverPlay=false;//remove later
+	that.blnCancelScreensaverPlay=true;//remove later
+	that.prevStrArgs=null;
+	that.strArgs="";
+	/*that.strGameMode="normal";*/
+	/*that.strGameMode="inches";*/
+	that.strGameMode="dictionary";
+	that.lstBricks=[
+			[1,0,0,0,//I
+			 1,0,0,0,
+			 1,0,0,0,
+			 1,0,0,0],
+			[1,0,0,0,//L
+			 1,0,0,0,
+			 1,1,0,0,
+			 0,0,0,0],
+			[0,1,0,0,//L2
+			 0,1,0,0,
+			 1,1,0,0,	
+			 0,0,0,0],
+			[1,1,0,0,//O
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[0,1,1,0,//S
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,1,1,0,//T
+			 0,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,//Z
+			 0,1,1,0,
+			 0,0,0,0,
+			 0,0,0,0]
+	];
+	//that.lstBrickRotations=[];
+	//that.initBrickRotations();
+	that.lstBrickRotations=[
+			[
+			[1,0,0,0,//I
+			 1,0,0,0,
+			 1,0,0,0,
+			 1,0,0,0],
+			[1,1,1,1,
+			 0,0,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,0,0,0,
+			 1,0,0,0,
+			 1,0,0,0,
+			 1,0,0,0],
+			[1,1,1,1,
+			 0,0,0,0,
+			 0,0,0,0,
+			 0,0,0,0]
+			],
+			[
+			[1,0,0,0,//L
+			 1,0,0,0,
+			 1,1,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 1,0,0,0,
+			 1,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 0,1,0,0,
+			 0,1,0,0,
+			 0,0,0,0],
+			[0,0,1,0,
+			 1,1,1,0,
+			 0,0,0,0,
+			 0,0,0,0]
+			],
+			[
+			[0,1,0,0,//L2
+			 0,1,0,0,
+			 1,1,0,0,	
+			 0,0,0,0],
+			[1,0,0,0,
+			 1,1,1,0,
+			 0,0,0,0,	
+			 0,0,0,0],
+			[1,1,0,0,
+			 1,0,0,0,
+			 1,0,0,0,	
+			 0,0,0,0],
+			[1,1,1,0,
+			 0,0,1,0,
+			 0,0,0,0,	
+			 0,0,0,0]
+			],
+			[
+			[1,1,0,0,//O
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0]
+			],
+			[
+			[0,1,1,0,//S
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,0,0,0,
+			 1,1,0,0,
+			 0,1,0,0,
+			 0,0,0,0],
+			[0,1,1,0,
+			 1,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,0,0,0,
+			 1,1,0,0,
+			 0,1,0,0,
+			 0,0,0,0]
+			],
+			[
+			[1,1,1,0,//T
+			 0,1,0,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[0,1,0,0,
+			 1,1,0,0,
+			 0,1,0,0,
+			 0,0,0,0],
+			[0,1,0,0,
+			 1,1,1,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[1,0,0,0,
+			 1,1,0,0,
+			 1,0,0,0,
+			 0,0,0,0]
+			],
+			[
+			[1,1,0,0,//Z
+			 0,1,1,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[0,1,0,0,
+			 1,1,0,0,
+			 1,0,0,0,
+			 0,0,0,0],
+			[1,1,0,0,
+			 0,1,1,0,
+			 0,0,0,0,
+			 0,0,0,0],
+			[0,1,0,0,
+			 1,1,0,0,
+			 1,0,0,0,
+			 0,0,0,0]
+			]
+];	
+	//that.lstBrickRotation=0;//0..3
+	that.lstFallingBrick=[0,0];//brick,rotation
+	that.lstFallingBrickCoords=[0,0];
+	that.intNextBrick=0;
+	that.intBoardWidth=that.base.intScreenWidth_text-2;
+	that.intBoardHeight=that.base.intScreenHeight_text-2;
+	that.lstBoard=[];
+	that.gameModeGameOver();
+	that.blnNewInchOnCleanUp=true;
+};
+Program_TetrisConstructor_strF=function(that,computer,base){
+};
+Program_Tetris=function(computer,base){
+	Program_TetrisConstructor(this,computer,base);
+	Program_TetrisConstructor_strF(this,computer,base);
+};
+Program_Tetris.prototype.getBrickIndex=function(i,j){
+	return 4*j+i;
+};
+Program_Tetris.prototype.getBoardIndex=function(i,j){
+	return j*(this.intBoardWidth)+i;
+};
+/*
+Program_Tetris.prototype.rotateBrick=function(lstBrick){
+	var lstNewBrick=[];
+	for(var i=0;i<4;i++)
+		for(var j=0;j<4;j++){
+			lstNewBrick[this.getBrickIndex(j,i)]=lstBrick[this.getBrickIndex(i,j)];
+		}
+	return lstNewBrick;
+};
+Program_Tetris.prototype.initBrickRotations=function(){
+	var lstBrick=null;
+	this.lstFallingBrick=[];
+	var lstPrevBrick=null;
+	for(var ii=0;ii<this.lstBricks.length;ii++){
+		lstBrick=this.lstBricks[ii];
+		lstPrevBrick=copyList(lstBrick);
+		this.lstBrickRotations[ii]=[];
+		this.lstBrickRotations[ii].push(lstBrick);
+		for(var jj=0;jj<3;jj++){
+			lstPrevBrick=copyList(this.rotateBrick(lstPrevBrick));
+			this.lstBrickRotations[ii].push(lstPrevBrick);
+		}
+	}
+	console.log(this.lstBrickRotations);
+};
+*/
+Program_Tetris.prototype.clearBoard=function(){
+	this.lstBoard=[];
+	for(var i=0;i<=this.intBoardWidth-1;i++){
+		for(var j=0;j<=this.intBoardHeight-1;j++){
+			this.lstBoard[this.getBoardIndex(i,j)]=0;
+		}
+	}
+};
+Program_Tetris.prototype.gameModeGameOver=function(){
+	this.base.clearScreen_text();
+	this.clearBoard();
+	var strGameOver="Points: "+this.intPoints+" Game over - press p to play";
+	for(var ii=0;ii<strGameOver.length;ii++)
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.floor((this.base.intScreenWidth_text-1)/2.-strGameOver.length/2.+ii),Math.floor((this.base.intScreenHeight_text-1)/2.))]=strGameOver[ii];
+	this.drawMouse();
+};
+Program_Tetris.prototype.gameModePause=function(){
+	this.base.clearScreen_text();
+	var strGamePause="Pause - press p to play";
+	for(var ii=0;ii<strGamePause.length;ii++)
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.floor((this.base.intScreenWidth_text-1)/2.-strGamePause.length/2.+ii),Math.floor((this.base.intScreenHeight_text-1)/2.))]=strGamePause[ii];
+	this.drawMouse();
+};
+Program_Tetris.prototype.roundRand=function(min,max){
+	return min+Math.round(Math.abs(max-min)*Math.random());
+};
+Program_Tetris.prototype.addRandomApple=function(){//addRandomBrick
+	var x,y;
+	var blnGoodApple=false;
+	while(false==blnGoodApple){
+		x=this.roundRand(1,this.base.intScreenWidth_text-2);
+		y=this.roundRand(1,this.base.intScreenHeight_text-2);
+		blnGoodApple=true;
+		for(var ii=0;ii<this.theSnake.length;ii++)
+			if(this.theSnake[ii][0]==x&&this.theSnake[ii][1]==y)
+				blnGoodApple=false;
+	}
+	if("normal"==this.strGameMode){
+		var value=this.roundRand(this.intMinApple,this.intMaxApple);
+		/*var value=roundRand(1,255);*/
+		/*var value=roundRand(0,65535);*/
+		this.theApples.push([x,y,value]);
+	}
+	if("inches"==this.strGameMode||"dictionary"==this.strGameMode){
+		try{
+		var intLength=this.lstDictionary.length;
+		var intDictionary=roundRand(0,intLength);
+		if(intDictionary>=intLength)intDictionary=intLength-1;
+			this.theApples.push([x,y,intDictionary]);
+		}catch(xcp){
+			this.theApples.push([0,0,0]);
+		}
+	}
+};
+Program_Tetris.prototype.eatApple=function(intAppleNumber){//cleanUpLines
+	var x,y,intValue;
+	var lstReturn=this.theApples[intAppleNumber];
+	x=lstReturn[0];
+	y=lstReturn[1];
+	intValue=lstReturn[2];
+	this.theApples.splice(intAppleNumber,1);
+	var newSnake=[];
+	switch(this.intMoveDirection){
+		case 0:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]-1]);break;
+		case 1:newSnake.push([this.theSnake[0][0]+1,this.theSnake[0][1]]);break;
+		case 2:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]+1]);break;
+		case 3:newSnake.push([this.theSnake[0][0]-1,this.theSnake[0][1]]);break;
+	}
+	for(var ii=0;ii<this.theSnake.length;ii++)
+		newSnake.push(this.theSnake[ii]);
+	this.theSnake=newSnake;
+	if(true==this.blnScreensaverPlay){
+		var newSnakeMoveDirections=[];
+		newSnakeMoveDirections.push(this.intMoveDirection);
+		for(var ii=0;ii<this.theSnake.length;ii++)
+			newSnakeMoveDirections.push(this.theSnakeMoveDirections[ii]);
+		this.theSnakeMoveDirections=newSnakeMoveDirections;
+	}
+	this.intPoints++;
+	this.intAppleEaten=intValue;
+
+     	/*console.log(this.lstDictionary[this.intAppleEaten]);*/
+     	var strAppleEaten="";
+	if("normal"==this.strGameMode)
+		strAppleEaten=String.fromCharCode(this.intAppleEaten)+" "+this.intAppleEaten+String.fromCharCode(10);
+	if("inches"==this.strGameMode)
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+String.fromCharCode(10);
+	if("dictionary"==this.strGameMode){
+		var strMeanings,strMeanings0,strMeanings1,strMeanings2;
+		strMeanings0=this.lstDictionary[this.intAppleEaten][2][0];
+		strMeanings1=this.lstDictionary[this.intAppleEaten][3][0];
+		strMeanings2=this.lstDictionary[this.intAppleEaten][4][0];
+		strMeanings="";
+		if(undefined!=strMeanings0)strMeanings+=strMeanings0+" ";
+		if(undefined!=strMeanings1)strMeanings+=strMeanings1+" ";
+		if(undefined!=strMeanings2)strMeanings+=strMeanings2+" ";
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+" "+strMeanings+String.fromCharCode(10);
+	}
+	var txtFunFunFun=document.getElementById("txtFunFunFun");
+	txtFunFunFun.value+=strAppleEaten;
+	/*console.log(txtFunFunFun.value);*/
+};
+Program_Tetris.prototype.checkLinesToCleanUp=function(){
+	var blnWholeLine=true;
+	var lstIntLines=[];
+	//for(var j=0;j<=this.intBoardHeight-1;j++){
+	for(var j=this.intBoardHeight-1;j>=0;j--){
+		blnWholeLine=true;
+		for(var i=0;i<=this.intBoardWidth-1;i++)
+			if(0==this.lstBoard[this.getBoardIndex(i,j)])blnWholeLine=false;
+		if(true==blnWholeLine)lstIntLines.push(j);	
+	}
+	return lstIntLines;
+};
+Program_Tetris.prototype.cleanUpLines=function(lstIntLines){
+	//cleaning lines from bottom to up
+	//alert("cleanUpLines("+lstIntLines+");");
+	for(var ii=0;ii<lstIntLines.length;ii++){
+		//for(var j=this.intBoardHeight-1;j>lstIntLines[ii];j--)
+		for(var j=lstIntLines[ii];j>0;j--)
+			for(var i=0;i<=this.intBoardWidth-1;i++)
+				this.lstBoard[this.getBoardIndex(i,j)]=this.lstBoard[this.getBoardIndex(i,j-1)];
+		for(var i=0;i<=this.intBoardWidth-1;i++)
+			this.lstBoard[this.getBoardIndex(i,0)]=0;
+	}
+	if(true==this.blnNewInchOnCleanUp)this.newInch();
+	
+};
+Program_Tetris.prototype.checkAppleEaten=function(){//checkLinesToCleanUp
+	for(var ii=0;ii<this.theApples.length;ii++)
+		if(this.theApples[ii][0]==this.theSnake[0][0]&&this.theApples[ii][1]==this.theSnake[0][1])
+			return ii;
+	return -1;
+};
+Program_Tetris.prototype.checkCollisions=function(lstBrickRotation,lstFallingBrickCoords){//checkGameOver
+	if(undefined==lstBrickRotation){
+		lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+	}
+	if(undefined==lstFallingBrickCoords)lstFallingBrickCoords=this.lstFallingBrickCoords;
+	for(var i=0;i<4;i++){
+		for(var j=0;j<4;j++){
+			//if(0!=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]][this.getBrickIndex(i,j)]){
+			if(0!=lstBrickRotation[this.getBrickIndex(i,j)]){
+				if(i+lstFallingBrickCoords[0]<0){
+					console.log("return0");
+					return 0;//true
+				}
+				if(i+lstFallingBrickCoords[0]>this.intBoardWidth-1){
+					console.log("return1");
+					return 0;//true
+				}
+				if(j+lstFallingBrickCoords[1]<0){
+					console.log("return2");
+					return 0;//true
+				}
+				if(j+lstFallingBrickCoords[1]>this.intBoardHeight-1){
+					console.log("return3");
+					return 0;//true
+				}
+				//if((0!=this.lstBoard[this.getBoardIndex(i+lstFallingBrickCoords[0],j+lstFallingBrickCoords[1]+1)])&&(0==j+lstFallingBrickCoords[1]))return 3;//true
+				if((0!=this.lstBoard[this.getBoardIndex(i+lstFallingBrickCoords[0],j+lstFallingBrickCoords[1])])&&(0==j+lstFallingBrickCoords[1]))return 3;//true
+				//if((0!=this.lstBoard[this.getBoardIndex(i+lstFallingBrickCoords[0],j+lstFallingBrickCoords[1]+1)]))return 1;//true
+				if((0!=this.lstBoard[this.getBoardIndex(i+lstFallingBrickCoords[0],j+lstFallingBrickCoords[1])]))return 1;//true
+			}
+		}
+	}
+	return 2;//false
+};
+Program_Tetris.prototype.checkCollisionsPrev2=function(){//checkGameOver
+	for(var i=0;i<4;i++){
+		for(var j=0;j<4;j++){
+			if(0!=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]][this.getBrickIndex(i,j)]){
+				if(j+this.lstFallingBrickCoords[1]>this.intBoardHeight-2)return 0;//true
+				if((0!=this.lstBoard[this.getBoardIndex(i+this.lstFallingBrickCoords[0],j+this.lstFallingBrickCoords[1]+1)])&&(0==j+this.lstFallingBrickCoords[1]))return 3;//true
+				if((0!=this.lstBoard[this.getBoardIndex(i+this.lstFallingBrickCoords[0],j+this.lstFallingBrickCoords[1]+1)]))return 1;//true
+			}
+		}
+	}
+	return 2;//false
+};
+Program_Tetris.prototype.checkCollisionsPrev=function(){//checkGameOver
+	for(var i=0;i<4;i++){
+		for(var j=0;j<4;j++){
+			if(0!=this.lstFallingBrick[this.getBrickIndex(i,j)]){
+				if(j+this.lstFallingBrickCoords[1]>this.intBoardHeight-2)return 0;//true
+				//if(0==j+this.lstFallingBrickCoords[1])return 0;//true
+				//if((0!=this.lstBoard[this.getBoardIndex(i+this.lstFallingBrickCoords[0],j+this.lstFallingBrickCoords[1]+1)])&&(0!=this.lstFallingBrick[this.getBrickIndex(i,j)]))return 1;//true
+				if((0!=this.lstBoard[this.getBoardIndex(i+this.lstFallingBrickCoords[0],j+this.lstFallingBrickCoords[1])])&&(0!=this.lstFallingBrick[this.getBrickIndex(i,j)]))return 1;//true
+			}
+		}
+	}
+	return 2;//false
+};
+//checkBrickCanFall
+Program_Tetris.prototype.checkPotentialCollisions=function(intMoveDirection){
+	var newSnake=[];
+	var newSnakeMoveDirections=[];
+	switch(intMoveDirection){
+		case 0:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]-1]);break;
+		case 1:newSnake.push([this.theSnake[0][0]+1,this.theSnake[0][1]]);break;
+		case 2:newSnake.push([this.theSnake[0][0],this.theSnake[0][1]+1]);break;
+		case 3:newSnake.push([this.theSnake[0][0]-1,this.theSnake[0][1]]);break;
+	}
+	newSnakeMoveDirections.push(intMoveDirection);
+	for(var ii=0;ii<this.theSnake.length;ii++){
+		newSnake.push(this.theSnake[ii]);
+		newSnakeMoveDirections.push(this.theSnakeMoveDirections[ii]);
+	}
+	for(var ii=0;ii<newSnake.length;ii++){
+		for(var jj=0;jj<newSnake.length;jj++){
+			if(ii!=jj&&newSnake[ii][0]==newSnake[jj][0]&&newSnake[ii][1]==newSnake[jj][1])
+			return true;
+		}
+	}
+	if(0==newSnake[0][0])
+		return true;
+	if(0==newSnake[0][1])
+		return true;
+	if(this.base.intScreenWidth_text-1==newSnake[0][0])
+		return true;
+	if(this.base.intScreenHeight_text-1==newSnake[0][1])
+		return true;
+	for(var ii=2;ii<newSnake.length;ii++){
+		if(newSnake[ii][0]==newSnake[0][0]-1&&newSnake[ii][1]==newSnake[0][1]&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]+1&&newSnake[ii][1]==newSnake[0][1]&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]&&newSnake[ii][1]==newSnake[0][1]-1&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+		if(newSnake[ii][0]==newSnake[0][0]&&newSnake[ii][1]==newSnake[0][1]+1&&newSnakeMoveDirections[ii]==newSnakeMoveDirections[0])
+			return true;
+	}
+	return false;
+};
+//turn off that mode for now
+Program_Tetris.prototype.screensaverMovement=function(){
+	//algorithm: test all graviting quickly all rotations of the brick on all possible shifts and take the solution with the most lines cleaned up. If no lines to clean up, then get the solution with the lowest height from computeBoardHeight(lstBoard)
+	if(true==this.blnCancelScreensaverPlay){
+		this.blnCancelScreensaverPlay=false;
+		return;
+	}
+	if(false==this.checkPotentialCollisions(this.intMoveDirection)){
+		if(this.theSnake[0][0]==this.theApples[0][0]&&this.theSnake[0][1]==this.theApples[0][1])
+			return;
+	}else{
+
+			if(0==this.intMoveDirection)
+				if(this.theSnake[0][0]>=this.theApples[0][0]){
+					if(false==this.checkPotentialCollisions(3)){
+						this.intMoveDirection=3;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(1)){
+							this.intMoveDirection=1;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(1)){
+						this.intMoveDirection=1;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(3)){
+							this.intMoveDirection=3;
+							return;
+						}
+
+					}
+				}
+			if(3==this.intMoveDirection)
+				if(this.theSnake[0][1]>=this.theApples[0][1]){
+					if(false==this.checkPotentialCollisions(0)){
+						this.intMoveDirection=0;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(2)){
+							this.intMoveDirection=2;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(2)){
+						this.intMoveDirection=2;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(0)){
+							this.intMoveDirection=0;
+							return;
+						}
+					}
+				}
+			if(2==this.intMoveDirection)
+				if(this.theSnake[0][0]>=this.theApples[0][0]){
+					if(false==this.checkPotentialCollisions(3)){
+						this.intMoveDirection=3;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(1)){
+							this.intMoveDirection=1;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(1)){
+						this.intMoveDirection=1;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(3)){
+							this.intMoveDirection=3;
+							return;
+						}
+					}
+				}
+			if(1==this.intMoveDirection)
+				if(this.theSnake[0][1]>=this.theApples[0][1]){
+					if(false==this.checkPotentialCollisions(0)){
+						this.intMoveDirection=0;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(2)){
+							this.intMoveDirection=2;
+							return;
+						}
+					}
+				}else{
+					if(false==this.checkPotentialCollisions(2)){
+						this.intMoveDirection=2;
+						return;
+					}else{
+						if(false==this.checkPotentialCollisions(0)){
+							this.intMoveDirection=0;
+							return;
+						}
+					}
+				}
+
+
+
+	}
+
+	if(0==this.intMoveDirection&&this.theSnake[0][1]-1<this.theApples[0][1])
+		if(this.theSnake[0][0]>=this.theApples[0][0]){
+			if(false==this.checkPotentialCollisions(3)){
+				this.intMoveDirection=3;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(1)){
+					this.intMoveDirection=1;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(1)){
+				this.intMoveDirection=1;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(3)){
+					this.intMoveDirection=3;
+					return;
+				}
+
+			}
+		}
+	if(3==this.intMoveDirection&&this.theSnake[0][0]-1<this.theApples[0][0])
+		if(this.theSnake[0][1]>=this.theApples[0][1]){
+			if(false==this.checkPotentialCollisions(0)){
+				this.intMoveDirection=0;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(2)){
+					this.intMoveDirection=2;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(2)){
+				this.intMoveDirection=2;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(0)){
+					this.intMoveDirection=0;
+					return;
+				}
+			}
+		}
+	if(2==this.intMoveDirection&&this.theSnake[0][1]+1>this.theApples[0][1])
+		if(this.theSnake[0][0]>=this.theApples[0][0]){
+			if(false==this.checkPotentialCollisions(3)){
+				this.intMoveDirection=3;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(1)){
+					this.intMoveDirection=1;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(1)){
+				this.intMoveDirection=1;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(3)){
+					this.intMoveDirection=3;
+					return;
+				}
+			}
+		}
+	if(1==this.intMoveDirection&&this.theSnake[0][0]+1>this.theApples[0][0])
+		if(this.theSnake[0][1]>=this.theApples[0][1]){
+			if(false==this.checkPotentialCollisions(0)){
+				this.intMoveDirection=0;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(2)){
+					this.intMoveDirection=2;
+					return;
+				}
+			}
+		}else{
+			if(false==this.checkPotentialCollisions(2)){
+				this.intMoveDirection=2;
+				return;
+			}else{
+				if(false==this.checkPotentialCollisions(0)){
+					this.intMoveDirection=0;
+					return;
+				}
+			}
+		}
+};
+Program_Tetris.prototype.gravitateBrick=function(){
+	this.lstFallingBrickCoords[1]++;
+	console.log("gravitateBrick()");
+};
+Program_Tetris.prototype.copyBrick=function(lstBrick,lstDest){
+	for(var i=0;i<4;i++){
+		for(var j=0;j<4;j++){
+			if(0!=lstBrick[this.getBrickIndex(i,j)])
+				lstDest[this.getBoardIndex(this.lstFallingBrickCoords[0]+i,this.lstFallingBrickCoords[1]+j)]=lstBrick[this.getBrickIndex(i,j)];
+		}
+	}
+	console.log("lstDest");
+	console.log(lstDest);
+};
+Program_Tetris.prototype.newInch=function(){
+	if("normal"==this.strGameMode)
+		this.intAppleEaten=this.roundRand(this.intMinApple,this.intMaxApple);
+	if("inches"==this.strGameMode||"dictionary"==this.strGameMode){
+		try{
+			var intLength=this.lstDictionary.length;
+			var intDictionary=roundRand(0,intLength);
+			if(intDictionary>=intLength)intDictionary=intLength-1;
+			this.intAppleEaten=intDictionary;
+		}catch(xcp){
+			this.intAppleEaten=0;
+		}
+	}
+
+     	/*console.log(this.lstDictionary[this.intAppleEaten]);*/
+     	var strAppleEaten="";
+	if("normal"==this.strGameMode)
+		strAppleEaten=String.fromCharCode(this.intAppleEaten)+" "+this.intAppleEaten+String.fromCharCode(10);
+	if("inches"==this.strGameMode)
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+String.fromCharCode(10);
+	if("dictionary"==this.strGameMode){
+		try{
+		var strMeanings,strMeanings0,strMeanings1,strMeanings2;
+		strMeanings0=this.lstDictionary[this.intAppleEaten][2][0];
+		strMeanings1=this.lstDictionary[this.intAppleEaten][3][0];
+		strMeanings2=this.lstDictionary[this.intAppleEaten][4][0];
+		strMeanings="";
+		if(undefined!=strMeanings0)strMeanings+=strMeanings0+" ";
+		if(undefined!=strMeanings1)strMeanings+=strMeanings1+" ";
+		if(undefined!=strMeanings2)strMeanings+=strMeanings2+" ";
+		strAppleEaten=this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1]+" "+strMeanings+String.fromCharCode(10);
+		}catch(xcp){
+			strAppleEaten="no dictionary";
+		}
+	}
+	var txtFunFunFun=document.getElementById("txtFunFunFun");
+	txtFunFunFun.value+=strAppleEaten;
+	/*console.log(txtFunFunFun.value);*/
+};
+Program_Tetris.prototype.newBrick=function(){
+	this.copyBrick(this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]],this.lstBoard);
+	this.lstFallingBrick=[this.roundRand(0,this.lstBricks.length-1),this.roundRand(0,3)];
+	this.lstFallingBrickCoords=[0,0];
+	if(false==this.blnNewInchOnCleanUp)this.newInch();
+};
+Program_Tetris.prototype.updateGame=function(blnGravitateBrick){
+	if(undefined==blnGravitateBrick)blnGravitateBrick=true;
+	//if(true==this.checkCollisions()){
+	var lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+	//var lstFallingBrickCoords=this.lstFallingBrickCoords;
+	var lstFallingBrickCoords=[this.lstFallingBrickCoords[0],this.lstFallingBrickCoords[1]+1];
+	var intCollision=this.checkCollisions(lstBrickRotation,lstFallingBrickCoords);
+	//if(3==this.checkCollisions(lstBrickRotation,lstFallingBrickCoords)){
+	if(3==intCollision){
+		this.intGameMode=4;
+		return;
+	}
+	//if(0==this.checkCollisions(lstBrickRotation,lstFallingBrickCoords)){
+	if(0==intCollision){
+		console.log("0==this.checkCollisions();");
+		this.newBrick();
+		//return;
+	}
+	//if(1==this.checkCollisions(lstBrickRotation,lstFallingBrickCoords)){
+	if(1==intCollision){
+		//this.lstFallingBrickCoords[1]--;
+		console.log("1==this.checkCollisions();");
+		this.newBrick();
+	}
+	//if(2==this.checkCollisions(lstBrickRotation,lstFallingBrickCoords)){
+	if(2==intCollision){
+		if(true==blnGravitateBrick)
+			this.gravitateBrick();
+	};
+	/*
+	if(true==this.blnScreensaverPlay){
+		this.screensaverMovement();
+	}
+	*/
+	/*
+	var intAppleNumber=this.checkAppleEaten();
+	if(-1!=intAppleNumber){
+		this.eatApple(intAppleNumber);
+		this.addRandomApple();
+	//}else this.moveSnake();
+	}else this.gravitateBrick();
+	*/
+	var lstIntLines=this.checkLinesToCleanUp();
+	if(0!=lstIntLines.length){
+		this.intPoints+=lstIntLines.length;
+		this.cleanUpLines(lstIntLines);
+	}
+};
+Program_Tetris.prototype.moveSnake=function(){//gravitateBrick
+	for(var ii=this.theSnake.length-2;ii>=0;ii--){
+		this.theSnake[ii+1][0]=this.theSnake[ii][0];
+		this.theSnake[ii+1][1]=this.theSnake[ii][1];
+	}
+	switch(this.intMoveDirection){
+		case 0:this.theSnake[0][1]--;break;
+		case 1:this.theSnake[0][0]++;break;
+		case 2:this.theSnake[0][1]++;break;
+		case 3:this.theSnake[0][0]--;break;
+	}
+	if(true==this.blnScreensaverPlay){
+		for(var ii=this.theSnakeMoveDirections.length-2;ii>=0;ii--){
+			this.theSnakeMoveDirections[ii+1]=this.theSnakeMoveDirections[ii];
+		}
+		this.theSnakeMoveDirections[0]=this.intMoveDirection;
+	}
+};
+Program_Tetris.prototype.getBoardDimensions=function(){
+	var strNewSize=prompt("Enter the new board size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+this.intBoardWidth+","+this.intBoardHeight+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		return [this.base.intScreenWidth_text-2,this.base.intScreenHeight_text-2];
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		return [this.base.intScreenWidth_text-2,this.base.intScreenHeight_text-2];
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		return [this.base.intScreenWidth_text-2,this.base.intScreenHeight_text-2];
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		return [this.base.intScreenWidth_text-2,this.base.intScreenHeight_text-2];
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		return [this.base.intScreenWidth_text-2,this.base.intScreenHeight_text-2];
+	}
+	return [intWidth,intHeight];
+};
+Program_Tetris.prototype.drawWalls=function(){
+	//window
+	for(var i=0;i<=this.base.intScreenWidth_text-1;i++){
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,0)]="=";
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,this.base.intScreenHeight_text-1)]="=";
+	}
+	for(var j=1;j<=this.base.intScreenHeight_text;j++){
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(0,j)]="|";
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(this.base.intScreenWidth_text-1,j)]="|";
+	}
+	if(this.intBoardWidth>this.base.intScreenWidth_text-2)this.intBoardWidth=this.base.intScreenWidth_text-2;
+	if(this.intBoardHeight>this.base.intScreenHeight_text-2)this.intBoardHeight=this.base.intScreenHeight_text-2;
+	var intShiftX=this.base.intScreenWidth_text-1-this.intBoardWidth;
+	var intShiftY=this.base.intScreenHeight_text-1-this.intBoardHeight;
+	if(this.intBoardWidth<=this.base.intScreenWidth_text-2&&this.intBoardHeight<=this.base.intScreenHeight_text-2){
+		//board walls
+		for(var i=0;i<=this.intBoardWidth;i++){
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX-1+i,intShiftY-1+0)]="=";
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX-1+i,intShiftY-1+this.intBoardHeight+1)]="=";
+		}
+		for(var j=0;j<=this.intBoardHeight;j++){
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX-1+0,intShiftY-1+j)]="|";
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX-1+this.intBoardWidth+1,intShiftY-1+j)]="|";
+		}
+	}
+};
+Program_Tetris.prototype.drawFallingBrick=function(){
+	var intShiftX=this.base.intScreenWidth_text-1-this.intBoardWidth;
+	var intShiftY=this.base.intScreenHeight_text-1-this.intBoardHeight;
+	//var intFallingBrickRotation=this.lstFallingBrick[1]*(4)+this.lstFallingBrick[0];
+	//var lstFallingBrick=this.lstFallingBrick[intFallingBrickRotation];
+	var lstFallingBrick=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+	/*
+	console.log("lstFallingBrick");
+	console.log(lstFallingBrick);
+	console.log("this.lstFallingBrickCoords");
+	console.log(this.lstFallingBrickCoords);
+	*/
+	for(var i=0;i<4;i++){
+		for(var j=0;j<4;j++){
+			if(0!=lstFallingBrick[4*j+i])
+				this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX+i+this.lstFallingBrickCoords[0],intShiftY+j+this.lstFallingBrickCoords[1])]="0";
+		}
+	}
+};
+Program_Tetris.prototype.drawSnake=function(){//drawFallingBrick
+	var i,j;
+	var lstReturn=this.theSnake[0];
+	i=lstReturn[0];
+	j=lstReturn[1];
+	this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,j)]="@";
+	for(var ii=1;ii<this.theSnake.length;ii++){
+		lstReturn=this.theSnake[ii];
+		i=lstReturn[0];
+		j=lstReturn[1];
+		this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i,j)]="#";
+	}
+};
+Program_Tetris.prototype.intAppleOnList=function(lstExceptions,intAppleNumber){//
+	var intNumber=-1;
+	for(var ii=0;ii<lstExceptions.length;ii++)
+		if(lstExceptions[ii][0]==intAppleNumber)
+			intNumber=ii;
+	return intNumber;
+};
+Program_Tetris.prototype.emptyByteChar=function(intAppleNumber){
+	if(intAppleNumber<=31)return true;	
+	if(intAppleNumber>=127&&intAppleNumber<=160)return true;	
+	return false;
+};
+Program_Tetris.prototype.drawBoard=function(){//drawBoard
+	var intShiftX=this.base.intScreenWidth_text-1-this.intBoardWidth;
+	var intShiftY=this.base.intScreenHeight_text-1-this.intBoardHeight;
+	for(var i=0;i<=this.intBoardWidth-1;i++){
+		for(var j=0;j<=this.intBoardHeight-1;j++){
+			if(0==this.lstBoard[this.getBoardIndex(i,j)])
+				this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX+i,intShiftY+j)]=" ";
+			else
+			//TODO: inches bricks 
+				this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(intShiftX+i,intShiftY+j)]="0";
+	
+		}
+	}
+};
+Program_Tetris.prototype.drawApples=function(){//drawBoard
+	var i,j,intValue;
+	var lstExceptions=[[0,"zero"],[173,"173"],[32,"space"],[27,"esc"],[127,"del"]];
+	var intException=-1;
+	var lstReturn;
+	lstReturn=this.computer.lstVeryOrange;
+	var intR,intG,intB,intA;
+	intR=lstReturn[0];
+	intG=lstReturn[1];
+	intB=lstReturn[2];
+	intA=lstReturn[3];
+	for(var ii=0;ii<this.theApples.length;ii++){
+		lstReturn=this.theApples[ii];
+		i=lstReturn[0];
+		j=lstReturn[1];
+		intValue=lstReturn[2];
+		if("normal"==this.strGameMode){
+			intException=this.intAppleOnList(lstExceptions,intValue);	
+			if(-1==intException)
+				if(false==this.emptyByteChar(intValue))
+					strValue=String.fromCharCode(intValue);
+				else strValue=""+intValue;
+			else strValue=""+lstExceptions[intException][1];
+			for(var jj=0;jj<strValue.length;jj++)
+					this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i+jj,j)]=strValue[jj];
+
+		}
+		if("inches"==this.strGameMode||"dictionary"==this.strGameMode){
+			strValue=this.lstDictionary[intValue][0];
+			for(var jj=0;jj<strValue.length;jj++)
+				this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(i+jj,j)]=strValue[jj];
+			}
+	};
+};
+Program_Tetris.prototype.drawPoints=function(){
+	var strPoints,strPoints0,strPoints1;
+	if("normal"==this.strGameMode)
+		strPoints="Snake: "+this.intPoints+" : "+this.intAppleEaten;
+	if("inches"==this.strGameMode)
+		strPoints=""+this.intPoints+" : "+this.lstDictionary[this.intAppleEaten]+" "+this.lstDictionary[this.intAppleEaten][0].charCodeAt(0);
+	if("dictionary"==this.strGameMode){
+		try{
+		strPoints0=""+this.intPoints+" : "+this.lstDictionary[this.intAppleEaten][0]+" "+this.lstDictionary[this.intAppleEaten][1];
+		var strMeanings0,strMeanings1,strMeanings2;
+		strMeanings0=this.lstDictionary[this.intAppleEaten][2][0];
+		strMeanings1=this.lstDictionary[this.intAppleEaten][3][0];
+		strMeanings2=this.lstDictionary[this.intAppleEaten][4][0];
+		strPoints1="";
+		if(undefined!=strMeanings0)strPoints1+=strMeanings0+" ";
+		if(undefined!=strMeanings1)strPoints1+=strMeanings1+" ";
+		if(undefined!=strMeanings2)strPoints1+=strMeanings2+" ";
+		}catch(xcp){
+			strPoints0=""+this.intPoints;
+			strPoints1=""+this.intPoints;
+		}
+	}
+	if("normal"==this.strGameMode||"inches"==this.strGameMode){
+		document.title=strPoints;
+		var x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints.length/2.);
+		for(var ii=0;ii<strPoints.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,0)]=strPoints[ii];
+	}
+	if("dictionary"==this.strGameMode){
+		document.title=strPoints0;
+		var x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints0.length/2.);
+		for(var ii=0;ii<strPoints0.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,0)]=strPoints0[ii];
+		x=Math.round((this.base.intScreenWidth_text-1)/2.-strPoints1.length/2.);
+		for(var ii=0;ii<strPoints1.length;ii++)
+			this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(x+ii,this.base.intScreenHeight_text-1)]=strPoints1[ii];
+
+	}
+};
+Program_Tetris.prototype.drawMouse=function(){
+	this.base.lstScreenBuffer_text[this.base.getScreenIndex_text(Math.round(this.fltMouseX),Math.round(this.fltMouseY))]=String.fromCharCode(73);
+};
+Program_Tetris.prototype.updateDimensions=function(){
+};
+Program_Tetris.prototype.inits=function(){
+	var txtFunFunFun=document.getElementById("txtFunFunFun");
+	/*txtFunFunFun.value="";*/
+	this.base.blnTextMode=true;
+	if(this.strArgs!=this.prevStrArgs)
+		this.reloadStrArgs();
+	var objArgs={};
+	objArgs.varCols=null;
+	objArgs.varRows=null;
+     	/*
+     	if(null==netspace.computer.inchesKeyboard||null==netspace.computer.inchesKeyboard.varDictionary)
+		openFile(function(content){netspace.computer.theActualProgram.inits2(content);},objArgs);
+     	this.inits2(0);
+     	*/
+	if("inches"==this.strGameMode||"dictionary"==this.strGameMode)
+     		if(undefined==this.lstDictionary){
+			if("inches"==this.strGameMode)
+				openFile(function(content){netspace.computer.theActualProgram.inits2_inches(content);},objArgs);
+			if("dictionary"==this.strGameMode)
+				openFile(function(content){netspace.computer.theActualProgram.inits2_dictionary(content);},objArgs);
+		}
+};
+Program_Tetris.prototype.setBoardDimensions=function(){
+	var lstBoardSize=this.getBoardDimensions();
+	this.intBoardWidth=lstBoardSize[0];
+	this.intBoardHeight=lstBoardSize[1];
+	console.log("lstBoardSize="+lstBoardSize);
+	console.log([this.intBoardWidth,this.intBoardHeight]);
+	console.log([this.base.intScreenWidth_text,this.base.intScreenHeight_text]);
+};
+Program_Tetris.prototype.inits2_inches=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+     	var inchesKeyboard=null;
+	var objDictionary=null;
+     	if(0!=strContent){
+     		inchesKeyboard=new InchesKeyboard();
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intFirst123,intSecond123);
+		objDictionary=inchesKeyboard.parseContents(strContent);
+     	}else{
+     		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varDictionary;
+     	}
+	/*console.log(objDictionary);*/
+	this.objDictionary=objDictionary;
+	this.lstDictionary=[];
+	for(x in this.objDictionary)
+		this.lstDictionary.push(this.objDictionary[x]);
+	this.lstDictionary=flattenConcat(this.lstDictionary);
+	/*console.log(this.lstDictionary);*/
+	this.setBoardDimensions();
+};
+Program_Tetris.prototype.inits2_dictionary=function(strContent){
+	/*var objDictionary=JSON.parse(strContent);*/
+     	var inchesKeyboard=null;
+	var objDictionary=null;
+     	if(0!=strContent){
+     		inchesKeyboard=new InchesKeyboard();
+		/*objDictionary=inchesKeyboard.parseSlownikContents(strContent);*/
+		var intFirst123=strContent.indexOf("{");
+		var intSecond123=strContent.substring(intFirst123+1).indexOf("{");
+		if(-1!=intSecond123)strContent=strContent.substring(intSecond123);
+		objDictionary=JSON.parse(strContent);
+     	}else{
+     		inchesKeyboard=netspace.computer.inchesKeyboard;
+		objDictionary=netspace.computer.inchesKeyboard.varSlownik;
+     	}
+	/*console.log(objDictionary);*/
+	this.objDictionary=objDictionary;
+	this.lstDictionary=[];
+	var lstEntry=[];
+	for(x in this.objDictionary){
+		lstEntry=[];
+		lstEntry.push(x);
+		for(var i=0;i<this.objDictionary[x].length;i++)
+			lstEntry.push(this.objDictionary[x][i]);
+		this.lstDictionary.push([lstEntry]);
+	}
+	this.lstDictionary=flattenConcat(this.lstDictionary);
+	/*console.log(this.lstDictionary);*/
+	this.setBoardDimensions();
+};
+Program_Tetris.prototype.stopFinalizations=function(strString){
+	this.prevStrArgs=this.strArgs;
+};
+Program_Tetris.prototype.exitFinalizations=function(strString){
+	this.prevStrArgs=this.strArgs;
+};
+Program_Tetris.prototype.arrowUp=function(){
+	if(true==this.canMoveBrick(0))
+		this.lstFallingBrick[1]=((this.lstFallingBrick[1]+1)%4);
+	//this.refreshScreen();
+	////this.prevGameTime=null;
+	//this.blnCancelScreensaverPlay=true;
+};
+Program_Tetris.prototype.canMoveBrick=function(intDirection){
+	var lstBrickRotation,lstFallingBrickCoords,intCollision;
+	switch(intDirection){
+		case 0://rotate
+			lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][(this.lstFallingBrick[1]+1)%4];
+			lstFallingBrickCoords=[this.lstFallingBrickCoords[0],this.lstFallingBrickCoords[1]];
+			break;
+		case 1://right
+			if(this.lstFallingBrickCoords[0]>=this.intBoardWidth-1)return false;
+				lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+				lstFallingBrickCoords=[this.lstFallingBrickCoords[0]+1,this.lstFallingBrickCoords[1]];
+		break;
+		case 2://down
+			if(this.lstFallingBrickCoords[1]>=this.intBoardHeight-1)return false;
+				lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+				lstFallingBrickCoords=[this.lstFallingBrickCoords[0],this.lstFallingBrickCoords[1]+1];
+		break;
+		case 3://left
+			if(this.lstFallingBrickCoords[0]<=0)return false;
+				lstBrickRotation=this.lstBrickRotations[this.lstFallingBrick[0]][this.lstFallingBrick[1]];
+				lstFallingBrickCoords=[this.lstFallingBrickCoords[0]-1,this.lstFallingBrickCoords[1]];
+		break;
+	}
+	intCollision=this.checkCollisions(lstBrickRotation,lstFallingBrickCoords);
+	if(2==intCollision)return true;
+	else return false;
+};
+Program_Tetris.prototype.arrowDown=function(){
+	//if(this.lstFallingBrickCoords[1]<this.intBoardHeight-2)
+	if(true==this.canMoveBrick(2)){
+		this.lstFallingBrickCoords[1]++;
+		this.updateGame(false);
+	}else this.updateGame(true);
+	//this.refreshScreen();
+	//this.prevGameTime=null;
+	//this.blnCancelScreensaverPlay=true;
+};
+Program_Tetris.prototype.arrowLeft=function(){
+	//if(this.lstFallingBrickCoords[0]>0)
+	console.log("=>"+this.lstFallingBrickCoords);
+	if(true==this.canMoveBrick(3))
+		this.lstFallingBrickCoords[0]--;
+	//this.refreshScreen();
+	////this.prevGameTime=null;
+	//this.blnCancelScreensaverPlay=true;
+};
+Program_Tetris.prototype.arrowRight=function(){
+	//if(this.lstFallingBrickCoords[0]<this.intBoardWidth-2)
+	console.log("=>"+this.lstFallingBrickCoords);
+	if(true==this.canMoveBrick(1))
+		this.lstFallingBrickCoords[0]++;
+	//this.refreshScreen();
+	////this.prevGameTime=null;
+	//this.blnCancelScreensaverPlay=true;
+};
+Program_Tetris.prototype.onKeyDown=function(evtEvent){
+	switch(evtEvent.key){
+		case "F4":/*Alt+F4 would close the browser*/this.base.exitProgram(this,"Snake program exited.");break;
+		case "c":
+			if(true==evtEvent.ctrlKey)this.base.exitProgram(this,"Snake program exited.");
+			else if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};
+			break;
+		case "z":
+			if(true==evtEvent.ctrlKey) this.base.stopProgram(this,"Snake program stopped. If you run it again with the same arguments, previous game state will be reloaded."+String.fromCharCode(10)+"Program call: snake intMinApple intMaxApple intGameSpeed_ms"+String.fromCharCode(10)+"snake==snake 1 2359 250");
+			else if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};
+			break;
+		/*for not precise tiny onscreen keyboards*/
+		case "O":
+		case "o":
+		case "W":
+		case "w":
+		case "Q":
+		case "q":
+		case "E":
+		case "e":
+		case "R":
+		case "r":
+		//case "ArrowUp":if(0==this.intMoveDirection)this.prevGameTime=null;if(2!=this.intMoveDirection){this.intMoveDirection=0;this.blnCancelScreensaverPlay=true;};//.arrowUp();
+		case "ArrowUp":this.arrowUp();
+			break;
+		case "L":
+		case "l":
+		case "D":
+		case "d":
+		case "F":
+		case "f":
+		case "G":
+		case "g":
+		//case "ArrowRight":if(1==this.intMoveDirection)this.prevGameTime=null;if(3!=this.intMoveDirection){this.intMoveDirection=1;this.blnCancelScreensaverPlay=true;};//.arrowRight();
+		case "ArrowRight":this.arrowRight();
+			break;
+		case "K":
+		case "k":
+		case "S":
+		case "s":
+		case "Z":
+		case "z":
+		case "X":
+		case "x":
+		case "C":
+		case "c":
+		//case "ArrowDown":if(2==this.intMoveDirection)this.prevGameTime=null;if(0!=this.intMoveDirection){this.intMoveDirection=2;this.blnCancelScreensaverPlay=true;};//.arrowDown();
+		case "ArrowDown":this.arrowDown();
+			break;
+		case "J":
+		case "j":
+		case "A":
+		case "a":
+		//case "ArrowLeft":if(3==this.intMoveDirection)this.prevGameTime=null;if(1!=this.intMoveDirection){this.intMoveDirection=3;this.blnCancelScreensaverPlay=true;};//.arrowLeft();
+		case "ArrowLeft":this.arrowLeft();
+			break;
+		case "p":
+			if(4==this.intGameMode){this.newGameModeGame();break;}if(0==this.intGameMode){this.intGameMode=1;break;}if(1==this.intGameMode){this.intGameMode=0;break;};break;
+		case "Alt":if(1==evtEvent.location){if(false==this.blnMouseBlocked){this.blnMouseBlocked=true;this.prevMouseX=null;this.prevMouseY=null;}else this.blnMouseBlocked=false;}break;
+	}
+};
+Program_Tetris.prototype.onKeyUp=function(evtEvent){
+};
+Program_Tetris.prototype.onMouseDown=function(evtEvent){
+};
+Program_Tetris.prototype.onMouseUp=function(evtEvent){
+};
+Program_Tetris.prototype.onMouseWheel=function(evtEvent){
+};
+Program_Tetris.prototype.onMouseMove=function(evtEvent){
+	this.base.onMouseMove_text(evtEvent,this);
+	return;
+	if(true==this.blnMouseBlocked)return;
+	var diffX,diffY;
+	if(null==this.prevMouseX||null==this.prevMouseY){
+		this.prevMouseX=evtEvent.offsetX;
+		this.prevMouseY=evtEvent.offsetY;
+		return;
+	}
+	diffX=evtEvent.offsetX-this.prevMouseX;
+	diffY=evtEvent.offsetY-this.prevMouseY;
+	this.prevMouseX=evtEvent.offsetX;
+	this.fltMouseX+=this.fltMouseSpeed*diffX;
+	this.prevMouseY=evtEvent.offsetY;
+	this.fltMouseY+=this.fltMouseSpeed*diffY;
+	if(this.fltMouseX<0)this.fltMouseX=0;
+	if(this.fltMouseX>this.base.intScreenWidth_text-1)this.fltMouseX=this.base.intScreenWidth_text-1;
+	if(this.fltMouseY<0)this.fltMouseY=0;
+	if(this.fltMouseY>this.base.intScreenHeight_text-1)this.fltMouseY=this.base.intScreenHeight_text-1;
+};
+Program_Tetris.prototype.newGameModeGame=function(){
+	this.fltMouseX=Math.round((this.base.intScreenWidth_text-1)/2.);
+	this.fltMouseY=Math.round((this.base.intScreenHeight_text-1)/2.);
+	this.intMoveDirection=0;/*[up,right,down,left]*/
+	this.gameSpeed=0.001*this.intGameSpeed_ms;
+	this.prevGameTime=null;
+	var i,j;
+	i=Math.round(this.base.intScreenWidth_text/2.);
+	j=Math.round(this.base.intScreenHeight_text/2.);
+	this.theSnake=[[i,j],[i+1,j]];
+	this.theSnakeMoveDirections=[0,0];
+	this.intGameMode=0;
+	this.base.clearScreen_text();
+	this.theApples=[];
+	this.addRandomApple();
+	this.intPoints=0;
+	this.intAppleEaten=0;
+	this.newInch();
+};
+/*
+Program_Tetris.prototype.refreshScreen=function(){
+	this.drawWalls();
+	this.base.clearScreen_text();
+	this.drawBoard();
+	this.drawFallingBrick();
+	this.drawPoints();
+	this.drawMouse();
+};
+*/
+Program_Tetris.prototype.gameModeGame=function(currentFrameTime){
+	var now=performance.now();
+	this.base.clearScreen_text();
+	this.drawWalls();
+	//this.drawSnake();
+	//this.drawApples();
+	this.drawBoard();
+	this.drawFallingBrick();
+	this.drawPoints();
+	this.drawMouse();
+	if(null==this.prevGameTime){
+		this.prevGameTime=now;
+		this.updateGame(true);
+	}
+	if(Math.abs(this.prevGameTime-currentFrameTime)>this.gameSpeed*1000){
+		this.updateGame(true);
+		this.prevGameTime=now;
+	}
+};
+Program_Tetris.prototype.reloadStrArgs=function(){
+	var lstArgs=this.strArgs.split(" ");
+	this.intMinApple=1;
+	this.intMaxApple=2359;
+	//this.intGameSpeed_ms=250;
+	this.intGameSpeed_ms=1000;
+	this.strMode="normal";
+	var strScreensaverPlay;
+	this.blnScreensaverPlay=true;
+	var intArg=null,intNumericArg=0;
+	for(var ii=0;ii<lstArgs.length;ii++){
+		if("scrsvr"==lstArgs[ii].substring(0,6)){
+			this.blnScreensaverPlay=true;
+		}
+		if("game"==lstArgs[ii].substring(0,4)){
+			this.blnScreensaverPlay=false;
+		}
+		if("normal"==lstArgs[ii]){
+			this.strGameMode="normal";
+		}
+		if("inches"==lstArgs[ii]){
+			this.strGameMode="inches";
+		}
+		if("dictionary"==lstArgs[ii]){
+			this.strGameMode="dictionary";
+		}
+		intArg=parseInt(lstArgs[ii]);
+		if(false==nonNumber(intArg)){
+			switch(intNumericArg){
+				case 0:
+					this.intMinApple=intArg;
+					intNumericArg++;
+					break;
+				case 1:
+					this.intMaxApple=intArg;
+					intNumericArg++;
+					break;
+				case 2:
+					this.intGameSpeed_ms=intArg;
+					intNumericArg++;
+					break;
+
+			}
+		}
+		
+	}
+	this.prevStrArgs=this.strArgs;
+	this.intGameMode=4;
+};
+Program_Tetris.prototype.loopFunction=function(currentFrameTime){
 	switch(this.intGameMode){
 		case 0:this.gameModeGame(currentFrameTime);break;
 		case 1:this.gameModePause(currentFrameTime);break;
