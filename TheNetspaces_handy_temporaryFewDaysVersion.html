@@ -6561,13 +6561,15 @@ Piano.prototype.sineComponentFunction=function(ii,fltAmplitude,fltFrequency){
 	return fltAmplitude*Math.sin(2.*Math.PI*fltFrequency*ii/44100.);
 };
 Piano.prototype.squareComponentFunction=function(ii,fltAmplitude,fltFrequency){
-	return (fltAmplitude)*((-1)**Math.floor((2.*fltFrequency*ii/44100.)));
+	/*return (fltAmplitude)*((-1)**Math.floor((2.*fltFrequency*ii/44100.)));*/
+	return (fltAmplitude)*Math.pow((-1),Math.floor((2.*fltFrequency*ii/44100.)));
 };
 Piano.prototype.sawtoothComponentFunction=function(ii,fltAmplitude,fltFrequency){
 	return (fltAmplitude)*(2*(fltFrequency*ii/44100.-Math.floor(fltFrequency*ii/44100.)-0.5));
 };
 Piano.prototype.triangleComponentFunction=function(ii,fltAmplitude,fltFrequency){
-	return (fltAmplitude)*(2*(-1)**Math.floor((2.*fltFrequency*ii/44100.))*(fltFrequency*ii/44100.-Math.floor(fltFrequency*ii/44100.)-0.5));
+	/*return (fltAmplitude)*(2*(-1)**Math.floor((2.*fltFrequency*ii/44100.))*(fltFrequency*ii/44100.-Math.floor(fltFrequency*ii/44100.)-0.5));*/
+	return (fltAmplitude)*(2*Math.pow((-1),Math.floor((2.*fltFrequency*ii/44100.)))*(fltFrequency*ii/44100.-Math.floor(fltFrequency*ii/44100.)-0.5));
 };
 Piano.prototype.loadSineComponentsSoundfontLetter=function(intMidiNote,fltLength){
 	this.loadTxtFunFunFunComponentsSoundfontLetter(intMidiNote,fltLength,this.sineComponentFunction);
@@ -10259,6 +10261,60 @@ Computer.prototype.emptyKeyEvent=function(){
 	evtKey.code="";
 	return evtKey;
 };
+Computer.prototype.resizeTextModeScreen=function(intWidth_chars,intHeight_chars){
+	var intScreenWidth_text=intWidth_chars;
+	var intScreenHeight_text=intHeight_chars;
+	netspace.computer.intScreenWidth_text=intScreenWidth_text;
+	netspace.computer.intScreenHeight_text=intScreenHeight_text;
+	netspace.computer.screenCanvas=null;
+	if(0!=this.intRenderText)
+		netspace.computer.arrHTMLtextScreenBuffer=new Uint8Array(3*90*intScreenWidth_text*intScreenHeight_text);
+	if(undefined!=netspace.computer.theActualProgram.updateDimensions)netspace.computer.theActualProgram.updateDimensions();
+	if(undefined!=netspace.shaderThinkpad&&null!=netspace.shaderThinkpad){
+		var intNewWidth=netspace.computer.intFontWidth*netspace.computer.intScreenWidth_text;
+		var intNewHeight=netspace.computer.intFontHeight*netspace.computer.intScreenHeight_text;
+		netspace.shaderThinkpad.resize(intNewWidth,intNewHeight);
+	}
+	var theActualProgram=netspace.computer.theActualProgram;
+	if(undefined!=netspace.computer.theActualProgram.wndEditing){
+		netspace.computer.theActualProgram.resizeWindow("resizeWindow(0,1,"+intWidth_chars+","+(intHeight_chars-2)+")");
+		netspace.computer.theActualProgram.wndPrompt.resize("resizeWindow(0,"+(intHeight_chars-1)+","+intWidth_chars+",1,0)");
+	}
+};
+Computer.prototype.resizeTextModeScreenPrompt=function(){
+	var strDimensions=prompt("Enter new [intScreenWidth_text,intScreenHeight_text]:","["+netspace.computer.intScreenWidth_text+","+netspace.computer.intScreenHeight_text+"]");
+	if(null==strDimensions||undefined==strDimensions)return;
+	var lstDimensions=strDimensions.substring(1,strDimensions.length-1).split(",");
+	var intScreenWidth_text,intScreenHeight_text;
+	intScreenWidth_text=parseInt(lstDimensions[0]);
+	intScreenHeight_text=parseInt(lstDimensions[1]);
+	if(true==nonNumber(intScreenWidth_text)||true==nonNumber(intScreenHeight_text))return;
+	this.resizeTextModeScreen(intScreenWidth_text,intScreenHeight_text);
+};
+Computer.prototype.fullScreenFromZoom=function(){
+	/*in newer Androids window.innerWidth and window.innerHeight is constant and scalled by window.visualViewport.scale*/
+	/*in older Androids window.innerWidth and window.innerHeight is different with different zooms*/
+	var fltDeviceScalingFactor=0.1;
+	var fltZoomScale;
+	if(undefined==window.visualViewport){
+		fltZoomScale=1.;
+		fltDeviceScalingFactor=0.3;
+	}
+	else{
+		fltZoomScale=window.visualViewport.scale;
+		if(undefined==fltZoomScale){
+			fltZoomScale=1.;
+			fltDeviceScalingFactor=0.3;
+		}
+	}
+	var fltScaleFactorHeight=fltDeviceScalingFactor/fltZoomScale;
+	var fltScaleFactorWidth=2.3*fltScaleFactorHeight;
+	var intWindowWidth=Math.floor(window.innerWidth*fltScaleFactorWidth);
+	var intWindowHeight=Math.floor(window.innerHeight*fltScaleFactorHeight);
+	var intWidth_chars=Math.floor(intWindowWidth/netspace.computer.intFontWidth);
+	var intHeight_chars=Math.floor(intWindowHeight/netspace.computer.intFontHeight);
+	this.resizeTextModeScreen(intWidth_chars,intHeight_chars);
+};
 Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	this.blnRenderScreen=true;
 	if(true==blnLoad3dWorldsOnStart)
@@ -10307,6 +10363,8 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	txtArtificialTextarea1.type="text";
 	txtArtificialTextarea1.id="txtArtificialTextarea1";
 	txtArtificialTextarea1.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea1.style="font-size:26px;";
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
 		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
@@ -10403,6 +10461,8 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 	txtArtificialTextarea2.type="text";
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea2.style="font-size:26px;";
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
 	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
@@ -10551,6 +10611,22 @@ Computer.prototype.netspacesFullScreenMode=function(blnFullscreenMode){
 		divBtnLockFullscreenMode.appendChild(chk3dMouseMode2);
 		var chk3dMouseModeTitle=document.createTextNode("3d mouse");
 		divBtnLockFullscreenMode.appendChild(chk3dMouseModeTitle);
+
+		divBtnLockFullscreenMode.appendChild(document.createElement("br"));
+		var btnFullScreenFromZoom=document.createElement("button");
+		divBtnLockFullscreenMode.appendChild(btnFullScreenFromZoom);
+		btnFullScreenFromZoom.id="btnFullScreenFromZoom";
+		btnFullScreenFromZoom.innerText="Full screen from pinch zoom";
+		btnFullScreenFromZoom.onclick=function(){
+			netspace.computer.fullScreenFromZoom();
+		};
+		var btnResizeTextModeScreenPrompt=document.createElement("button");
+		divBtnLockFullscreenMode.appendChild(btnResizeTextModeScreenPrompt);
+		btnResizeTextModeScreenPrompt.id="btnResizeTextModeScreenPrompt";
+		btnResizeTextModeScreenPrompt.innerText="Resize text mode screen...";
+		btnResizeTextModeScreenPrompt.onclick=function(){
+			netspace.computer.resizeTextModeScreenPrompt();
+		};
 	}
 
 	var divTouchscreenKeyboard=document.getElementById("divTouchscreenKeyboard");
@@ -10660,6 +10736,8 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	txtArtificialTextarea1.type="text";
 	txtArtificialTextarea1.id="txtArtificialTextarea1";
 	txtArtificialTextarea1.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea1.style="font-size:26px;";
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
 		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
@@ -10756,6 +10834,8 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 	txtArtificialTextarea2.type="text";
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea2.style="font-size:26px;";
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
 	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
@@ -10905,6 +10985,22 @@ Computer.prototype.netspacesComputerScreenCanvasMode=function(blnComputerScreenC
 		divBtnLockComputerScreenCanvas.appendChild(chk3dMouseMode2);
 		var chk3dMouseModeTitle=document.createTextNode("3d mouse");
 		divBtnLockComputerScreenCanvas.appendChild(chk3dMouseModeTitle);
+
+		divBtnLockComputerScreenCanvas.appendChild(document.createElement("br"));
+		var btnFullScreenFromZoom=document.createElement("button");
+		divBtnLockComputerScreenCanvas.appendChild(btnFullScreenFromZoom);
+		btnFullScreenFromZoom.id="btnFullScreenFromZoom";
+		btnFullScreenFromZoom.innerText="Full screen from pinch zoom";
+		btnFullScreenFromZoom.onclick=function(){
+			netspace.computer.fullScreenFromZoom();
+		};
+		var btnResizeTextModeScreenPrompt=document.createElement("button");
+		divBtnLockComputerScreenCanvas.appendChild(btnResizeTextModeScreenPrompt);
+		btnResizeTextModeScreenPrompt.id="btnResizeTextModeScreenPrompt";
+		btnResizeTextModeScreenPrompt.innerText="Resize text mode screen...";
+		btnResizeTextModeScreenPrompt.onclick=function(){
+			netspace.computer.resizeTextModeScreenPrompt();
+		};
 		
 	}
 
@@ -11032,6 +11128,8 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	txtArtificialTextarea1.type="text";
 	txtArtificialTextarea1.id="txtArtificialTextarea1";
 	txtArtificialTextarea1.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea1.style="font-size:26px;";
 	netspace.computer.txtArtificialTextarea_blnOninputDone=false;
 	txtArtificialTextarea1.oninput=function(evtInput){
 		if(0==this.value.length||10==this.value.charCodeAt(0)||13==this.value.charCodeAt(0)){netspace.computer.txtArtificialTextarea_blnOninputDone=false;this.value="";return;}
@@ -11128,6 +11226,8 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 	txtArtificialTextarea2.type="text";
 	txtArtificialTextarea2.id="txtArtificialTextarea2";
 	txtArtificialTextarea2.rows=1;
+	/*smallest font size to prevent autozoom on focus*/
+	txtArtificialTextarea2.style="font-size:26px;";
 	txtArtificialTextarea2.oninput=txtArtificialTextarea1.oninput;
 	txtArtificialTextarea2.onkeyup=function(evtKey){this.value="";netspace.computer.txtArtificialTextarea_blnOninputDone=true;};
 	txtArtificialTextarea2.onkeydown=function(evtKey){
@@ -11278,6 +11378,22 @@ Computer.prototype.netspacesComputerTextScreenDivMode=function(blnComputerTextSc
 		divBtnLockTextScreenDiv.appendChild(chk3dMouseMode2);
 		var chk3dMouseModeTitle=document.createTextNode("3d mouse");
 		divBtnLockTextScreenDiv.appendChild(chk3dMouseModeTitle);
+
+		divBtnLockTextScreenDiv.appendChild(document.createElement("br"));
+		var btnFullScreenFromZoom=document.createElement("button");
+		divBtnLockTextScreenDiv.appendChild(btnFullScreenFromZoom);
+		btnFullScreenFromZoom.id="btnFullScreenFromZoom";
+		btnFullScreenFromZoom.innerText="Full screen from pinch zoom";
+		btnFullScreenFromZoom.onclick=function(){
+			netspace.computer.fullScreenFromZoom();
+		};
+		var btnResizeTextModeScreenPrompt=document.createElement("button");
+		divBtnLockTextScreenDiv.appendChild(btnResizeTextModeScreenPrompt);
+		btnResizeTextModeScreenPrompt.id="btnResizeTextModeScreenPrompt";
+		btnResizeTextModeScreenPrompt.innerText="Resize text mode screen...";
+		btnResizeTextModeScreenPrompt.onclick=function(){
+			netspace.computer.resizeTextModeScreenPrompt();
+		};
 
 	}
 	var divTouchscreenKeyboard=document.getElementById("divTouchscreenKeyboard");
