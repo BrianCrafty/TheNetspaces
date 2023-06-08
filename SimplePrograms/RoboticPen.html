@@ -468,7 +468,8 @@ RoboticPen.prototype.findNearestPredefinedColor=function(intR,intG,intB,intA){
 		lstColors.push(this.lstColors[ii]);
 	}
 	for(ii=0;ii<lstColors.length;ii++){
-		intDistance=Math.sqrt((intR-lstColors[ii][0])**2+(intG-lstColors[ii][1])**2+(intB-lstColors[ii][2])**2+(intA-lstColors[ii][3])**2);
+		/*intDistance=Math.sqrt((intR-lstColors[ii][0])**2+(intG-lstColors[ii][1])**2+(intB-lstColors[ii][2])**2+(intA-lstColors[ii][3])**2);*/
+		intDistance=Math.sqrt(Math.pow(intR-lstColors[ii][0],2)+Math.pow(intG-lstColors[ii][1],2)+Math.pow(intB-lstColors[ii][2],2)+Math.pow(intA-lstColors[ii][3],2));
 		if(intMinDistance<0||intDistance<intMinDistance){
 			intMinDistance=intDistance;
 			intMinColor=ii;
