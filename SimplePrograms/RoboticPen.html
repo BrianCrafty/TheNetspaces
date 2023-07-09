@@ -19,164 +19,8 @@ textarea{background-color:black;
 }
 </style>
 <script type-"text/javascript">
-function setContents(contents){
-	var txtText=document.getElementById("txtText");
-	txtText.value=contents;
-	document.getElementById("txtLineNumber").value="1";
-}
-function openFile(){
-	var fileInput=document.createElement("input");
-	fileInput.type="file";
-	fileInput.style.display="none";
-	fileInput.onchange=function(evtChange){
-		var file=evtChange.target.files[0];
-		if(!file){
-			return;
-		}	
-		var strFilename=document.getElementById("txtFilename");
-		strFilename.value=file.name;
-		var fileReader=new FileReader();
-		fileReader.onload=function(evtFile) {
-			var contents=evtFile.target.result;
-			setContents(contents);
-			document.body.removeChild(fileInput);
-		};
-		fileReader.readAsText(file);
-	};
-	document.body.appendChild(fileInput);
-	click(fileInput);
-}
-function click(elem){
-	var eventMouse=document.createEvent("MouseEvents");
-	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
-	elem.dispatchEvent(eventMouse);
-}
-function prepareFileToSave(contents,fileName){
-	var a=document.getElementById("save");
-	if(fileName)a.setAttribute("download",fileName);
-	var blob=new Blob([contents],{type:"text/plain;charset=utf-8"});
-	var downloadUrl=URL.createObjectURL(blob);
-	a.setAttribute("href",downloadUrl);
-}
-function btnOpenPressed(){
-	openFile();
-}
-function btnSavePressed(){
-	var txtText=document.getElementById("txtText");
-	var strFilename=document.getElementById("txtFilename").value;
-	if (0==strFilename.length)strFilename="text.txt";
-	prepareFileToSave(txtText.value,strFilename);
-	alert("File ready for saving. After modifying again, prepare the file for saving again.");
-}
-function gotoLine(line){
-	alert("Scroll will be estimated and the line number is usually not exact.");
-
-	var txtText=document.getElementById("txtText");
-	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
-	var lineHeight=txtText.clientHeight/txtText.rows;
-	var scrollTop=(line-1)*(lineHeight);
-	txtText.scrollTop=scrollTop;
-}
-function btnGotoLinenumber(){
-	gotoLine(parseInt(document.getElementById("txtLineNumber").value));	
-}
-function chkLineWrapClicked(){
-	var chkLineWrap=document.getElementById("chkLineWrap");
-	var txtText=document.getElementById("txtText");
-	if (true==chkLineWrap.checked)txtText.wrap="on";
-	if (false==chkLineWrap.checked)txtText.wrap="off";
-}
-function fullScreenSize(){
-	var txtText=document.getElementById("txtText");
-	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
-	var lineWidth=txtText.clientWidth/txtText.cols;
-	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
-	var lineHeight=txtText.clientHeight/txtText.rows;
-	txtText.cols=window.innerWidth/lineWidth;
-	txtText.rows=(window.innerHeight-100)/lineHeight;
-}
-function btnResizePressed(){
-	var txtText=document.getElementById("txtText");
-	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
-	if(null==strNewSize)return;
-	if(0==strNewSize.length){
-		fullScreenSize();
-		return;
-	}
-	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
-	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
-		alert(strError);
-		fullScreenSize();
-		return;
-	}
-	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
-	if(2!=lstDimensions.length){
-		alert(strError);
-		fullScreenSize();
-		return;
-	}
-	var intWidth=parseInt(lstDimensions[0]);
-	var intHeight=parseInt(lstDimensions[1]);
-	if(true==Number.isNaN(intWidth)){
-		alert(strError);
-		fullScreenSize();
-		return;
-	}
-	if(true==Number.isNaN(intHeight)){
-		alert(strError);
-		fullScreenSize();
-		return;
-	}
-	txtText.cols=intWidth;
-	txtText.rows=intHeight;
-}
-function btnFindPressed(){
-	alert("Use the webbrowser functionality to search on the webpage.");
-}
-function init(){
-	document.getElementById("btnOpen").onclick=btnOpenPressed;
-	document.getElementById("btnSave").onclick=btnSavePressed;
-	document.getElementById("btnGoto").onclick=btnGotoLinenumber;
-	document.getElementById("chkLineWrap").onclick=chkLineWrapClicked;
-	document.getElementById("btnResize").onclick=btnResizePressed;
-	document.getElementById("btnFind").onclick=btnFindPressed;
-	document.getElementById("btnResetAndDraw").onclick=btnResetAndDrawPressed;
-	document.getElementById("btnReset").onclick=btnResetPressed;
-	document.getElementById("btnDraw").onclick=btnDrawPressed;
-	document.getElementById("btnClear").onclick=btnClearPressed;
-	document.getElementById("btnResizeRoboticCanvas").onclick=btnResizeRoboticCanvasPressed;
-	document.getElementById("btnLoadBackgroundImage").onclick=btnLoadBackgroundImagePressed;
-	document.getElementById("btnExportToAsciiArtText").onclick=btnExportToAsciiArtTextPressed;
-	document.getElementById("chkShowBackgroundImage").onchange=chkShowBackgroundImageChanged;
-	var penCanvas=document.getElementById("RoboticPenCanvas");
-	window.roboticPen=new RoboticPen(penCanvas);
-}
-window.onload=init;
-RoboticPenConstructor=function(that,roboticPenCanvas){
-	that.blnPenDown=true;
-	that.roboticPenCanvas=roboticPenCanvas;
-	that.intScreenWidth=that.roboticPenCanvas.width;
-	that.intScreenHeight=that.roboticPenCanvas.height;
-	that.intX0=Math.ceil(that.intScreenWidth/2.);
-	that.intY0=Math.ceil(that.intScreenHeight/2.);
-	that.intX=0;
-	that.intY=0;
-	that.angle=0;//watch convention
-	that.intSize=10;
-	that.lstFGcolor=[255,60,0,255];
-	//that.lstBGcolor=[255,255,255,255];
-	that.lstBGcolor=[0,0,0];
-	that.lstAvatarFGcolor=[255,60,0,255];
-	that.lstAvatarBGcolor=[255,60,0,0];
-	that.offlineCanvas=document.createElement("canvas");
-	that.offlineCanvas.width=that.intScreenWidth;
-	that.offlineCanvas.height=that.intScreenHeight;
-	that.backgroundImageCanvas=null;
-	that.strProgram="";
-	that.intLineWidth=1;
-	that.blnVisible=true;
-	that.lstOpaqueColor=[0,0,0,0];
-	that.degree=Math.PI/180;
+PenCanvasConstructor=function(that,penCanvas){
+	that.penCanvas=penCanvas;
 	that.lstColors=[[255,255,255,255],
 		[0,0,0,255],
 		[255,100,0,255],
@@ -188,30 +32,1053 @@ RoboticPenConstructor=function(that,roboticPenCanvas){
 		[100,50,0,255],
 		[0,0,255,255]
 	];
+	that.intScreenWidth=that.penCanvas.width;
+	that.intScreenHeight=that.penCanvas.height;
+	that.lstOpaqueColor=[0,0,0,0];
+	that.lstFGcolor=[255,60,0,255];
+	that.lstBGcolor=[0,0,0,0];
+	that.degree=Math.PI/180;
+	that.intLineWidth=1;
+	that.fltGrayscale=1;
+	that.lstUndoItems=[];
+	that.lstRedoItems=[];
+	that.intUndoItem=0;
+	that.intRedoItem=0;
+	that.lstDrawingHistory=[];
+	that.intDrawingItem=0;
+	that.chkUsePutpixelLines=document.getElementById("chkUsePutpixelLines");
+	that.chkPencilTool=document.getElementById("chkPencilTool");
+	that.chkRubberTool=document.getElementById("chkRubberTool");
+	that.chkBucketTool=document.getElementById("chkBucketTool");
+	that.intFloodFillCallStackLimit=1000;
+	that.intFloodFillCallStackCounter=0;
+	that.lstAdditionalFloodFillCallStack=[];
+	that.lstDrawingHistoryToPlay=null;
+	that.intDrawingHistoryToPlayCounter=0;
+	that.fltDrawingHistoryToPlayDelay=0;
+	that.lstLayers=[];
+	that.intUniqueNumber_Layers=0;
+};
+PenCanvasConstructor_strF=function(that,penCanvas){
+};
+PenCanvas=function(penCanvas){
+	PenCanvasConstructor(this,penCanvas);
+	PenCanvasConstructor_strF(this,penCanvas);
+};
+PenCanvas.prototype.toRadian=function(fltAngle){return fltAngle*this.degree;}
+PenCanvas.prototype.listToStringRecursive=function(lstSrc){
+	var strList="[";
+	for(var ii=0;ii<lstSrc.length;ii++){
+		if(0!=ii)strList+=",";
+		if(true==this.isList(lstSrc[ii]))
+			strList+=this.listToStringRecursive(lstSrc[ii]);
+		else strList+=(""+lstSrc[ii]);
+	}
+	strList+="]";
+	return strList;
+};
+PenCanvas.prototype.lastIndexOf=function(strSrc,strFind){
+	var strSearch=strSrc;
+	var intIndex=strSearch.indexOf(strFind);
+	var intPrevIndex=intIndex;
+	while(-1!=intIndex){
+		strSearch=strSearch.substring(intIndex+1);
+		intIndex=strSearch.indexOf(strFind);
+		if(-1!=intIndex)intPrevIndex+=(intIndex+1);
+	}
+	return intPrevIndex;
+};
+PenCanvas.prototype.stringToListCore=function(strSrc,lstList){
+	var intItem;
+	var lstStrSrc=strSrc.split(",");
+	for(var ii=0;ii<lstStrSrc.length;ii++){
+		intItem=parseInt(lstStrSrc[ii]);
+		if(intItem==parseFloat(lstStrSrc[ii]))
+			lstList.push(intItem);
+		else
+			lstList.push(parseFloat(lstStrSrc[ii]));
+	}
+};
+PenCanvas.prototype.findPairingBracket=function(strBracket,lstTextBuffer,lstCursor_buffer,blnStopAfterScreen,blnWrap,intInnerWidth,intInnerHeight){
+	var blnBracket=false;
+	var lstBrackets=["(",")","[","]","{","}"];
+	var intBracket=lstBrackets.indexOf(strBracket);
+	if(-1==intBracket)return -1;
+	var lstClosingBrackets=[")","(","]","[","}","{"];
+	var intOccurence=1;
+	var intCharsChecked=0;
+	var intLinesChecked=0;
+	var intI, intJ;
+	var lstReturn;
+	lstReturn=lstCursor_buffer;
+	intI=lstReturn[0];
+	intJ=lstReturn[1];
+	var strLine;
+	if(0==intBracket%2){
+		for(var j=intJ;j<lstTextBuffer.length;j++){
+			strLine=lstTextBuffer[j];
+			for(var i=intI+1;i<strLine.length;i++){
+				if(strLine[i]==strBracket)intOccurence++;
+				if(strLine[i]==lstClosingBrackets[intBracket])intOccurence--;
+				if(0==intOccurence)return [i,j];
+				intCharsChecked++;
+				if(true==blnStopAfterScreen){
+					if(true==blnWrap){
+						if(intCharsChecked>=2*intInnerWidth*intInnerHeight){return -1;}
+					}else{
+						if(intLinesChecked>=2*intInnerHeight){return -1;}
+					}
+				}
+			}
+			intI=0;
+			intLinesChecked++;
+		}
+	}else{
+		for(var j=intJ;j>=0;j--){
+			strLine=lstTextBuffer[j];
+			for(var i=intI-1;i>=0;i--){
+				if(strLine[i]==strBracket)intOccurence++;
+				if(strLine[i]==lstClosingBrackets[intBracket])intOccurence--;
+				if(0==intOccurence)return [i,j];
+				intCharsChecked++;
+				if(true==blnStopAfterScreen){
+					if(true==blnWrap){
+						if(intCharsChecked>=2*intInnerWidth*intInnerHeight){return -1;}
+					}else{
+						if(intLinesChecked>=2*intInnerHeight){return -1;}
+					}
+				}
+
+			}
+			if(j-1>=0)
+				intI=lstTextBuffer[j-1].length-1;
+			else return -1;
+			intLinesChecked++;
+		}
+	}
+	return -1;
+};
+PenCanvas.prototype.stringToListRecursive=function(strSrc){
+	var lstList=[];
+	var lstStrSrc;
+	var lstSublist;
+	var strSubstring;
+	var int91,int93;
+	var newLstBuffer=[];
+	int91=strSrc.indexOf("[");
+	if(-1!=int91){
+		newLstBuffer=this.findPairingBracket("[",[strSrc],[int91,0],false,false,strSrc.length,1);
+		if(-1!=newLstBuffer)
+			int93=newLstBuffer[0];
+		else int93=-1;
+		if(-1==int91&&-1!=int93)
+		{
+			console.error("stringToListRecursive: error");
+			return [];
+		}
+		if(-1!=int91&&-1==int93){
+			console.error("stringToListRecursive: error");
+			return [];
+		}
+	}else int93=-1;
+	if(-1==int91&&-1==int93){
+		this.stringToListCore(strSrc,lstList);
+	}else{
+		strSubstring=strSrc.substring(0,int91-1);
+		if(strSubstring.length>0){
+			lstSublist=this.stringToListRecursive(strSubstring);
+			for(var ii=0;ii<lstSublist.length;ii++)
+				lstList.push(lstSublist[ii]);
+		}
+		lstSublist=this.stringToListRecursive(strSrc.substring(int91+1,int93));
+		lstList.push(lstSublist);
+		strSubstring=strSrc.substring(int93+2,strSrc.length);
+		if(strSubstring.length>0){
+			lstSublist=this.stringToListRecursive(strSubstring);
+			for(var ii=0;ii<lstSublist.length;ii++)
+				lstList.push(lstSublist[ii]);
+		}
+	}
+	return lstList;
+};
+PenCanvas.prototype.txtLineWidthChanged=function(){
+	var txtLineWidth=document.getElementById("txtLineWidth");
+	var intWidth=parseInt(txtLineWidth.value);
+	if(true==Number.isNaN(intWidth))txtLineWidth.value=window.penCanvas.intLineWidth;
+	else{
+		window.penCanvas.intLineWidth=intWidth;
+		if(true==document.getElementById("chkPencilTool").checked)
+			window.manualPen.intPrevPencilWidth=intWidth;
+		if(true==document.getElementById("chkRubberTool").checked)
+			window.manualPen.intPrevRubberWidth=intWidth;
+	}
+};
+PenCanvas.prototype.rangeGrayscaleChanged=function(){
+	var rangeGrayscale=document.getElementById("rangeGrayscale");
+	var intGrayscale=parseInt(rangeGrayscale.value);
+	if(true==Number.isNaN(intGrayscale))rangeGrayscale.value=Math.round(100*window.penCanvas.fltGrayscale);
+	else window.penCanvas.fltGrayscale=intGrayscale/100.;
+};
+PenCanvas.prototype.getIndex=function(i,j){
+	return (j*(this.intScreenWidth)+i)*4;
+};
+PenCanvas.prototype.getIndex_widthHeight=function(i,j,intWidth,intHeight){
+	return (j*(intWidth)+i)*4;
+};
+PenCanvas.prototype.isList=function(lstSrc){
+	if("object"!=typeof(lstSrc))return false;
+	if(lstSrc.constructor==[].constructor)return true;
+	return false;
+};
+PenCanvas.prototype.copyListRecursive=function(lstSrc){
+	var lstDst=[];
+	for(var ii=0;ii<lstSrc.length;ii++){
+		if(true==this.isList(lstSrc[ii]))
+			lstDst.push(this.copyListRecursive(lstSrc[ii]));
+		else lstDst.push(lstSrc[ii]);
+	}
+	return lstDst;
+};
+PenCanvas.prototype.drawLine=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
+	if(true==blnUndo)
+		this.addUndoItem([1,theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale]);
+	if(false==this.chkUsePutpixelLines.checked)
+		this.drawLineCanvas(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo);
+	else this.drawLinePutpixel(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo);
+};
+PenCanvas.prototype.drawLineCanvas=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
+	var theCanvasContext=theCanvas.getContext("2d");
+	theCanvasContext.beginPath();
+	var lstGrayscaleColor=[Math.round(fltGrayscale*lstColor[0]),Math.round(fltGrayscale*lstColor[1]),Math.round(fltGrayscale*lstColor[2]),Math.round(fltGrayscale*lstColor[3])];
+	var strColor="rgba("+lstGrayscaleColor[0]+","+lstGrayscaleColor[1]+","+lstGrayscaleColor[2]+","+lstGrayscaleColor[3]+")";
+	theCanvasContext.strokeStyle=strColor;
+	theCanvasContext.lineWidth=intLineWidth;
+	theCanvasContext.moveTo(intX0,intY0);
+	theCanvasContext.lineTo(intX1,intY1);
+	theCanvasContext.stroke();
+};
+PenCanvas.prototype.putpixel=function(theCanvas,theImage,intX,intY,lstColor,intLineWidth){
+	//this.putpixelCanvas(theCanvas,theImage,intX,intY,lstColor,intLineWidth);
+	this.putpixelMemory(theCanvas,theImage,intX,intY,lstColor,intLineWidth);
+};
+PenCanvas.prototype.putpixelCanvas=function(theCanvas,theImage,intX,intY,lstColor,intLineWidth){
+	var theContext=theCanvas.getContext('2d');
+	var intR,intG,intB,intAlpha;
+	var textureWidth=theCanvas.width;
+	var textureHeight=theCanvas.height;
+	var strColorStyle="rgba("+lstColor[0]+","+lstColor[1]+","+lstColor[2]+","+lstColor[3]+")";
+	if((0==intR)&&(0==intG)&&(0==intB))
+		theContext.fillStyle=theCanvas.strLinesHighlightStyle;
+	else theContext.fillStyle=strColorStyle;
+	theContext.fillRect(intX,intY,intLineWidth,intLineWidth);
+};
+PenCanvas.prototype.putpixelMemory=function(theCanvas,theImage,intX,intY,lstColor,intLineWidth){
+	var intImageWidth=theCanvas.width;
+	var intImageHeight=theCanvas.height;
+	var intIndex;
+	var intR,intG,intB,intA;
+	intR=lstColor[0];
+	intG=lstColor[1];
+	intB=lstColor[2];
+	intA=lstColor[3];
+	for(var ii=0;ii<intLineWidth;ii++)
+		for(var jj=0;jj<intLineWidth;jj++){
+			intIndex=this.getIndex_widthHeight(intX+ii,intY+jj,intImageWidth,intImageHeight);
+			theImage.data[intIndex+0]=intR;
+			theImage.data[intIndex+1]=intG;
+			theImage.data[intIndex+2]=intB;
+			theImage.data[intIndex+3]=intA;
+		}
+};
+PenCanvas.prototype.drawLine0=function(theCanvas,theImage,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
+	var dX=intX1-intX0;
+	var dY=intY1-intY0;
+	var intYi=1;
+	if(dY<0){
+		intYi=-1;
+		dY=-dY;
+	}
+	var d=2*dY-dX;
+	var intY =intY0;
+
+	for(var intX=intX0;intX<=intX1;intX++){
+		this.putpixel(theCanvas,theImage,intX,intY,lstColor,intLineWidth);
+	if(d>0){
+		intY=intY+intYi;
+		d=d-2*dX;
+	}
+	d=d+2*dY;
+	}
+};
+PenCanvas.prototype.drawLine1=function(theCanvas,theImage,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
+	var dX=intX1-intX0;
+	var dY=intY1-intY0;
+	var intXi=1;
+	if(dX<0){
+		intXi=-1;
+		dX=-dX;
+	}
+	var d=2*dX-dY;
+	var intX=intX0;
+
+	for(var intY=intY0;intY<=intY1;intY++){
+		this.putpixel(theCanvas,theImage,intX,intY,lstColor,intLineWidth);
+		if(d>0){
+			intX=intX+intXi;
+			d=d-2*dY;
+		}
+		d=d+2*dX;
+		}
+};
+PenCanvas.prototype.drawLinePutpixel=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
+	var theContext=theCanvas.getContext('2d');
+	var theImage=theContext.getImageData(0,0,theCanvas.width,theCanvas.height);
+	var lstGrayscaleColor=[Math.round(fltGrayscale*lstColor[0]),Math.round(fltGrayscale*lstColor[1]),Math.round(fltGrayscale*lstColor[2]),Math.round(fltGrayscale*lstColor[3])];
+	if(Math.abs(intY1-intY0)<=Math.abs(intX1-intX0)){
+		if(intX0>=intX1)
+			this.drawLine0(theCanvas,theImage,intX1,intY1,intX0,intY0,lstGrayscaleColor,intLineWidth);
+		else this.drawLine0(theCanvas,theImage,intX0,intY0,intX1,intY1,lstGrayscaleColor,intLineWidth);
+	}else{
+			if(intY0>=intY1)
+			this.drawLine1(theCanvas,theImage,intX1,intY1,intX0,intY0,lstGrayscaleColor,intLineWidth);
+		else this.drawLine1(theCanvas,theImage,intX0,intY0,intX1,intY1,lstGrayscaleColor,intLineWidth);
+	}
+	theContext.putImageData(theImage,0,0);
+};
+PenCanvas.prototype.drawline=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
+	this.drawLine(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo);
+};
+PenCanvas.prototype.bucketFill=function(theCanvas,lstColorFrom,lstColorTo,lstPointFrom,blnUndo){
+	if(true==blnUndo)
+		this.addUndoItem([2,theCanvas,lstColorFrom,lstColorTo,lstPointFrom]);
+	var theContext;
+	var theImage,intWidth,intHeight;
+	if(null!=lstColorFrom&&null!=lstPointFrom){
+		intWidth=theCanvas.width;
+		intHeight=theCanvas.height;
+		theContext=theCanvas.getContext("2d");
+		theImage=theContext.getImageData(0,0,intWidth,intHeight);
+		window.penCanvas.floodFillAlgorithm(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,lstPointFrom[0],lstPointFrom[1]);
+		theContext.putImageData(theImage,0,0);
+		
+		lstColorFrom=null;
+		lstPointFrom=null;
+		buttonDisabled(document.getElementById("btnBucketFill"),true);
+		window.penCanvas.updateScreen(false,true);
+	}
+};
+PenCanvas.prototype.colorsEqual=function(lstColor0,lstColor1){
+	if(lstColor0[0]!=lstColor1[0])return false;
+	if(lstColor0[1]!=lstColor1[1])return false;
+	if(lstColor0[2]!=lstColor1[2])return false;
+	if(lstColor0[3]!=lstColor1[3])return false;
+	return true;
+};
+PenCanvas.prototype.colorEqualTo=function(theImage,intWidth,intHeight,lstColor,i,j){
+	if(lstColor[0]==theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+0]&&
+		lstColor[1]==theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+1]&&
+		lstColor[2]==theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+2]&&
+		lstColor[3]==theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+3])
+			return true;
+	return false;
+};
+PenCanvas.prototype.floodFillAlgorithm=function(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j){
+	this.floodFillAlgorithmCall(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j);
+	while(this.lstAdditionalFloodFillCallStack.length>0){
+		this.floodFillAlgorithmCallFromList();
+	}
+	this.intFloodFillCallStackCounter=0;
+};
+PenCanvas.prototype.floodFillAlgorithmCallFromList=function(){
+	var lstArgs=this.lstAdditionalFloodFillCallStack.pop();
+	this.intFloodFillCallStackCounter--;
+	this.floodFillAlgorithmCall(lstArgs[0],lstArgs[1],lstArgs[2],lstArgs[3],lstArgs[4],lstArgs[5],lstArgs[6]);
+};
+PenCanvas.prototype.floodFillAlgorithmCall=function(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j){
+	this.intFloodFillCallStackCounter++;
+	if((true==this.colorsEqual(lstColorFrom,lstColorTo))||false==this.colorEqualTo(theImage,intWidth,intHeight,lstColorFrom,i,j)){
+		return;
+	}
+	theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+0]=lstColorTo[0];
+	theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+1]=lstColorTo[1];
+	theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+2]=lstColorTo[2];
+	theImage.data[this.getIndex_widthHeight(i,j,intWidth,intHeight)+3]=lstColorTo[3];
+
+	if(i>0)
+		if(this.intFloodFillCallStackCounter<this.intFloodFillCallStackLimit){
+			this.floodFillAlgorithmCall(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i-1,j);
+		}else this.lstAdditionalFloodFillCallStack.push([theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i-1,j]);
+	if(i<intWidth-1)
+		if(this.intFloodFillCallStackCounter<this.intFloodFillCallStackLimit){
+			this.floodFillAlgorithmCall(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i+1,j);
+		}else this.lstAdditionalFloodFillCallStack.push([theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i+1,j]);
+	if(j>0)
+		if(this.intFloodFillCallStackCounter<this.intFloodFillCallStackLimit){
+			this.floodFillAlgorithmCall(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j-1);
+		}else this.lstAdditionalFloodFillCallStack.push([theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j-1]);
+	if(j<intHeight-1)
+		if(this.intFloodFillCallStackCounter<this.intFloodFillCallStackLimit){
+			this.floodFillAlgorithmCall(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j+1);
+		}else this.lstAdditionalFloodFillCallStack.push([theImage,intWidth,intHeight,lstColorFrom,lstColorTo,i,j+1]);
+};
+PenCanvas.prototype.penCanvasToBlobCallback=function(blob){
+	var strFilename=document.getElementById("txtPenCanvasFilename").value;
+	if (0==strFilename.length)strFilename="PenCanvas.jpg";
+	var a=document.getElementById("savePenCanvas");
+	a.setAttribute("download",strFilename);
+	var downloadUrl=URL.createObjectURL(blob);
+	a.setAttribute("href",downloadUrl);
+};
+PenCanvas.prototype.preparePenCanvasToSave=function(penCanvas){
+	var strType="image/jpeg";
+	var strFilename=document.getElementById("txtPenCanvasFilename").value;
+	if (0==strFilename.length)strFilename="PenCanvas.jpg";
+	var lstFilename=strFilename.split(".");
+	if("jpg"==lstFilename[1].toLowerCase()||"jpeg"==lstFilename[1].toLowerCase())
+		strType="image/jpeg";
+	else
+		strType="image/"+lstFilename[1].toLowerCase();
+	var blob=penCanvas.toBlob(window.penCanvas.penCanvasToBlobCallback,strType);
+};
+PenCanvas.prototype.clearCanvas=function(theCanvas,intR,intG,intB,intA){
+	var theCanvasContext=theCanvas.getContext("2d");
+	var intWidth=theCanvas.width;
+	var intHeight=theCanvas.height;
+	var theCanvasImage=theCanvasContext.createImageData(intWidth,intHeight);
+	for(var i=0;i<intWidth;i++)
+		for(var j=0;j<intHeight;j++){
+			intIndex=(j*intWidth+i)*4;	
+				theCanvasImage.data[intIndex+0]=intR;
+				theCanvasImage.data[intIndex+1]=intG;
+				theCanvasImage.data[intIndex+2]=intB;
+				theCanvasImage.data[intIndex+3]=intA;
+				}
+	theCanvasContext.putImageData(theCanvasImage,0,0);
+};
+function clearScreen(){
+	window.penCanvas.clearCanvas(window.penCanvas.penCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],window.penCanvas.lstBGcolor[3]);
+	window.penCanvas.clearCanvas(window.roboticPen.offlineCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],window.penCanvas.lstBGcolor[3]);
+	window.penCanvas.clearCanvas(window.manualPen.offlineCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],window.penCanvas.lstBGcolor[3]);
+	window.penCanvas.clearCanvas(window.manualPen.temporaryCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],window.penCanvas.lstBGcolor[3]);
+}
+PenCanvas.prototype.imageToPenCanvasImage=function(theImage,intImageWidth,intImageHeight,penImage,blnModiff){
+	var index
+	var index0,index1;
+	var intR,intG,intB,intA;
+	var intMinWidth=(this.intScreenWidth<=intImageWidth)?this.intScreenWidth:intImageWidth;
+	var intMinHeight=(this.intScreenHeight<=intImageHeight)?this.intScreenHeight:intImageHeight;
+	for(var i=0;i<intMinWidth;i++)
+		for(var j=0;j<intMinHeight;j++){
+			index0=this.getIndex_widthHeight(i,j,intImageWidth,intImageHeight);
+			index1=this.getIndex(i,j);
+			intR=theImage.data[index0+0];
+			intG=theImage.data[index0+1];
+			intB=theImage.data[index0+2];
+			intA=theImage.data[index0+3];
+			if(this.lstOpaqueColor[3]!=intA||this.lstOpaqueColor[0]!=intR||this.lstOpaqueColor[1]!=intG||this.lstOpaqueColor[2]!=intB){
+				penImage.data[index1+0]=intR;
+				penImage.data[index1+1]=intG;
+				penImage.data[index1+2]=intB;
+				penImage.data[index1+3]=intA;
+				blnModiff=true;
+			}
+		}
+	return blnModiff;
+};
+PenCanvas.prototype.updateScreen=function(blnAlsoTemporaryCanvas,blnRefreshScreen){
+	if(true==blnRefreshScreen)window.penCanvas.clearCanvas(window.penCanvas.penCanvas,window.penCanvas.lstOpaqueColor[0],window.penCanvas.lstOpaqueColor[1],window.penCanvas.lstOpaqueColor[2],window.penCanvas.lstOpaqueColor[3]);
+
+	var penCanvas=this.penCanvas;
+	var penContext=penCanvas.getContext("2d");
+	var penImage=penContext.getImageData(0,0,penCanvas.width,penCanvas.height);
+	var blnModiff=false;
+
+	var backgroundImage=null;
+	var chkShowBackgroundImage=document.getElementById("chkShowBackgroundImage");
+	if(null!=window.roboticPen.backgroundImageCanvas&&true==chkShowBackgroundImage.checked){
+		var backgroundImageContext=window.roboticPen.backgroundImageCanvas.getContext("2d");
+		backgroundImage=backgroundImageContext.getImageData(0,0,window.roboticPen.backgroundImageCanvas.width,window.roboticPen.backgroundImageCanvas.height);
+	}
+	if(null!=backgroundImage){
+		blnModiff=this.imageToPenCanvasImage(backgroundImage,window.roboticPen.backgroundImageCanvas.width,window.roboticPen.backgroundImageCanvas.height,penImage,blnModiff);
+	}
+	var layerCanvas;
+	var layerContext;
+	var layerImage;
+	var temporaryCanvas;
+	var temporaryContext;
+	var temporaryImage;
+	for(var ii=0;ii<window.penCanvas.lstLayers.length;ii++){
+		layerCanvas=window.penCanvas.lstLayers[ii][2];
+		layerContext=layerCanvas.getContext("2d");
+		layerImage=layerContext.getImageData(0,0,layerCanvas.width,layerCanvas.height);
+		blnModiff=this.imageToPenCanvasImage(layerImage,layerCanvas.width,layerCanvas.height,penImage,blnModiff);
+		if(layerCanvas==window.roboticPen.offlineCanvas){
+			if(true==blnModiff)
+				penContext.putImageData(penImage,0,0);
+			window.roboticPen.redraw();
+			penImage=penContext.getImageData(0,0,penCanvas.width,penCanvas.height);
+		}
+		if(layerCanvas==window.manualPen.offlineCanvas)
+			if(true==blnAlsoTemporaryCanvas){
+				temporaryCanvas=window.manualPen.temporaryCanvas;
+				temporaryContext=temporaryCanvas.getContext("2d");
+				temporaryImage=temporaryContext.getImageData(0,0,temporaryCanvas.width,temporaryCanvas.height);
+				blnModiff=this.imageToPenCanvasImage(temporaryImage,temporaryCanvas.width,temporaryCanvas.height,penImage,blnModiff);
+			}
+	}
+
+	if(true==blnModiff)
+		penContext.putImageData(penImage,0,0);
+};
+PenCanvas.prototype.resizeAllCanvases=function(intWidth,intHeight){
+	window.penCanvas.intScreenWidth=intWidth;
+	window.penCanvas.intScreenHeight=intHeight;
+	//references to PenCanvas objects for easier coding in txtText
+	window.roboticPen.intScreenWidth=intWidth;
+	window.roboticPen.intScreenHeight=intHeight;
+	window.penCanvas.penCanvas.height=intHeight;
+	window.penCanvas.penCanvas.width=intWidth;
+	window.penCanvas.penCanvas.height=intHeight;
+	window.manualPen.temporaryCanvas.width=intWidth;
+	window.manualPen.temporaryCanvas.height=intHeight;
+	if(null!=window.roboticPen.backgroundImageCanvas){
+		window.roboticPen.backgroundImageCanvas.width=intWidth;
+		window.roboticPen.backgroundImageCanvas.height=intHeight;
+	}
+	var layerCanvas;
+	for(var ii=0;ii<window.penCanvas.lstLayers.length;ii++){
+		layerCanvas=window.penCanvas.lstLayers[ii][2];
+		layerCanvas.width=intWidth;
+		layerCanvas.height=intHeight;
+	}
+	window.penCanvas.updateScreen(true,true);
+};
+PenCanvas.prototype.drawItems=function(lstItems,blnOpaque,blnUndo){
+	var lstItem;
+	var lstOpaqueColorCanvas;
+	if(true==this.chkUsePutpixelLines.checked)
+		lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],this.lstOpaqueColor[3]];
+	else{
+		if(0==this.lstOpaqueColor[3])
+			lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],1];
+		else
+			lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],this.lstOpaqueColor[3]];
+	}
+	for(var ii=0;ii<lstItems.length;ii++){
+		lstItem=lstItems[ii];
+		if(false==this.isList(lstItem))continue;
+		if(1==lstItem[0]){
+			if(false==blnOpaque){
+				this.drawLine(lstItem[1],lstItem[2],lstItem[3],lstItem[4],lstItem[5],lstItem[6],lstItem[7],lstItem[8],blnUndo);
+			}else{
+				this.drawLine(lstItem[1],lstItem[2],lstItem[3],lstItem[4],lstItem[5],lstOpaqueColorCanvas,lstItem[7],1.,blnUndo);
+			}
+		}
+		if(2==lstItem[0]){
+			if(false==blnOpaque)
+				window.penCanvas.bucketFill(lstItem[1],lstItem[2],lstItem[3],lstItem[4],blnUndo);
+			else
+				window.penCanvas.bucketFill(lstItem[1],lstItem[3],lstItem[2],lstItem[4],blnUndo);
+		}
+	}
+	window.penCanvas.updateScreen(true,true);
+};
+PenCanvas.prototype.btnUndoRedoDisabledEnabled=function(){
+	var btnUndo=document.getElementById("btnUndo");
+	if(this.lstUndoItems.length>0)buttonDisabled(btnUndo,false);
+	else buttonDisabled(btnUndo,true);
+	var btnRedo=document.getElementById("btnRedo");
+	if(this.lstRedoItems.length>0)buttonDisabled(btnRedo,false);
+	else buttonDisabled(btnRedo,true);
+};
+PenCanvas.prototype.copyUndoRedoItems=function(lstItemsSrc){
+	var lstItemsDst=[];
+	var lstItem;
+	for(var ii=0;ii<lstItemsSrc.length;ii++){
+		lstItem=lstItemsSrc[ii];
+		if(false==this.isList(lstItem))lstItemsDst.push(Math.round(performance.now()));
+		else lstItemsDst.push(lstItem);
+	}
+	this.lstDrawingHistory.push(lstItemsDst);
+};
+PenCanvas.prototype.copyLstUndoItemsWithOpaqueColor=function(lstItemsSrc){
+	var lstOpaqueColorCanvas;
+	var lstItemsDst=[];
+	var theItemSrc;
+	if(true==this.chkUsePutpixelLines.checked)
+		lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],this.lstOpaqueColor[3]];
+	else{
+		if(0==this.lstOpaqueColor[3])
+			lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],1];
+		else
+			lstOpaqueColorCanvas=[this.lstOpaqueColor[0],this.lstOpaqueColor[1],this.lstOpaqueColor[2],this.lstOpaqueColor[3]];
+	}
+	for(var ii=0;ii<lstItemsSrc.length;ii++){
+		theItemSrc=lstItemsSrc[ii];
+		if(false==this.isList(theItemSrc))lstItemsDst.push(Math.round(performance.now()));
+		else{
+			theItemDst=this.copyListRecursive(theItemSrc);
+			theItemDst[6]=lstOpaqueColorCanvas;
+			lstItemsDst.push(theItemDst);
+		}
+	}
+	return lstItemsDst;
+};
+PenCanvas.prototype.addUndoItem=function(lstItem){
+	var intNow=Math.round(performance.now());
+	if(undefined==this.lstUndoItems[this.intUndoItem])this.lstUndoItems[this.intUndoItem]=[intNow];
+	if(undefined==this.lstDrawingHistory[this.intDrawingItem])this.lstDrawingHistory[this.intDrawingItem]=[intNow];
+	this.lstUndoItems[this.intUndoItem].push(lstItem);
+	this.lstDrawingHistory[this.intDrawingItem].push(lstItem);
+	this.lstRedoItems=[];
+	this.btnUndoRedoDisabledEnabled();
+};
+PenCanvas.prototype.addRedoItem=function(lstItems){
+	this.lstRedoItems.push(lstItems);
+	this.copyUndoRedoItems(lstItems);
+	this.intRedoItem++;
+	this.intDrawingItem++;
+	this.btnUndoRedoDisabledEnabled();
+};
+PenCanvas.prototype.listToStringRecursiveDrawingHistory=function(lstSrc){
+	var strList="[";
+	for(var ii=0;ii<lstSrc.length;ii++){
+		if(0!=ii)strList+=",";
+		if(true==this.isList(lstSrc[ii]))
+			strList+=this.listToStringRecursiveDrawingHistory(lstSrc[ii]);
+		else{
+			if((""+lstSrc[ii]).substring(1,7)=="object")
+				strList+="#0";
+			else
+				strList+=(""+Math.round(lstSrc[ii]));
+		}
+	}
+	strList+="]";
+	return strList;
+};
+PenCanvas.prototype.stringToListCoreDrawingHistory=function(strSrc,lstList,offlineCanvas){
+	var intItem;
+	var lstStrSrc=strSrc.split(",");
+	for(var ii=0;ii<lstStrSrc.length;ii++){
+		if("#"==lstStrSrc[ii][0])
+			lstList.push(offlineCanvas);
+		else{
+			intItem=parseInt(lstStrSrc[ii]);
+			if(intItem==parseFloat(lstStrSrc[ii]))
+				lstList.push(intItem);
+			else
+				lstList.push(parseFloat(lstStrSrc[ii]));
+		}
+	}
+};
+PenCanvas.prototype.stringToListRecursiveDrawingHistory=function(strSrc,offlineCanvas){
+	var lstList=[];
+	var lstStrSrc;
+	var lstSublist;
+	var strSubstring;
+	var int91,int93;
+	var newLstBuffer=[];
+	int91=strSrc.indexOf("[");
+	if(-1!=int91){
+		newLstBuffer=this.findPairingBracket("[",[strSrc],[int91,0],false,false,strSrc.length,1);
+		if(-1!=newLstBuffer)
+			int93=newLstBuffer[0];
+		else int93=-1;
+		if(-1==int91&&-1!=int93)
+		{
+			console.error("stringToListRecursive: error");
+			return [];
+		}
+		if(-1!=int91&&-1==int93){
+			console.error("stringToListRecursive: error");
+			return [];
+		}
+	}else int93=-1;
+	if(-1==int91&&-1==int93){
+		this.stringToListCoreDrawingHistory(strSrc,lstList,offlineCanvas);
+	}else{
+		strSubstring=strSrc.substring(0,int91-1);
+		if(strSubstring.length>0){
+			lstSublist=this.stringToListRecursiveDrawingHistory(strSubstring,offlineCanvas);
+			for(var ii=0;ii<lstSublist.length;ii++)
+				lstList.push(lstSublist[ii]);
+		}
+		lstSublist=this.stringToListRecursiveDrawingHistory(strSrc.substring(int91+1,int93),offlineCanvas);
+		lstList.push(lstSublist);
+		strSubstring=strSrc.substring(int93+2,strSrc.length);
+		if(strSubstring.length>0){
+			lstSublist=this.stringToListRecursiveDrawingHistory(strSubstring,offlineCanvas);
+			for(var ii=0;ii<lstSublist.length;ii++)
+				lstList.push(lstSublist[ii]);
+		}
+	}
+	return lstList;
+};
+PenCanvas.prototype.drawLstDrawingHistoryTimeout=function(){
+	if(window.penCanvas.intDrawingHistoryToPlayCounter<window.penCanvas.lstDrawingHistoryToPlay[0].length){
+		var lstItems=window.penCanvas.lstDrawingHistoryToPlay[0];
+		window.penCanvas.drawItems(lstItems[window.penCanvas.intDrawingHistoryToPlayCounter],false,true);
+		window.penCanvas.intUndoItem++;
+		window.penCanvas.intDrawingHistoryToPlayCounter++;
+		var fltTimeout;
+		if(-1!=window.penCanvas.fltDrawingHistoryToPlayDelay)
+			fltTimeout=window.penCanvas.fltDrawingHistoryToPlayDelay;
+		else{
+			if(window.penCanvas.intDrawingHistoryToPlayCounter>=window.penCanvas.lstDrawingHistoryToPlay[0].length){
+				fltTimeout=-1;
+			}
+			else fltTimeout=lstItems[window.penCanvas.intDrawingHistoryToPlayCounter][0]-lstItems[window.penCanvas.intDrawingHistoryToPlayCounter-1][0]-lstItems[0][0];
+		}
+		if(fltTimeout!=-1)
+			setTimeout(window.penCanvas.drawLstDrawingHistoryTimeout,fltTimeout);
+		else window.penCanvas.drawLstDrawingHistoryTimeout();
+	}else{
+		window.penCanvas.lstDrawingHistoryToPlay=null;
+		window.penCanvas.intDrawingHistoryToPlayCounter=0;
+		window.penCanvas.fltDrawingHistoryToPlayDelay=0;
+	}
+};
+PenCanvas.prototype.playLstDrawingHistory=function(strContents){
+	var lstDrawingHistory=window.penCanvas.stringToListRecursiveDrawingHistory(strContents,window.manualPen.offlineCanvas);
+	var lstItems;
+	var fltDelay=parseFloat(prompt("Enter dealy in microseconds, e.x. 1000 for one second delay. Enter -1 to play with times from the file.","-1"));
+	window.penCanvas.lstDrawingHistoryToPlay=lstDrawingHistory;
+	window.penCanvas.intDrawingHistoryToPlayCounter=0;
+	window.penCanvas.fltDrawingHistoryToPlayDelay=fltDelay;
+	window.penCanvas.drawLstDrawingHistoryTimeout();
+};
+PenCanvas.prototype.setLstDrawingHistory=function(strContents){
+	var lstDrawingHistory=window.penCanvas.stringToListRecursiveDrawingHistory(strContents,window.manualPen.offlineCanvas);
+	var lstItems;
+	for(var ii=0;ii<lstDrawingHistory.length;ii++){
+		lstItems=lstDrawingHistory[ii];
+		for(var jj=0;jj<lstItems.length;jj++)
+			window.penCanvas.drawItems(lstItems[jj],false,true);
+	}
+	window.penCanvas.intUndoItem++;
+};
+PenCanvas.prototype.lstDrawingHistoryToString=function(){
+	var strDrawingHistory=this.listToStringRecursiveDrawingHistory(this.lstDrawingHistory);
+	return strDrawingHistory;
+};
+PenCanvas.prototype.undoAction=function(){
+	var lstItems=window.penCanvas.lstUndoItems.pop();
+	if(undefined!=lstItems){
+		window.penCanvas.addRedoItem(lstItems);
+		window.penCanvas.drawItems(lstItems,true,false);
+		window.penCanvas.intUndoItem--;
+	}
+};
+PenCanvas.prototype.redoAction=function(){
+	var lstItems=window.penCanvas.lstRedoItems.pop();
+	window.penCanvas.lstUndoItems[window.penCanvas.intUndoItem]=lstItems;
+	window.penCanvas.lstDrawingHistory[window.penCanvas.intDrawingItem]=window.penCanvas.copyLstUndoItemsWithOpaqueColor(lstItems);
+	window.penCanvas.intUndoItem++;
+	window.penCanvas.intDrawingItem++;
+	window.penCanvas.btnUndoRedoDisabledEnabled();
+	if(undefined!=lstItems)
+		window.penCanvas.drawItems(lstItems,false,false);
+};
+PenCanvas.prototype.getLayerNumberByUniqueNumber=function(intUniqueNumber){
+	for(var ii=0;ii<this.lstLayers.length;ii++)
+		if(this.lstLayers[ii][4]==intUniqueNumber)return ii;
+	return -1;
+};
+PenCanvas.prototype.findSecondManualPenEditingLayer=function(intDifferentThen){
+	for(var ii=0;ii<this.lstLayers.length;ii++)
+		if(ii!=intDifferentThen&&true==this.lstLayers[ii][0].checked)return ii;
+	return -1;
+};
+PenCanvas.prototype.findSecondRoboticPenEditingLayer=function(intDifferentThen){
+	for(var ii=0;ii<this.lstLayers.length;ii++)
+		if(ii!=intDifferentThen&&true==this.lstLayers[ii][1].checked)return ii;
+	return -1;
+};
+PenCanvas.prototype.chkManualPenEditingLayerClicked=function(intUniqueNumber){
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	var kk=-1;
+	if(false==window.penCanvas.lstLayers[ii][0].checked){
+		window.penCanvas.lstLayers[ii][0].checked=true;
+		return;
+	}
+	if(true==window.penCanvas.lstLayers[ii][1].checked){
+		kk=window.penCanvas.findSecondManualPenEditingLayer(ii);
+		if(-1!=kk){
+			window.penCanvas.lstLayers[kk][1].checked=true;
+			for(var jj=0;jj<window.penCanvas.lstLayers.length;jj++)
+				if(jj!=kk)window.penCanvas.lstLayers[jj][1].checked=false;
+			window.roboticPen.offlineCanvas=window.penCanvas.lstLayers[kk][2];
+		}
+	}
+	for(var jj=0;jj<window.penCanvas.lstLayers.length;jj++)
+		if(jj!=ii)window.penCanvas.lstLayers[jj][0].checked=false;
+	window.manualPen.offlineCanvas=window.penCanvas.lstLayers[ii][2];
+};
+PenCanvas.prototype.chkRoboticPenEditingLayerClicked=function(intUniqueNumber){
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	var kk=-1;
+	if(false==window.penCanvas.lstLayers[ii][1].checked){
+		window.penCanvas.lstLayers[ii][1].checked=true;
+		return;
+	}
+	if(true==window.penCanvas.lstLayers[ii][0].checked){
+		kk=window.penCanvas.findSecondRoboticPenEditingLayer(ii);
+		if(-1!=kk){
+			window.penCanvas.lstLayers[kk][0].checked=true;
+			for(var jj=0;jj<window.penCanvas.lstLayers.length;jj++)
+				if(jj!=kk)window.penCanvas.lstLayers[jj][0].checked=false;
+			window.manualPen.offlineCanvas=window.penCanvas.lstLayers[kk][2];
+		}
+	}
+	for(var jj=0;jj<window.penCanvas.lstLayers.length;jj++)
+		if(jj!=ii)window.penCanvas.lstLayers[jj][1].checked=false;
+	window.roboticPen.offlineCanvas=window.penCanvas.lstLayers[ii][2];
+};
+PenCanvas.prototype.txtNameChanged=function(intUniqueNumber){
+};
+PenCanvas.prototype.btnDeleteLayerPressed=function(intUniqueNumber){
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	if(true==window.penCanvas.lstLayers[ii][0].checked||true==window.penCanvas.lstLayers[ii][1].checked){
+		alert("You can't delete editing layer with manualPen and roboticPen - set different layer to editing layer.");
+		return;
+	}
+
+	var tblLayers=document.getElementById("tblLayers");	
+	tblLayers.deleteRow(ii+1);
+	window.penCanvas.lstLayers.splice(ii,1);
+	window.penCanvas.updateScreen(true,true);
+};
+PenCanvas.prototype.btnMoveUpPressed=function(intUniqueNumber){
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	if(ii<=0)return;
+	var lstSwap=window.penCanvas.lstLayers[ii];
+	window.penCanvas.lstLayers[ii]=window.penCanvas.lstLayers[ii-1];
+	window.penCanvas.lstLayers[ii-1]=lstSwap;
+	var intRowNumber=ii+1;
+	var tblLayers=document.getElementById("tblLayers");
+	var rows=tblLayers.rows;
+	var parent=tblLayers.rows[intRowNumber].parentNode;
+	parent.insertBefore(rows[intRowNumber],rows[intRowNumber-1]);
+	window.penCanvas.updateScreen(true,true);
+};
+PenCanvas.prototype.btnMoveDownPressed=function(intUniqueNumber){
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	if(ii>=window.penCanvas.lstLayers.length-1)return;
+	var lstSwap=window.penCanvas.lstLayers[ii];
+	window.penCanvas.lstLayers[ii]=window.penCanvas.lstLayers[ii+1];
+	window.penCanvas.lstLayers[ii+1]=lstSwap;
+	var intRowNumber=ii+1;
+	var tblLayers=document.getElementById("tblLayers");
+	var rows=tblLayers.rows;
+	var parent=tblLayers.rows[intRowNumber].parentNode;
+	parent.insertBefore(rows[intRowNumber+1],rows[intRowNumber]);
+	window.penCanvas.updateScreen(true,true);
+};
+PenCanvas.prototype.btnLayerCopyPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnLayerCutPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnLayerPastePressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnLoadImageToLayerPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnSaveLayerToImagePressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnSaveLayerToLstDrawingHistoryPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnAddGridToLayerPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.btnAddSpiralToLayerPressed=function(intUniqueNumber){
+	alert("Functionality will be implemented later.");
+};
+PenCanvas.prototype.addLayer=function(theCanvas,strName,blnManualPenLayer,blnRoboticPenLayer){
+	var tblLayers=document.getElementById("tblLayers");
+	var rowLayer=tblLayers.insertRow(this.lstLayers.length+1);
+	var cell0=rowLayer.insertCell(0);
+	var chkManualPenEditingLayer=document.createElement("input");
+	chkManualPenEditingLayer.type="checkbox";
+	chkManualPenEditingLayer.id="chkManualPenEditingLayer"+this.intUniqueNumber_Layers;
+	chkManualPenEditingLayer.className="chkManualPenEditingLayer";
+	chkManualPenEditingLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	chkManualPenEditingLayer.checked=blnManualPenLayer;
+	chkManualPenEditingLayer.onclick=function(){window.penCanvas.chkManualPenEditingLayerClicked(this.intUniqueNumber)};
+	cell0.appendChild(chkManualPenEditingLayer);
+	var cell1=rowLayer.insertCell(1);
+	var chkRoboticPenEditingLayer=document.createElement("input");
+	chkRoboticPenEditingLayer.type="checkbox";
+	chkRoboticPenEditingLayer.id="chkRoboticPenEditingLayer"+this.intUniqueNumber_Layers;
+	chkRoboticPenEditingLayer.className="chkRoboticPenEditingLayer";
+	chkRoboticPenEditingLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	chkRoboticPenEditingLayer.checked=blnRoboticPenLayer;
+	chkRoboticPenEditingLayer.onclick=function(){window.penCanvas.chkRoboticPenEditingLayerClicked(this.intUniqueNumber)};
+	cell1.appendChild(chkRoboticPenEditingLayer);
+	var cell2=rowLayer.insertCell(2);
+	var cell3=rowLayer.insertCell(3);
+	var txtName=document.createElement("input");
+	txtName.type="text";
+	txtName.id="txtName"+this.intUniqueNumber_Layers;
+	txtName.className="txtName";
+	txtName.intUniqueNumber=this.intUniqueNumber_Layers;
+	txtName.onchange=function(){window.penCanvas.txtNameChanged(this.intUniqueNumber)};
+	if(undefined!=strName)txtName.value=strName;
+	cell3.appendChild(txtName);
+	var cell4=rowLayer.insertCell(4);
+	var btnDeleteLayer=document.createElement("button");
+	btnDeleteLayer.innerText="Delete";
+	btnDeleteLayer.id="btnDeleteLayer"+this.intUniqueNumber_Layers;
+	btnDeleteLayer.className="btnDeleteLayer";
+	btnDeleteLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnDeleteLayer.onclick=function(){window.penCanvas.btnDeleteLayerPressed(this.intUniqueNumber);};
+	cell4.appendChild(btnDeleteLayer);
+	var cell5=rowLayer.insertCell(5);
+	var btnMoveUp=document.createElement("button");
+	btnMoveUp.innerText="Move up";
+	btnMoveUp.id="btnMoveUp"+this.intUniqueNumber_Layers;
+	btnMoveUp.className="btnMoveUp";
+	btnMoveUp.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnMoveUp.onclick=function(){window.penCanvas.btnMoveUpPressed(this.intUniqueNumber);};
+	cell5.appendChild(btnMoveUp);
+	var cell6=rowLayer.insertCell(6);
+	var btnMoveDown=document.createElement("button");
+	btnMoveDown.innerText="Move down";
+	btnMoveDown.id="btnMoveDown"+this.intUniqueNumber_Layers;
+	btnMoveDown.className="btnMoveDown";
+	btnMoveDown.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnMoveDown.onclick=function(){window.penCanvas.btnMoveDownPressed(this.intUniqueNumber);};
+	cell6.appendChild(btnMoveDown);
+	var cell7=rowLayer.insertCell(7);
+	var btnCopy=document.createElement("button");
+	btnCopy.innerText="Copy";
+	btnCopy.id="btnCopy"+this.intUniqueNumber_Layers;
+	btnCopy.className="btnCopy";
+	btnCopy.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnCopy.onclick=function(){window.penCanvas.btnLayerCopyPressed(this.intUniqueNumber);};
+	cell7.appendChild(btnCopy);
+	var cell8=rowLayer.insertCell(8);
+	var btnCut=document.createElement("button");
+	btnCut.innerText="Cut";
+	btnCut.id="btnCut"+this.intUniqueNumber_Layers;
+	btnCut.className="btnCut";
+	btnCut.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnCut.onclick=function(){window.penCanvas.btnLayerCutPressed(this.intUniqueNumber);};
+	cell8.appendChild(btnCut);
+	var cell9=rowLayer.insertCell(9);
+	var btnPaste=document.createElement("button");
+	btnPaste.innerText="Paste";
+	btnPaste.id="btnPaste"+this.intUniqueNumber_Layers;
+	btnPaste.className="btnPaste";
+	btnPaste.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnPaste.onclick=function(){window.penCanvas.btnLayerPastePressed(this.intUniqueNumber);};
+	cell9.appendChild(btnPaste);
+	var cell10=rowLayer.insertCell(10);
+	var btnLoadImageToLayer=document.createElement("button");
+	btnLoadImageToLayer.innerText="Load image";
+	btnLoadImageToLayer.id="btnLoadImageToLayer"+this.intUniqueNumber_Layers;
+	btnLoadImageToLayer.className="btnLoadImageToLayer";
+	btnLoadImageToLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnLoadImageToLayer.onclick=function(){window.penCanvas.btnLoadImageToLayerPressed(this.intUniqueNumber);};
+	cell10.appendChild(btnLoadImageToLayer);
+	var cell11=rowLayer.insertCell(11);
+	var btnSaveLayerToImage=document.createElement("button");
+	btnSaveLayerToImage.innerText="Save image";
+	btnSaveLayerToImage.id="btnSaveLayerToImage"+this.intUniqueNumber_Layers;
+	btnSaveLayerToImage.className="btnSaveLayerToImage";
+	btnSaveLayerToImage.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnSaveLayerToImage.onclick=function(){window.penCanvas.btnSaveLayerToImagePressed(this.intUniqueNumber);};
+	cell11.appendChild(btnSaveLayerToImage);
+	var cell12=rowLayer.insertCell(12);
+	var btnSaveLayerToLstDrawingHistory=document.createElement("button");
+	btnSaveLayerToLstDrawingHistory.innerText="Save lstDrawingHistory";
+	btnSaveLayerToLstDrawingHistory.id="btnSaveLayerToLstDrawingHistory"+this.intUniqueNumber_Layers;
+	btnSaveLayerToLstDrawingHistory.className="btnSaveLayerToLstDrawingHistory";
+	btnSaveLayerToLstDrawingHistory.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnSaveLayerToLstDrawingHistory.onclick=function(){window.penCanvas.btnSaveLayerToLstDrawingHistoryPressed(this.intUniqueNumber);};
+	cell12.appendChild(btnSaveLayerToLstDrawingHistory);
+	var cell13=rowLayer.insertCell(13);
+	var btnAddGridToLayer=document.createElement("button");
+	btnAddGridToLayer.innerText="Add grid";
+	btnAddGridToLayer.id="btnAddGridToLayer"+this.intUniqueNumber_Layers;
+	btnAddGridToLayer.className="btnAddGridToLayer";
+	btnAddGridToLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnAddGridToLayer.onclick=function(){window.penCanvas.btnAddGridToLayerPressed(this.intUniqueNumber);};
+	cell13.appendChild(btnAddGridToLayer);
+	var cell14=rowLayer.insertCell(14);
+	var btnAddSpiralToLayer=document.createElement("button");
+	btnAddSpiralToLayer.innerText="Add grid";
+	btnAddSpiralToLayer.id="btnAddSpiralToLayer"+this.intUniqueNumber_Layers;
+	btnAddSpiralToLayer.className="btnAddSpiralToLayer";
+	btnAddSpiralToLayer.intUniqueNumber=this.intUniqueNumber_Layers;
+	btnAddSpiralToLayer.onclick=function(){window.penCanvas.btnAddSpiralToLayerPressed(this.intUniqueNumber);};
+	cell14.appendChild(btnAddSpiralToLayer);
+
+	this.lstLayers.push([chkManualPenEditingLayer,chkRoboticPenEditingLayer,theCanvas,txtName,this.intUniqueNumber_Layers]);
+	this.intUniqueNumber_Layers++;
+};
+PenCanvas.prototype.btnAddLayerClicked=function(){
+	var theCanvas=document.createElement("canvas");
+	theCanvas.width=window.penCanvas.intScreenWidth;
+	theCanvas.height=window.penCanvas.intScreenHeight;
+	var strName=prompt("Enter layer name:","layer"+window.penCanvas.lstLayers.length);
+	if(null!=strName)
+		window.penCanvas.addLayer(theCanvas,strName,false,false);
+};
+RoboticPenConstructor=function(that,penCanvas){
+	//references to PenCanvas objects for easier coding in txtText
+	that.blnPenDown=true;
+	that.penCanvas=penCanvas;
+	that.intScreenWidth=window.penCanvas.intScreenWidth;
+	that.intScreenHeight=window.penCanvas.intScreenHeight;
+	that.intX0=Math.ceil(window.penCanvas.intScreenWidth/2.);
+	that.intY0=Math.ceil(window.penCanvas.intScreenHeight/2.);
+	that.intX=0;
+	that.intY=0;
+	that.angle=0;//watch convention
+	that.intSize=10;
+	that.lstFGcolor=window.penCanvas.lstFGcolor;
+	that.lstBGcolor=window.penCanvas.lstBGcolor;
+	that.lstOpaqueColor=window.penCanvas.lstOpaqueColor;
+	that.lstAvatarFGcolor=[255,60,0,255];
+	that.lstAvatarBGcolor=[255,60,0,0];
+	that.offlineCanvas=document.createElement("canvas");
+	that.offlineCanvas.width=window.penCanvas.intScreenWidth;
+	that.offlineCanvas.height=window.penCanvas.intScreenHeight;
+	that.backgroundImageCanvas=null;
+	that.strProgram="";
+	that.blnVisible=true;
 	that.charColors={}
-	that.charColors[that.lstOpaqueColor]=" ";
-	for(var ii=0;ii<that.lstColors.length;ii++)that.charColors[that.lstColors[ii]]="0";
-	that.charColors[that.lstColors[1]]=" ";
+	that.charColors[window.penCanvas.lstOpaqueColor]=" ";
+	for(var ii=0;ii<window.penCanvas.lstColors.length;ii++)that.charColors[window.penCanvas.lstColors[ii]]="0";
+	that.charColors[window.penCanvas.lstColors[1]]=" ";
 	that.txtAsciiArt=null;
+	that.lstCallstack=[];
 };
 RoboticPenConstructor_strF=function(that){
 
 };
-RoboticPen=function(roboticPenCanvas){
-	RoboticPenConstructor(this,roboticPenCanvas);
-	RoboticPenConstructor_strF(this,roboticPenCanvas);
+RoboticPen=function(penCanvas){
+	RoboticPenConstructor(this,penCanvas);
+	RoboticPenConstructor_strF(this,penCanvas);
 };
 RoboticPen.prototype.resetPenState=function(){
-	this.intScreenWidth=this.roboticPenCanvas.width;
-	this.intScreenHeight=this.roboticPenCanvas.height;
-	this.intX0=Math.ceil(this.intScreenWidth/2.);
-	this.intY0=Math.ceil(this.intScreenHeight/2.);
+	this.intScreenWidth=window.penCanvas.intScreenWidth;
+	this.intScreenHeight=window.penCanvas.intScreenHeight;
+	this.intX0=Math.ceil(window.penCanvas.intScreenWidth/2.);
+	this.intY0=Math.ceil(window.penCanvas.intScreenHeight/2.);
 	this.intX=0;
 	this.intY=0;
 	this.angle=0;
 	this.pendown();
 	this.showpen();
-	this.clearScreen(0,0,0);
+	window.penCanvas.clearCanvas(this.offlineCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2]);
+	window.penCanvas.updateScreen(true,true);
 };
 RoboticPen.prototype.resetpenstate=function(){
 	this.resetPenState();
@@ -286,42 +1153,41 @@ RoboticPen.prototype.isvisible=function(){
 	return this.isVisible();
 };
 RoboticPen.prototype.drawLine=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
-	var theCanvasContext=theCanvas.getContext("2d");
-	theCanvasContext.beginPath();
-	var strColor="rgba("+lstColor[0]+","+lstColor[1]+","+lstColor[2]+","+lstColor[3]+")";
-	theCanvasContext.strokeStyle=strColor;
-	theCanvasContext.lineWidth=intLineWidth;
-	theCanvasContext.moveTo(this.intX0+intX0,this.intY0+intY0);
-	theCanvasContext.lineTo(this.intX0+intX1,this.intY0+intY1);
-	theCanvasContext.stroke();
+	var fltGrayscale=window.penCanvas.fltGrayscale;
+	var blnUndo=true;
+	window.penCanvas.drawLine(theCanvas,this.intX0+intX0,this.intY0+intY0,this.intX0+intX1,this.intY0+intY1,lstColor,intLineWidth,fltGrayscale,blnUndo);
 };
 RoboticPen.prototype.drawline=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth){
 	this.drawLine(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth);
 };
 RoboticPen.prototype.forward=function(intLength){
-	var fltSin=Math.sin(this.toRadian(this.angle));
-	var fltCos=Math.cos(this.toRadian(this.angle));
-	var intDX=intLength*fltSin;
-	var intDY=-intLength*fltCos;
+	var fltSin=Math.sin(window.penCanvas.toRadian(this.angle));
+	var fltCos=Math.cos(window.penCanvas.toRadian(this.angle));
+	var intDX=Math.round(intLength*fltSin);
+	var intDY=Math.round(-intLength*fltCos);
 	if(true==this.blnPenDown){
-		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX+intDX,this.intY+intDY,this.lstFGcolor,this.intLineWidth);
+		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX+intDX,this.intY+intDY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth);
 	}
-	this.intX=this.intX+=intDX;
-	this.intY=this.intY+=intDY;
+	this.intX+=intDX;
+	this.intY+=intDY;
+	this.intX=this.intX;
+	this.intY=this.intY;
 };
 RoboticPen.prototype.fd=function(intLength){
 	this.forward(intLength);
 };
 RoboticPen.prototype.backward=function(intLength){
-	var fltSin=Math.sin(this.toRadian(this.angle));
-	var fltCos=Math.cos(this.toRadian(this.angle));
-	var intDX=intLength*fltSin;
-	var intDY=-intLength*fltCos;
+	var fltSin=Math.sin(window.penCanvas.toRadian(this.angle));
+	var fltCos=Math.cos(window.penCanvas.toRadian(this.angle));
+	var intDX=Math.round(intLength*fltSin);
+	var intDY=Math.round(-intLength*fltCos);
 	if(true==this.blnPenDown){
-		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX-intDX,this.intY-intDY,this.lstFGcolor,this.intLineWidth);
+		this.drawLine(this.offlineCanvas,this.intX,this.intY,this.intX-intDX,this.intY-intDY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth);
 	}
-	this.intX=this.intX-=intDX;
-	this.intY=this.intY-=intDY;
+	this.intX-=intDX;
+	this.intY-=intDY;
+	this.intX=this.intX;
+	this.intY=this.intY;
 };
 RoboticPen.prototype.bk=function(intLength){
 	this.backward(intLength);
@@ -341,134 +1207,47 @@ RoboticPen.prototype.right=function(degrees){
 RoboticPen.prototype.rt=function(degrees){
 	this.right(degrees);
 };
-RoboticPen.prototype.getIndex=function(i,j){
-	return (j*(this.intScreenWidth)+i)*4;
+/*
+RoboticPen.prototype.fill=function(lstColorTo){
+	this.lstCallstack.push(["fill",lstColorTo]);
 };
-RoboticPen.prototype.getIndex_widthHeight=function(i,j,intWidth,intHeight){
-	return (j*(intWidth)+i)*4;
+RoboticPen.prototype.fill_callstack=function(lstColorTo){
+*/
+RoboticPen.prototype.fill=function(lstColorTo){
+	var intWidth=window.penCanvas.intScreenWidth;
+	var intHeight=window.penCanvas.intScreenHeight;
+	var theContext=window.roboticPen.offlineCanvas.getContext("2d");
+	var theImage=theContext.getImageData(0,0,intWidth,intHeight);
+	var lstPointFrom=[this.intX0+this.intX,this.intY0+this.intY];
+	var lstColorFrom=[];
+	lstColorFrom[0]=theImage.data[window.penCanvas.getIndex_widthHeight(lstPointFrom[0],lstPointFrom[1],intWidth,intHeight)+0];
+	lstColorFrom[1]=theImage.data[window.penCanvas.getIndex_widthHeight(lstPointFrom[0],lstPointFrom[1],intWidth,intHeight)+1];
+	lstColorFrom[2]=theImage.data[window.penCanvas.getIndex_widthHeight(lstPointFrom[0],lstPointFrom[1],intWidth,intHeight)+2];
+	lstColorFrom[3]=theImage.data[window.penCanvas.getIndex_widthHeight(lstPointFrom[0],lstPointFrom[1],intWidth,intHeight)+3];
+	window.penCanvas.floodFillAlgorithm(theImage,intWidth,intHeight,lstColorFrom,lstColorTo,lstPointFrom[0],lstPointFrom[1]);
+	theContext.putImageData(theImage,0,0);
 };
-RoboticPen.prototype.updateScreen=function(blnOfflineCanvas){
-	var offlineContext=this.offlineCanvas.getContext("2d");
-	var intMinWidth,intMinHeight;
-	var offlineImage=offlineContext.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
-	var backgroundImage=null;
-	var chkShowBackgroundImage=document.getElementById("chkShowBackgroundImage");
-	if(null!=this.backgroundImageCanvas&&true==chkShowBackgroundImage.checked){
-		var backgroundImageContext=this.backgroundImageCanvas.getContext("2d");
-		backgroundImage=backgroundImageContext.getImageData(0,0,this.backgroundImageCanvas.width,this.backgroundImageCanvas.height);
-	}
-	var roboticPenCanvas=this.roboticPenCanvas;
-	var roboticPenContext=roboticPenCanvas.getContext("2d");
-	var roboticPenImage=roboticPenContext.createImageData(this.intScreenWidth,this.intScreenHeight);
-	var index=0;
-	var intR,intG,intB,intA;
-	var blnModiff=false;
-	if(null!=backgroundImage){
-		intMinWidth=(this.intScreenWidth<=this.backgroundImageCanvas.width)?this.intScreenWidth:this.backgroundImageCanvas.width;
-		intMinHeight=(this.intScreenHeight<=this.backgroundImageCanvas.height)?this.intScreenHeight:this.backgroundImageCanvas.height;
-		for(var i=0;i<intMinWidth;i++)
-			for(var j=0;j<intMinHeight;j++){
-				index0=this.getIndex_widthHeight(i,j,this.backgroundImageCanvas.width,this.backgroundImageCanvas.height);
-				index1=this.getIndex(i,j);
-				intR=backgroundImage.data[index0+0];
-				intG=backgroundImage.data[index0+1];
-				intB=backgroundImage.data[index0+2];
-				intA=backgroundImage.data[index0+3];
-				if(undefined!=intA&&this.lstOpaqueColor[0]!=intR||this.lstOpaqueColor[1]!=intG||this.lstOpaqueColor[2]!=intB){
-					roboticPenImage.data[index1+0]=intR;
-					roboticPenImage.data[index1+1]=intG;
-					roboticPenImage.data[index1+2]=intB;
-					roboticPenImage.data[index1+3]=intA;
-					blnModiff=true;
-				}
-			}
-
-	}
-	if(true==blnOfflineCanvas){
-		index=0;
-		for(var i=0;i<this.intScreenWidth;i++)
-			for(var j=0;j<this.intScreenHeight;j++){
-				index=this.getIndex(i,j);
-				intR=offlineImage.data[index+0];
-				intG=offlineImage.data[index+1];
-				intB=offlineImage.data[index+2];
-				intA=offlineImage.data[index+3];
-				if(undefined!=intA&&this.lstOpaqueColor[0]!=intR||this.lstOpaqueColor[1]!=intG||this.lstOpaqueColor[2]!=intB){
-					roboticPenImage.data[index+0]=intR;
-					roboticPenImage.data[index+1]=intG;
-					roboticPenImage.data[index+2]=intB;
-					roboticPenImage.data[index+3]=intA;
-					blnModiff=true;
-				}
-			}
-	}
-	if(true==blnModiff)
-		roboticPenContext.putImageData(roboticPenImage,0,0);
-	this.redraw();
-};
-RoboticPen.prototype.clearCanvas=function(theCanvas,intR,intG,intB){
-	var theCanvasContext=theCanvas.getContext("2d");
-	var intWidth=theCanvas.width;
-	var intHeight=theCanvas.height;
-	var theCanvasImage=theCanvasContext.createImageData(intWidth,intHeight);
-	for(var i=0;i<intWidth;i++)
-		for(var j=0;j<intHeight;j++){
-			intIndex=(j*intWidth+i)*4;	
-				theCanvasImage.data[intIndex+0]=intR;
-				theCanvasImage.data[intIndex+1]=intG;
-				theCanvasImage.data[intIndex+2]=intB;
-				//theCanvasImage.data[intIndex+3]=255;
-				theCanvasImage.data[intIndex+3]=0;
-				}
-	theCanvasContext.putImageData(theCanvasImage,0,0);
-};
-RoboticPen.prototype.clearScreen=function(intR,intG,intB){
-	this.clearCanvas(this.offlineCanvas,intR,intG,intB);
-	this.clearCanvas(this.roboticPenCanvas,intR,intG,intB);
-};
-RoboticPen.prototype.computeAveragedColor=function(lstR,lstG,lstB,lstA){
-	var intLength=lstA.length;
-	if(lstR.length!=intLength||lstG.length!=intLength||lstB.length!=intLength){
-		return -1;
-	}
-	var intColors=0;
-	var intR=0,intG=0,intB=0,intA=0;
-	var intAveragedR=0,intAveragedG=0,intAveragedB=0,intAveragedA=0;
-	for(var ii=0;ii<intLength;ii++){
-		intR=lstR[ii];
-		intG=lstG[ii];
-		intB=lstB[ii];
-		intA=lstA[ii];
-		if(intR==this.lstOpaqueColor[0]&&intG==this.lstOpaqueColor[1]&&intB==this.lstOpaqueColor[2]&&intA==this.lstOpaqueColor[3]){
-		}else{
-			intAveragedR+=intR;
-			intAveragedG+=intG;
-			intAveragedB+=intB;
-			intAveragedA+=intA;
-			intColors++;
+RoboticPen.prototype.callstackFunctions=function(){
+	var lstCall;
+	while(this.lstCallstack.length>0){
+		lstCall=this.lstCallstack.pop();
+		switch(lstCall[0]){
+			case "fill":this.fill_callstack(lstCall[1]);
+			break;
 		}
 	}
-	if(0==intColors)return this.lstOpaqueColor;
-	intAveragedR/=intColors;
-	intAveragedG/=intColors;
-	intAveragedB/=intColors;
-	intAveragedA/=intColors;
-	//antialiasing algorithm in drawLine draws with different alpha
-	if(intAveragedA>0)intAveragedA=255;
-	return [intAveragedR,intAveragedG,intAveragedB,intAveragedA];
 };
 RoboticPen.prototype.findNearestPredefinedColor=function(intR,intG,intB,intA){
 	var intMinDistance=-1;
 	var intMinColor=-1;
 	var intDistance;
 	var lstColors=[];
-	lstColors.push(this.lstOpaqueColor);
+	lstColors.push(window.penCanvas.lstOpaqueColor);
 	var ii;
-	for(ii=0;ii<this.lstColors.length;ii++){
-		lstColors.push(this.lstColors[ii]);
+	for(ii=0;ii<window.penCanvas.lstColors.length;ii++){
+		lstColors.push(window.penCanvas.lstColors[ii]);
 	}
 	for(ii=0;ii<lstColors.length;ii++){
-		/*intDistance=Math.sqrt((intR-lstColors[ii][0])**2+(intG-lstColors[ii][1])**2+(intB-lstColors[ii][2])**2+(intA-lstColors[ii][3])**2);*/
 		intDistance=Math.sqrt(Math.pow(intR-lstColors[ii][0],2)+Math.pow(intG-lstColors[ii][1],2)+Math.pow(intB-lstColors[ii][2],2)+Math.pow(intA-lstColors[ii][3],2));
 		if(intMinDistance<0||intDistance<intMinDistance){
 			intMinDistance=intDistance;
@@ -484,10 +1263,11 @@ RoboticPen.prototype.exportToAsciiArt=function(intWidth,intHeight,intMode){
 	var lstAveragedR,lstAveragedG,lstAveragedB,lstAveragedA;
 	var intAveragedR,intAveragedG,intAveragedB,intAveragedA;
 	if(0==intMode){
-		context=this.offlineCanvas.getContext("2d");
-		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
-		intMinWidth=this.intScreenWidth;
-		intMinHeight=this.intScreenHeight;
+		context=this.penCanvas.getContext("2d");
+		image=context.getImageData(0,0,window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight);
+		intMinWidth=window.penCanvas.intScreenWidth;
+		intMinHeight=window.penCanvas.intScreenHeight;
+
 	}
 	if(1==intMode){
 		if(null!=this.backgroundImageCanvas){
@@ -498,17 +1278,16 @@ RoboticPen.prototype.exportToAsciiArt=function(intWidth,intHeight,intMode){
 		}
 	}
 	if(2==intMode){
-		context=this.roboticPenCanvas.getContext("2d");
-		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
-		intMinWidth=this.intScreenWidth;
-		intMinHeight=this.intScreenHeight;
-
+		context=this.offlineCanvas.getContext("2d");
+		image=context.getImageData(0,0,window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight);
+		intMinWidth=window.penCanvas.intScreenWidth;
+		intMinHeight=window.penCanvas.intScreenHeight;
 	}
 	if(null==image){
 		context=this.offlineCanvas.getContext("2d");
-		image=context.getImageData(0,0,this.intScreenWidth,this.intScreenHeight);
-		intMinWidth=this.intScreenWidth;
-		intMinHeight=this.intScreenHeight;
+		image=context.getImageData(0,0,window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight);
+		intMinWidth=window.penCanvas.intScreenWidth;
+		intMinHeight=window.penCanvas.intScreenHeight;
 	}
 	var lstAveragedColor,lstColor;
 	for(var J=0;J<Math.floor(intMinHeight/intHeight);J++){
@@ -519,7 +1298,7 @@ RoboticPen.prototype.exportToAsciiArt=function(intWidth,intHeight,intMode){
 			lstAveragedA=[];
 			for(var i=0;i<intWidth;i++)
 				for(var j=0;j<intHeight;j++){
-					index=this.getIndex_widthHeight(I*intWidth+i,J*intHeight+j,intMinWidth,intMinHeight);
+					index=window.penCanvas.getIndex_widthHeight(I*intWidth+i,J*intHeight+j,intMinWidth,intMinHeight);
 					intR=image.data[index+0];
 					intG=image.data[index+1];
 					intB=image.data[index+2];
@@ -544,203 +1323,74 @@ RoboticPen.prototype.btnSaveAsciiArtPressed=function(){
 	prepareFileToSave(txtText.value,strFilename);
 	alert("File ready for downloading under the save link on top. After modifying again, prepare the file for saving again.");
 };
-function btnClearPressed(){
-	window.roboticPen.clearScreen(0,0,0);
-}
-function fullScreenRoboticPenCanvasSize(){
-	var intWidth=window.innerWidth;
-	var intHeight=(window.innerHeight-100);
-	window.roboticPen.roboticPenCanvas.width=intWidth;
-	window.roboticPen.intScreenWidth=intWidth;
-	window.roboticPen.roboticPenCanvas.height=intHeight;
-	window.roboticPen.intScreenHeight=intHeight;
-	window.roboticPen.offlineCanvas.width=intWidth;
-	window.roboticPen.offlineCanvas.height=intHeight;
-	window.roboticPen.updateScreen(true);
-}
-function btnResizeRoboticCanvasPressed(evtMouse,theNewWidth,theNewHeight){
-	var intNewWidth,intNewHeigth;
-	if(undefined==theNewWidth)intNewWidth=window.roboticPen.intScreenWidth;
-	else intNewWidth=theNewWidth;
-	if(undefined==theNewHeight)intNewHeigth=window.roboticPen.intScreenHeight;
-	else intNewHeigth=theNewHeight;
-	var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+intNewWidth+","+intNewHeigth+"]");
+RoboticPen.prototype.chkLineWrapAsciiArtChanged=function(){
+	if(true==window.roboticPen.chkLineWrapAsciiArt.checked)
+		window.roboticPen.txtAsciiArt.wrap="on";
+	else
+		window.roboticPen.txtAsciiArt.wrap="off";
+};
+RoboticPen.prototype.fullScreenSize=function(){
+	var txtText=window.roboticPen.txtAsciiArt;
+	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
+	var lineWidth=txtText.clientWidth/txtText.cols;
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	txtText.cols=window.innerWidth/lineWidth;
+	txtText.rows=(window.innerHeight-100)/lineHeight;
+};
+RoboticPen.prototype.btnResizeAsciiArtPressed=function(){
+	var txtText=window.roboticPen.txtAsciiArt;
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
 	if(null==strNewSize)return;
 	if(0==strNewSize.length){
-		fullScreenRoboticPenCanvasSize();
+		window.roboticPen.fullScreenSize();
 		return;
 	}
 	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
 	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
 		alert(strError);
-		fullScreenRoboticPenCanvasSize();
+		window.roboticPen.fullScreenSize();
 		return;
 	}
 	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
 	if(2!=lstDimensions.length){
 		alert(strError);
-		fullScreenRoboticPenCanvasSize();
+		window.roboticPen.fullScreenSize();
 		return;
 	}
 	var intWidth=parseInt(lstDimensions[0]);
 	var intHeight=parseInt(lstDimensions[1]);
 	if(true==Number.isNaN(intWidth)){
 		alert(strError);
-		fullScreenRoboticPenCanvasSize();
+		window.roboticPen.fullScreenSize();
 		return;
 	}
 	if(true==Number.isNaN(intHeight)){
 		alert(strError);
-		fullScreenRoboticPenCanvasSize();
+		window.roboticPen.fullScreenSize();
 		return;
 	}
-	window.roboticPen.roboticPenCanvas.width=intWidth;
-	window.roboticPen.intScreenWidth=intWidth;
-	window.roboticPen.roboticPenCanvas.height=intHeight;
-	window.roboticPen.intScreenHeight=intHeight;
-	window.roboticPen.offlineCanvas.width=intWidth;
-	window.roboticPen.offlineCanvas.height=intHeight;
-	window.roboticPen.resetPenState();
-	window.roboticPen.updateScreen(true);
-}
-function btnResetPressed(){
-	window.roboticPen.resetPenState();
-	window.roboticPen.updateScreen(false);
-}
-function loadImage(url){
-	var img=new Image();
-	img.onload=function(evtLoad){
-		window.roboticPen.backgroundImageCanvas=document.createElement("canvas");
-		window.roboticPen.backgroundImageCanvas.id="backgroundImageCanvas";
-		window.roboticPen.backgroundImageCanvas.width=this.width;
-		window.roboticPen.backgroundImageCanvas.height=this.height;
-		backgroundImageContext=window.roboticPen.backgroundImageCanvas.getContext("2d");
-		backgroundImageContext.drawImage(this,0,0,this.width,this.height);
-		var divShowBackgroundImage=document.getElementById("divShowBackgroundImage");
-		divShowBackgroundImage.style.display="";
-		//btnDrawPressed();
-		btnResetPressed();
-		if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
-			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the roboticPenCanvas has size ["+[window.roboticPen.intScreenWidth,window.roboticPen.intScreenHeight]+"]. Resize the roboticPenCanvas?");
-			if(true==blnResize)btnResizeRoboticCanvasPressed(null,this.width,this.height);
-		}
-	};
-	img.src=url;
-}
-function openFile2(){
-	var fileInput=document.createElement("input");
-	fileInput.type="file";
-	fileInput.style.display="none";
-	fileInput.onchange=function(evtChange){
-		var file=evtChange.target.files[0];
-		if(!file){
-			return;
-		}	
-		var fileReader=new FileReader();
-		fileReader.onload=function(evtFile) {
-			var contents=evtFile.target.result;
-			loadImage(evtFile.target.result);
-			document.body.removeChild(fileInput);
-		};
-		fileReader.readAsDataURL(file);
-	};
-	document.body.appendChild(fileInput);
-	click(fileInput);
-}
-function btnLoadBackgroundImagePressed(){
-	openFile2();
-}
-function btnExportToAsciiArtTextPressed(){
-	var strAsciiArtScheme=prompt("Actual screen size ==["+window.roboticPen.intScreenWidth+","+window.roboticPen.intScreenHeight+"]. Enter ascii art char size and mode. If non opaque color found in region, whole region will be marked from the predefined in code color <-> char scheme rounding to the closest color. Modes: 0 - the offline canvas drawn from the code, 1 - the background image if loaded, 2 - whole visible image.","["+Math.floor(window.roboticPen.intScreenWidth/100)+","+Math.floor(window.roboticPen.intScreenHeight/100)+",0]");
-	var strError="The new size is not in the [width,height,mode] format, where width, height and mode are numbers.";
-	if(null==strAsciiArtScheme)return;
-	if(0==strAsciiArtScheme.length){
-		alert(strError);
-		return;
-	}
-	if("["!=strAsciiArtScheme[0]||"]"!=strAsciiArtScheme.substring(strAsciiArtScheme.length-1,strAsciiArtScheme.length)){
-		alert(strError);
-		return;
-	}
-	var lstDimensions=strAsciiArtScheme.substring(1,strAsciiArtScheme.length-1).split(",");
-	if(3!=lstDimensions.length){
-		alert(strError);
-		return;
-	}
-	var intWidth=parseInt(lstDimensions[0]);
-	var intHeight=parseInt(lstDimensions[1]);
-	var intMode=parseInt(lstDimensions[2]);
-	if(true==Number.isNaN(intWidth)){
-		alert(strError);
-		return;
-	}
-	if(true==Number.isNaN(intHeight)){
-		alert(strError);
-		return;
-	}
-	if(true==Number.isNaN(intMode)){
-		alert(strError);
-		return;
-	}
-	var strAsciiArt=window.roboticPen.exportToAsciiArt(intWidth,intHeight,intMode);
-	if(null==window.roboticPen.txtAsciiArt){
-		var divAsciiArt=document.getElementById("divAsciiArt");
-		window.roboticPen.txtAsciiArt=document.createElement("textarea");
-		window.roboticPen.txtAsciiArt.id="txtAsciiArt";
-		window.roboticPen.txtAsciiArt.style="font-family:monospace;";
-		window.roboticPen.txtAsciiArt.rows=window.roboticPen.intScreenWidth/intWidth+1;
-		window.roboticPen.txtAsciiArt.cols=window.roboticPen.intScreenHeight/intHeight+1;
-		window.roboticPen.txtAsciiArt.value=strAsciiArt;
-		divAsciiArt.appendChild(window.roboticPen.txtAsciiArt);
-		window.roboticPen.btnSaveAsciiArt=document.createElement("button");
-		window.roboticPen.btnSaveAsciiArt.id="btnSaveAsciiArt";
-		window.roboticPen.btnSaveAsciiArt.innerText="Prepare the Ascii Art for saving";
-		window.roboticPen.btnSaveAsciiArt.onclick=window.roboticPen.btnSaveAsciiArtPressed;
-		divAsciiArt.appendChild(window.roboticPen.btnSaveAsciiArt);
-		divAsciiArt.appendChild(document.createTextNode("Ascii Art filename:"));
-		window.roboticPen.txtAsciiArtFilename=document.createElement("input");
-		window.roboticPen.txtAsciiArtFilename.type="text";
-		window.roboticPen.txtAsciiArtFilename.id="txtAsciiArtFilename";
-		window.roboticPen.txtAsciiArtFilename.value="AsciiArt.txt";
-		divAsciiArt.appendChild(window.roboticPen.txtAsciiArtFilename);
-	}else{
-		window.roboticPen.txtAsciiArt.rows=window.roboticPen.intScreenWidth/intWidth+1;
-		window.roboticPen.txtAsciiArt.cols=window.roboticPen.intScreenHeight/intHeight+1;
-		window.roboticPen.txtAsciiArt.value=strAsciiArt;
-	}
-}
-function btnDrawPressed(){
-	var strCode=document.getElementById("txtText").value;
-	strCode="var roboticPen=window.roboticPen;"+String.fromCharCode(10)+strCode;
-	eval(strCode);
-	window.roboticPen.updateScreen(true);
-}
-function chkShowBackgroundImageChanged(){
-	window.roboticPen.resetPenState();
-	btnDrawPressed();
-}
-function btnResetAndDrawPressed(){
-	window.roboticPen.resetPenState();
-	btnDrawPressed();
-}
-var degree=Math.PI/180;
-function toRadian(a){return a*degree;}
-RoboticPen.prototype.toRadian=function(a){return a*this.degree;}
+	txtText.cols=intWidth;
+	txtText.rows=intHeight;
+	alert("txtAsciiArt resized => "+intWidth+","+intHeight);
+};
 RoboticPen.prototype.redraw=function(){
 	if(true==this.blnVisible){
 		window.roboticPen.drawRoboticPen(window.roboticPen.intSize+1,window.roboticPen.lstAvatarFGcolor,false);
 	}
 };
 RoboticPen.prototype.drawRoboticPen=function(intSize,lstColor,blnExterior){
-	this.drawRoboticPen_mouse(intSize,lstColor,blnExterior);
+	var chkDrawRoboticPenCursor=document.getElementById("chkDrawRoboticPenCursor");
+	if(true==chkDrawRoboticPenCursor.checked)
+		this.drawRoboticPen_pointer(intSize,lstColor,blnExterior);
 };
-RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior){
+RoboticPen.prototype.drawRoboticPen_pointer=function(intSize,lstColor,blnInterior){
 	var intX=this.intX0+this.intX;
 	var intY=this.intY0+this.intY;
 	var angle=this.angle;
-	var penCanvas=this.roboticPenCanvas;
+	var penCanvas=this.penCanvas;
 	var penCanvasContext=penCanvas.getContext("2d");
-	var fltInternalAngle=toRadian(45);
+	var fltInternalAngle=window.penCanvas.toRadian(45);
 	var intArrowWidth=Math.floor(intSize/2)-1;
 	var int_X1=Math.round(intX-intSize*Math.tan(fltInternalAngle));
 	var int_Y1=Math.round(intY+intSize);
@@ -754,7 +1404,7 @@ RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior)
 	var int_Y5=Math.round(int_Y2+intSize);
 	var int_X6=Math.round(intX+intArrowWidth);
 	var int_Y6=Math.round(int_Y2);
-	var fltAngle=toRadian(angle);
+	var fltAngle=window.penCanvas.toRadian(angle);
 	var fltSin=Math.sin(fltAngle);
 	var fltCos=Math.cos(fltAngle);
 	var intX1=Math.round((int_X1-intX)*fltCos-(int_Y1-intY)*fltSin)+intX;
@@ -798,6 +1448,1541 @@ RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior)
 		penCanvasContext.fill();
 	}
 };
+RoboticPen.prototype.computeAveragedColor=function(lstR,lstG,lstB,lstA){
+	var intLength=lstA.length;
+	if(lstR.length!=intLength||lstG.length!=intLength||lstB.length!=intLength){
+		return -1;
+	}
+	var intColors=0;
+	var intR=0,intG=0,intB=0,intA=0;
+	var intAveragedR=0,intAveragedG=0,intAveragedB=0,intAveragedA=0;
+	for(var ii=0;ii<intLength;ii++){
+		intR=lstR[ii];
+		intG=lstG[ii];
+		intB=lstB[ii];
+		intA=lstA[ii];
+		if(intR==window.penCanvas.lstOpaqueColor[0]&&intG==window.penCanvas.lstOpaqueColor[1]&&intB==window.penCanvas.lstOpaqueColor[2]&&intA==window.penCanvas.lstOpaqueColor[3]){
+		}else{
+			intAveragedR+=intR;
+			intAveragedG+=intG;
+			intAveragedB+=intB;
+			intAveragedA+=intA;
+			intColors++;
+		}
+	}
+	if(0==intColors)return window.penCanvas.lstOpaqueColor;
+	intAveragedR/=intColors;
+	intAveragedG/=intColors;
+	intAveragedB/=intColors;
+	intAveragedA/=intColors;
+	//antialiasing algorithm in drawLineCanvas draws with different alpha
+	if(intAveragedA>0)intAveragedA=255;
+	return [intAveragedR,intAveragedG,intAveragedB,intAveragedA];
+};
+ManualPenConstructor=function(that,penCanvas){
+	that.penCanvas=penCanvas;
+	that.blnDrawing=false;
+	that.blnLineLock=false;
+	that.blnDrawMultilines=false;
+	that.blnConstructingMultiline=false;
+	that.intPrevX=null;
+	that.intPrevY=null;
+	that.offlineCanvas=document.createElement("canvas");
+	that.offlineCanvas.width=window.penCanvas.intScreenWidth;
+	that.offlineCanvas.height=window.penCanvas.intScreenHeight;
+	window.penCanvas.clearCanvas(that.offlineCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],0);
+	that.temporaryCanvas=document.createElement("canvas");
+	that.temporaryCanvas.width=window.penCanvas.intScreenWidth;
+	that.temporaryCanvas.height=window.penCanvas.intScreenHeight;
+	window.penCanvas.clearCanvas(that.temporaryCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],0);
+	//{0:"pencil",1:"rubber",2:"bucket"};;
+	that.intPrevTool=0;
+	that.intPrevPencilWidth=1;
+	that.intPrevRubberWidth=10;
+	that.fltPrevPencilGrayscale=1;
+	that.fltPrevRubberGrayscale=1;
+	that.lstBucketColorClicked=null;
+	that.lstBucketPointClicked=null;
+};
+ManualPenConstructor_strF=function(that){
+
+};
+ManualPen=function(penCanvas){
+	ManualPenConstructor(this,penCanvas);
+	ManualPenConstructor_strF(this,penCanvas);
+};
+ManualPen.prototype.btnLineLockPressed=function(){
+	var btnLineLock=document.getElementById("btnLineLock");
+	var btnDrawMultilines=document.getElementById("btnDrawMultilines");
+	if(false==window.manualPen.blnLineLock){
+		window.manualPen.blnLineLock=true;
+		btnLineLock.innerText="Freehand drawing";
+		buttonDisabled(btnDrawMultilines,false);
+	}else{
+		window.manualPen.blnLineLock=false;
+		btnLineLock.innerText="Draw lines";
+		btnDrawMultilines.innerText="Draw multilines";
+		window.manualPen.blnDrawMultilines=false;
+		buttonDisabled(btnDrawMultilines,true);
+	}
+};
+ManualPen.prototype.btnDrawMultilinesPressed=function(){
+	var btnDrawMultilines=document.getElementById("btnDrawMultilines");
+	if(false==window.manualPen.blnDrawMultilines){
+		window.manualPen.blnDrawMultilines=true;
+		btnDrawMultilines.innerText="Stop drawing multilines";
+
+	}else{
+		window.manualPen.blnDrawMultilines=false;
+		btnDrawMultilines.innerText="Draw multilines";
+
+	}
+};
+ManualPen.prototype.onMouseDown=function(event){
+	if(true==window.penCanvas.chkBucketTool.checked){
+		window.manualPen.onMouseDownBucketTool(event);
+		return;
+	}
+	window.manualPen.onMouseDownLines(event);
+};
+ManualPen.prototype.onMouseDownBucketTool=function(event){
+};
+ManualPen.prototype.onMouseDownLines=function(event){
+	window.manualPen.blnDrawing=true;
+	if(false==window.manualPen.blnConstructingMultiline||null==window.manualPen.intPrevX||null==window.manualPen.intPrevY){
+		window.manualPen.intPrevX=event.offsetX;
+		window.manualPen.intPrevY=event.offsetY;
+	}
+	if(true==window.manualPen.blnDrawMultilines)
+		if(false==window.manualPen.blnConstructingMultiline){
+			window.manualPen.blnConstructingMultiline=true;
+			window.manualPen.intPrevX=event.offsetX;
+			window.manualPen.intPrevY=event.offsetY;
+		}
+	if(false==window.manualPen.blnDrawMultilines)
+		window.manualPen.blnConstructingMultiline=false;
+
+	window.penCanvas.drawLine(window.manualPen.offlineCanvas,window.manualPen.intPrevX,window.manualPen.intPrevY,window.manualPen.intPrevX,window.manualPen.intPrevY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth,window.penCanvas.fltGrayscale,true);
+	window.penCanvas.updateScreen(false,true);
+};
+ManualPen.prototype.onMouseMove=function(event){
+	if(true==window.penCanvas.chkBucketTool.checked){
+		window.manualPen.onMouseMoveBucketTool(event);
+		return;
+	}
+	window.manualPen.onMouseMoveLines(event);
+};
+ManualPen.prototype.onMouseMoveBucketTool=function(event){
+};
+ManualPen.prototype.onMouseMoveLines=function(event){
+	if(false==window.manualPen.blnDrawMultilines)window.manualPen.blnConstructingMultiline=false;
+	var intX,intY;
+	if(true==window.manualPen.blnDrawing&&false==window.manualPen.blnLineLock){
+		intX=event.offsetX;
+		intY=event.offsetY;
+		if(intX<=0||intX>=window.manualPen.offlineCanvas.width-1){
+			window.manualPen.intPrevX=null;
+			window.manualPen.intPrevY=null;
+			return;
+		}
+		if(intY<=0||intY>=window.manualPen.offlineCanvas.height-1){
+			window.manualPen.intPrevX=null;
+			window.manualPen.intPrevY=null;
+			return;
+		}
+		if(null==window.manualPen.intPrevX){
+			window.manualPen.intPrevX=intX;
+		}
+		if(null==window.manualPen.intPrevY){
+			window.manualPen.intPrevY=intY;
+		}
+		window.penCanvas.drawLine(window.manualPen.offlineCanvas,window.manualPen.intPrevX,window.manualPen.intPrevY,intX,intY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth,window.penCanvas.fltGrayscale,true);
+		window.manualPen.intPrevX=intX;
+		window.manualPen.intPrevY=intY;
+		window.penCanvas.updateScreen(false,true);
+	}
+	if(true==window.manualPen.blnDrawing&&true==window.manualPen.blnLineLock){
+		window.penCanvas.clearCanvas(window.manualPen.temporaryCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],0);
+		intX=event.offsetX;
+		intY=event.offsetY;
+		window.penCanvas.drawLine(window.manualPen.temporaryCanvas,window.manualPen.intPrevX,window.manualPen.intPrevY,intX,intY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth,window.penCanvas.fltGrayscale,false);
+		window.penCanvas.updateScreen(true,true);
+	}
+};
+ManualPen.prototype.onMouseUp=function(event){
+	if(true==window.penCanvas.chkBucketTool.checked){
+		window.manualPen.onMouseUpBucketTool(event);
+		return;
+	}
+	window.manualPen.onMouseUpLines(event);
+};
+ManualPen.prototype.onMouseUpBucketTool=function(event){
+	window.manualPen.lstBucketPointClicked=[event.offsetX,event.offsetY];
+	window.manualPen.lstBucketColorClicked=[];
+	var theImage=window.manualPen.offlineCanvas.getContext("2d").getImageData(0,0,window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight);
+	window.manualPen.lstBucketColorClicked[0]=theImage.data[window.penCanvas.getIndex_widthHeight(window.manualPen.lstBucketPointClicked[0],window.manualPen.lstBucketPointClicked[1],window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight)+0];
+	window.manualPen.lstBucketColorClicked[1]=theImage.data[window.penCanvas.getIndex_widthHeight(window.manualPen.lstBucketPointClicked[0],window.manualPen.lstBucketPointClicked[1],window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight)+1];
+	window.manualPen.lstBucketColorClicked[2]=theImage.data[window.penCanvas.getIndex_widthHeight(window.manualPen.lstBucketPointClicked[0],window.manualPen.lstBucketPointClicked[1],window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight)+2];
+	window.manualPen.lstBucketColorClicked[3]=theImage.data[window.penCanvas.getIndex_widthHeight(window.manualPen.lstBucketPointClicked[0],window.manualPen.lstBucketPointClicked[1],window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight)+3];
+	buttonDisabled(document.getElementById("btnBucketFill"),false);
+};
+ManualPen.prototype.onMouseUpLines=function(event){
+	if(false==window.manualPen.blnDrawMultilines)window.manualPen.blnConstructingMultiline=false;
+	if(true==window.manualPen.blnDrawing&&true==window.manualPen.blnLineLock){
+		if(false==window.manualPen.blnConstructingMultiline){
+			var intX,intY;
+			intX=event.offsetX;
+			intY=event.offsetY;
+			window.penCanvas.clearCanvas(window.manualPen.temporaryCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],0);
+			window.penCanvas.drawLine(window.manualPen.offlineCanvas,window.manualPen.intPrevX,window.manualPen.intPrevY,intX,intY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth,window.penCanvas.fltGrayscale,true);
+		}else{
+			var intX,intY;
+			intX=event.offsetX;
+			intY=event.offsetY;
+			window.penCanvas.drawLine(window.manualPen.offlineCanvas,window.manualPen.intPrevX,window.manualPen.intPrevY,intX,intY,window.penCanvas.lstFGcolor,window.penCanvas.intLineWidth,window.penCanvas.fltGrayscale,true);
+			window.manualPen.intPrevX=intX;
+			window.manualPen.intPrevY=intY;
+		}
+	}
+	window.manualPen.blnDrawing=false;
+	window.penCanvas.intUndoItem++;
+	window.penCanvas.intDrawingItem++;
+	if(false==window.manualPen.blnConstructingMultiline){
+		window.manualPen.intPrevX=null;
+		window.manualPen.intPrevY=null;
+	}
+	window.penCanvas.updateScreen(true,true);
+};
+ManualPen.prototype.cancelDrawing=function(){
+	window.penCanvas.clearCanvas(window.manualPen.temporaryCanvas,window.penCanvas.lstBGcolor[0],window.penCanvas.lstBGcolor[1],window.penCanvas.lstBGcolor[2],0);
+	window.manualPen.blnDrawing=false;
+	window.manualPen.blnConstructingMultiline=false;
+	window.manualPen.intPrevX=null;
+	window.manualPen.intPrevY=null;
+	window.penCanvas.updateScreen(false,false);
+};
+ManualPen.prototype.onMouseLeave=function(event){
+	if(true==window.penCanvas.chkBucketTool.checked){
+		window.manualPen.onMouseLeaveBucketTool(event);
+		return;
+	}
+	window.manualPen.onMouseLeaveLines(event);
+};
+ManualPen.prototype.onMouseLeaveBucketTool=function(event){
+};
+ManualPen.prototype.onMouseLeaveLines=function(event){
+	if(true==window.manualPen.blnDrawing){
+		window.manualPen.intUndoItem++;
+		window.manualPen.intDrawingItem++;
+	}
+	window.manualPen.cancelDrawing();
+};
+ManualPen.prototype.onKeyDown=function(event){
+	if(27==event.keyCode){
+		window.manualPen.cancelDrawing();
+	}
+};
+ChatConstructor=function(that){
+	that.txtContents=document.getElementById("txtChatContents");
+	that.txtInput=document.getElementById("txtChatInput");
+	that.intMyID=null;
+	that.intInterlocutorID=null;
+	that.strServerAddress="http://127.0.0.1:38120";
+	that.strNickname="Me";
+	that.dctInterlocutorNicknames={};
+	that.lstConversation=[];
+	that.blnConnected=false;
+	that.chkShowChatProtocolMessages=document.getElementById("chkShowChatProtocolMessages");
+	that.chkDivideDrawingIntoSmallMessages=document.getElementById("chkDivideDrawingIntoSmallMessages");
+	that.intLstDrawingHistorySent=0;
+	that.blnDrawing=false;
+	that.tmpLstDrawingHistory=[];
+};
+ChatConstructor_strF=function(that){
+};
+Chat=function(){
+	ChatConstructor(this);
+	ChatConstructor_strF(this);
+};
+Chat.prototype.LoadTextResource=function(url,callback){
+	var xmlhttp=new XMLHttpRequest();
+	xmlhttp.open("GET",url,true);
+	xmlhttp.onload=function(e){
+		if(xmlhttp.status<200||xmlhttp.status>=300){
+			console.error("Error loading text resource",url,xmlhttp.status,xmlhttp.statusText);
+			callback(new Error(xmlhttp.statusText));
+		}else{
+			callback(null,xmlhttp.responseText);
+		}
+	};
+	xmlhttp.onerror=callback;
+	xmlhttp.send();
+};
+Chat.prototype.appendText=function(strText){
+	this.txtContents.value+=strText+String.fromCharCode(10);
+	this.txtContents.scrollTop=100000000000;
+};
+Chat.prototype.appendMessage=function(lstMessage){
+	var theNickname=lstMessage[0];
+	var strDate=lstMessage[1];
+	var strMessage=lstMessage[2];
+	this.appendText(strDate+" "+theNickname+": "+strMessage);
+};
+Chat.prototype.appendMessage_=function(loadResults){
+	var strDate=this.getDateString();
+	var intMessage=loadResults.indexOf("strMessage");
+	var strMessage=loadResults.substring(intMessage+11,loadResults.length-1);
+	var intIdIndex=loadResults.indexOf("&intSendTo=");
+	if(-1!=intIdIndex)return;
+	if(-1==intIdIndex)intIdIndex=loadResults.indexOf("&intRecvFrom=")+13;
+	else intIdIndex+=11;
+	var intIdIndex2=loadResults.indexOf("&strMessage=")+12;
+	var strId=loadResults.substring(intIdIndex,intIdIndex2);
+	var theInterlocutorID=parseInt(strId);
+	strMessage=unescape(strMessage);
+	this.appendText(strDate+" "+this.dctInterlocutorNicknames[theInterlocutorID]+": "+strMessage);
+};
+Chat.prototype.flush=function(input,max){
+  return ((""+input).length<max)?this.flush("0"+input,max):""+input;
+};
+Chat.prototype.getDateString=function(){
+        var d=new Date();
+        var hour =d.getHours();
+        var minute=d.getMinutes();
+        var second=d.getSeconds();
+	return this.flush(""+hour,2)+":"+this.flush(""+minute,2)+":"+this.flush(""+second,2);
+};
+Chat.prototype.interpretCommand=function(strText){
+	var lstText;
+	var strCallstring="";
+	var strDate="";
+	if("/"==strText.substring(0,1)){
+		if("/server"==strText.substring(0,7)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				this.strServerAddress=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=connect("+this.strNickname+")";
+				setTimeout(this.stage2,1000);
+				return strCallstring;
+			}else{
+				var strDate=getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /server address:port"]);
+			}
+		}
+		if("/nick"==strText.substring(0,5)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				var theNickname=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=nickname("+escape(theNickname)+")";
+				return strCallstring;
+			}else{
+				var strDate=this.getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /nick Nickname"]);
+			}
+		}
+		if("/join"==strText.substring(0,5)){
+			lstText=strText.split(" ");	
+			if(2==lstText.length){
+				var strChannel=lstText[1];
+				strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=join("+strChannel+")";
+				return strCallstring;
+			}else{
+				var strDate=this.getDateString();
+				this.appendMessage(["",strDate,"Incorrect command. Correct: /join #intId0,intId1,...,intIdN"]);
+			}
+		}
+	}
+		strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=sendTo("+this.intInterlocutorID+","+escape(strText)+")";
+	return strCallstring;
+};
+Chat.prototype.textSend=function(txtValue){
+	if(txtValue.length>0){
+		window.chat.txtInput.value="";
+		var strDate=window.chat.getDateString();
+		window.chat.appendMessage([window.chat.strNickname,strDate,txtValue]);
+		var strCallstring=window.chat.interpretCommand(txtValue);
+		window.chat.LoadTextResource(strCallstring,window.chat.getServerContent);
+	}
+};
+Chat.prototype.lstDrawingHistorySendWithoutDivision=function(){
+	var lstDrawingHistoryToSend=[];
+	if(window.penCanvas.lstDrawingHistory.length>this.intLstDrawingHistorySent){
+		for(var ii=this.intLstDrawingHistorySent;ii<window.penCanvas.lstDrawingHistory.length;ii++)
+			lstDrawingHistoryToSend.push(window.penCanvas.lstDrawingHistory[ii]);
+		var strDrawingHistoryToSend=window.penCanvas.listToStringRecursiveDrawingHistory(lstDrawingHistoryToSend);
+		strDrawingHistoryToSend="lstDrawingHistory="+strDrawingHistoryToSend;
+		window.chat.textSend(strDrawingHistoryToSend);
+		this.intLstDrawingHistorySent=window.penCanvas.lstDrawingHistory.length;
+	}
+};
+Chat.prototype.lstDrawingHistorySendWithDivision=function(){
+	//temporary solution for small messages requirements
+	var lstDrawingHistoryToSend=[];
+	var strDrawingHistoryToSend="",strDrawingHistoryToSend_="";;
+	var lstItems;
+	if(window.penCanvas.lstDrawingHistory.length>this.intLstDrawingHistorySent){
+		for(var ii=this.intLstDrawingHistorySent;ii<window.penCanvas.lstDrawingHistory.length;ii++){
+			lstItems=window.penCanvas.lstDrawingHistory[ii];
+			if(undefined==lstItems)return;
+			for(var jj=0;jj<lstItems.length;jj++){
+				strDrawingHistoryToSend_=window.penCanvas.listToStringRecursiveDrawingHistory(lstItems[jj]);
+				switch(jj){
+					case this.intLstDrawingHistorySent:strDrawingHistoryToSend="|>"+strDrawingHistoryToSend_;break;
+					case window.penCanvas.lstDrawingHistory.length-1:strDrawingHistoryToSend=">|"+strDrawingHistoryToSend_;break;
+					default:
+					case window.penCanvas.lstDrawingHistory.length-1:strDrawingHistoryToSend=">>"+strDrawingHistoryToSend_;break;
+				}
+				window.chat.textSend(strDrawingHistoryToSend);
+			}
+		this.intLstDrawingHistorySent=window.penCanvas.lstDrawingHistory.length;
+		}
+	}
+};
+Chat.prototype.lstDrawingHistorySend=function(){
+	if(true==this.chkDivideDrawingIntoSmallMessages.checked)
+		this.lstDrawingHistorySendWithDivision();//not perfect yet
+	else
+		this.lstDrawingHistorySendWithoutDivision();
+};
+Chat.prototype.btnChatSendPressed=function(){
+	window.chat.textSend(window.chat.txtInput.value);
+	window.chat.lstDrawingHistorySend();
+};
+Chat.prototype.chkChatAutosendChanged=function(){
+	alert("Functionality will be implemented later.");
+};
+Chat.prototype.txtInputOnKeyDown=function(evtKey){
+	if("Enter"==evtKey.key){
+		window.chat.textSend(window.chat.txtInput.value);
+		return true;
+	}
+};
+Chat.prototype.btnChatConnectDisconnectPressed=function(){
+	window.chat.init();
+};
+Chat.prototype.collectLstDrawingHistory=function(strItem,blnDrawingStart){
+	if(true==blnDrawingStart){
+		this.blnDrawing=true;
+		this.tmpLstDrawingHistory.push(Math.round(performance.now()));
+	}
+	var lstItem=window.penCanvas.stringToListRecursiveDrawingHistory(strItem);
+	this.tmpLstDrawingHistory.push(lstItem);
+};
+Chat.prototype.finalizeLstDrawingHistory=function(strItem){
+	var lstItem=window.penCanvas.stringToListRecursiveDrawingHistory(strItem);
+	this.tmpLstDrawingHistory.push(lstItem);
+	var lstItems;
+	for(var ii=0;ii<this.tmpLstDrawingHistory.length;ii++){
+		lstItems=this.tmpLstDrawingHistory[ii];
+		for(var jj=0;jj<lstItems.length;jj++)
+			window.penCanvas.drawItems(lstItems[jj],false,true);
+	}
+	window.penCanvas.intUndoItem++;
+	this.blnDrawing=false;
+	this.tmpLstDrawingHistory=[];
+};
+Chat.prototype.interpretResultsWithoutDivision=function(loadResults){
+	//temporary solution for small messages requirements
+	loadResults=unescape(loadResults);
+	var intMessage=loadResults.indexOf("strMessage");
+	var blnPenCanvas=false;
+	if(-1!=intMessage){
+		var intLstDrawingHistory=loadResults.indexOf("lstDrawingHistory");
+		if(-1!=intLstDrawingHistory){
+			window.penCanvas.setLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+18));
+			if(true==this.chkShowChatProtocolMessages.checked)
+				this.appendMessage_(loadResults);
+			return;
+		}else this.appendMessage_(loadResults);
+		return;
+	}
+	intMessage=loadResults.indexOf("changedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.strNickname=theNickname;
+		this.appendText("nickname set");
+		var strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=changedNickname("+this.intInterlocutorID+","+escape(this.strNickname)+")";
+		this.LoadTextResource(strCallstring,this.getServerContent);
+		return;
+	}
+	intMessage=loadResults.indexOf("interlocutorChangedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.appendText("interlocutor nickname set");
+		var intId=parseInt(strId);
+		this.dctInterlocutorNicknames[intId]=theNickname;
+		return;
+	}
+};
+Chat.prototype.interpretResultsWithDivision=function(loadResults){
+	loadResults=unescape(loadResults);
+	var intMessage=loadResults.indexOf("strMessage");
+	var blnPenCanvas=false;
+	if(-1!=intMessage){
+		//temporary solution for small messages requirements
+		var intLstDrawingHistory=loadResults.indexOf("|>");
+		if(-1!=intLstDrawingHistory){
+			blnPenCanvas=true;
+			this.collectLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+18),true);
+			if(true==this.chkShowChatProtocolMessages.checked)
+				this.appendMessage_(loadResults);
+			return;
+
+		}
+		intLstDrawingHistory=loadResults.indexOf(">>");
+		if(-1!=intLstDrawingHistory){
+			blnPenCanvas=true;
+			this.collectLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+2));
+		}
+		intLstDrawingHistory=loadResults.indexOf(">|");
+		if(-1!=intLstDrawingHistory){
+			blnPenCanvas=true;
+			this.finalizeLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+2));
+		}
+		if(false==blnPenCanvas)	this.appendMessage_(loadResults);
+		return;
+	}
+	intMessage=loadResults.indexOf("changedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.strNickname=theNickname;
+		this.appendText("nickname set");
+		var strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=changedNickname("+this.intInterlocutorID+","+escape(this.strNickname)+")";
+		this.LoadTextResource(strCallstring,this.getServerContent);
+		return;
+	}
+	intMessage=loadResults.indexOf("interlocutorChangedNickname");
+	if(-1!=intMessage){
+		var intNickname=loadResults.indexOf("strNickname=");
+		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
+		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
+		theNickname=unescape(theNickname);
+		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
+		this.appendText(strMessage);
+		this.appendText("interlocutor nickname set");
+		var intId=parseInt(strId);
+		this.dctInterlocutorNicknames[intId]=theNickname;
+		return;
+	}
+};
+Chat.prototype.interpretResults=function(loadResults){
+	if(true==this.chkDivideDrawingIntoSmallMessages.checked)
+		this.interpretResultsWithoutDivision(loadResults);//not perfect yet
+	else
+		this.interpretResultsWithoutDivision(loadResults);
+};
+Chat.prototype.getServerContent=function(loadError,loadResults){
+	if(loadResults){
+		if(true==window.chat.chkShowChatProtocolMessages.checked)
+			window.chat.appendText(">>"+loadResults);
+		window.chat.interpretResults(loadResults);
+	}
+};
+Chat.prototype.receivingFunction=function(loadError,loadResults){
+	if(loadResults){
+		var strDate=window.chat.getDateString();
+		if(true==window.chat.chkShowChatProtocolMessages.checked)
+			window.chat.appendText("<<"+strDate+": "+loadResults);
+		window.chat.interpretResults(loadResults);
+		window.chat.LoadTextResource(window.chat.strServerAddress+"/index.html?intID="+window.chat.intMyID+"&strCommand=receiving()",window.chat.receivingFunction);
+	}
+};
+Chat.prototype.stage2=function(){
+	window.chat.LoadTextResource(window.chat.strServerAddress+"/index.html?intID="+window.chat.intMyID+"&strCommand=receiving()",window.chat.receivingFunction);
+	this.blnConnected=true;
+};
+Chat.prototype.init=function(){
+	this.strServerAddress=prompt("Enter server address:","http://127.0.0.1:38120");
+	window.chat.appendText("Chat init...");
+	var intMyID=parseInt(prompt("Enter intMyID:","1"));
+	var intInterlocutorID=parseInt(prompt("Enter intInterlocutorID:","2"));
+	this.intMyID=intMyID;
+	this.intInterlocutorID=intInterlocutorID;
+	this.dctInterlocutorNicknames[this.intInterlocutorID]="Interlocutor";
+	this.LoadTextResource(this.strServerAddress+"/index.html?intID="+intMyID+"&strCommand=connect("+this.strNickname+")",this.getServerContent);
+	setTimeout(this.stage2,1000);
+	
+};
+function setContents(contents){
+	var txtText=document.getElementById("txtText");
+	txtText.value=contents;
+	document.getElementById("txtLineNumber").value="1";
+}
+function openFile(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var strFilename=document.getElementById("txtFilename");
+		strFilename.value=file.name;
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			setContents(contents);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsText(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function click(elem){
+	var eventMouse=document.createEvent("MouseEvents");
+	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	elem.dispatchEvent(eventMouse);
+}
+function prepareFileToSave(contents,fileName,lnkDownload){
+	var a;
+	if(undefined==lnkDownload)
+		a=document.getElementById("save");
+	else a=lnkDownload;
+	if(fileName)a.setAttribute("download",fileName);
+	var blob=new Blob([contents],{type:"text/plain;charset=utf-8"});
+	var downloadUrl=URL.createObjectURL(blob);
+	a.setAttribute("href",downloadUrl);
+}
+function btnOpenPressed(){
+	openFile();
+}
+function btnSavePressed(){
+	var txtText=document.getElementById("txtText");
+	var strFilename=document.getElementById("txtFilename").value;
+	if (0==strFilename.length)strFilename="text.txt";
+	prepareFileToSave(txtText.value,strFilename);
+	alert("File ready for saving. After modifying again, prepare the file for saving again.");
+}
+function gotoLine(line){
+	alert("Scroll will be estimated and the line number is usually not exact.");
+	var txtText=document.getElementById("txtText");
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	var scrollTop=(line-1)*(lineHeight);
+	txtText.scrollTop=scrollTop;
+}
+function btnGotoLinenumber(){
+	gotoLine(parseInt(document.getElementById("txtLineNumber").value));	
+}
+function chkLineWrapClicked(){
+	var chkLineWrap=document.getElementById("chkLineWrap");
+	var txtText=document.getElementById("txtText");
+	if (true==chkLineWrap.checked)txtText.wrap="on";
+	if (false==chkLineWrap.checked)txtText.wrap="off";
+}
+function fullScreenSize(){
+	var txtText=document.getElementById("txtText");
+	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
+	var lineWidth=txtText.clientWidth/txtText.cols;
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	txtText.cols=window.innerWidth/lineWidth;
+	txtText.rows=(window.innerHeight-100)/lineHeight;
+}
+function btnResizePressed(){
+	var txtText=document.getElementById("txtText");
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	txtText.cols=intWidth;
+	txtText.rows=intHeight;
+}
+function btnFindPressed(){
+	alert("Use the webbrowser functionality to search on the webpage.");
+}
+function btnPrepareImagePressed(){
+	var penCanvas=document.getElementById("PenCanvas");
+	var txtFilename=document.getElementById("txtPenCanvasFilename");
+	var strFilename=txtFilename.value;
+	if (0==strFilename.length)txtFilename.value="PenCanvas.jpg";
+	window.penCanvas.preparePenCanvasToSave(penCanvas);
+	alert("File ready for saving. After modifying again, prepare the file for saving again. E.x. for opacity use png images, for smaller sizes use jpg images.");
+}
+function setRGBAcolor(lstRGBAcolor){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	var colorFG=document.getElementById("colorFG");
+	var colorBG=document.getElementById("colorBG");
+	var colorOpaque=document.getElementById("colorOpaque");
+	var txtColorR=document.getElementById("txtColorR");
+	var txtColorG=document.getElementById("txtColorG");
+	var txtColorB=document.getElementById("txtColorB");
+	var txtColorA=document.getElementById("txtColorA");
+	var strValue=rgbToValue(lstRGBAcolor);
+	if(true==chkSetFGcolor.checked){
+		window.penCanvas.lstFGcolor=lstRGBAcolor;
+		colorFG.value=strValue;
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+	if(true==chkSetBGcolor.checked){
+		window.penCanvas.lstBGcolor=lstRGBAcolor;
+		colorBG.value=strValue;
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+	if(true==chkSetOpaqueColor.checked){
+		window.penCanvas.lstOpaqueColor=lstRGBAcolor;
+		colorOpaque.value=strValue;
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+}
+function updateColorControlsRGBA(){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	var lstRGBAcolor;
+	if(true==chkSetFGcolor.checked)lstRGBAcolor=window.penCanvas.lstFGcolor;
+	if(true==chkSetBGcolor.checked)lstRGBAcolor=window.penCanvas.lstBGcolor;
+	if(true==chkSetOpaqueColor.checked)lstRGBAcolor=window.penCanvas.lstOpaqueColor;
+
+	var colorFG=document.getElementById("colorFG");
+	var colorBG=document.getElementById("colorBG");
+	var colorOpaque=document.getElementById("colorOpaque");
+	var txtColorR=document.getElementById("txtColorR");
+	var txtColorG=document.getElementById("txtColorG");
+	var txtColorB=document.getElementById("txtColorB");
+	var txtColorA=document.getElementById("txtColorA");
+	if(true==chkSetFGcolor.checked){
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+	if(true==chkSetBGcolor.checked){
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+	if(true==chkSetOpaqueColor.checked){
+		txtColorR.value=""+lstRGBAcolor[0];
+		txtColorG.value=""+lstRGBAcolor[1];
+		txtColorB.value=""+lstRGBAcolor[2];
+		txtColorA.value=""+lstRGBAcolor[3];
+	}
+	colorFG.value=rgbToValue(window.penCanvas.lstFGcolor);
+	colorBG.value=rgbToValue(window.penCanvas.lstBGcolor);
+	colorOpaque.value=rgbToValue(window.penCanvas.lstOpaqueColor);
+}
+function updateTxtColorRGBA(){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	var lstRGBAcolor;
+	if(true==chkSetFGcolor.checked)lstRGBAcolor=window.penCanvas.lstFGcolor;
+	if(true==chkSetBGcolor.checked)lstRGBAcolor=window.penCanvas.lstBGcolor;
+	if(true==chkSetOpaqueColor.checked)lstRGBAcolor=window.penCanvas.lstOpaqueColor;
+	document.getElementById("txtColorR").value=""+lstRGBAcolor[0];
+	document.getElementById("txtColorG").value=""+lstRGBAcolor[1];
+	document.getElementById("txtColorB").value=""+lstRGBAcolor[2];
+	document.getElementById("txtColorA").value=""+lstRGBAcolor[3];
+}
+function valueToRGB(strValue){
+	var lstRGBcolor=[parseInt(strValue.substring(1,3),16),parseInt(strValue.substring(3,5),16),parseInt(strValue.substring(5,7),16),255];
+	return lstRGBcolor;
+}
+function rgbToValue(lstColor){
+	var strHexDigits="0123456789abcdef";
+	var intH,intHH;
+	var strHex="#";
+	var intNumber;
+	for(var ii=0;ii<3;ii++){
+		intNumber=lstColor[ii];
+		intH=intNumber%16;
+		intHH=Math.floor(intNumber/16);
+		strHex+=strHexDigits[intHH]+strHexDigits[intH];
+	}
+	return strHex;
+};
+function setFGcolorRGBA(lstRGBAcolor){
+	window.penCanvas.lstFGcolor=lstRGBAcolor;
+}
+function setBGcolorRGBA(lstRGBAcolor){
+	window.penCanvas.lstBGcolor=lstRGBAcolor;
+}
+function setOpaqueColorRGBA(lstRGBAcolor){
+	window.penCanvas.lstOpaqueColor=lstRGBcolor;
+}
+function setFGcolor(strValue){
+	var lstRGBcolor=valueToRGB(strValue);
+	var intAcolor=window.penCanvas.lstFGcolor[3];
+	var lstRGBAcolor=[lstRGBcolor[0],lstRGBcolor[1],lstRGBcolor[2],intAcolor];
+	setFGcolorRGBA(lstRGBAcolor);
+	updateTxtColorRGBA();
+}
+function setBGcolor(strValue){
+	var lstRGBcolor=valueToRGB(strValue);
+	var intAcolor=window.penCanvas.lstBGcolor[3];
+	var lstRGBAcolor=[lstRGBcolor[0],lstRGBcolor[1],lstRGBcolor[2],intAcolor];
+	setBGcolorRGBA(lstRGBAcolor);
+	updateTxtColorRGBA();
+}
+function setOpaqueColor(strValue){
+	var lstRGBcolor=valueToRGB(strValue);
+	var intAcolor=window.penCanvas.lstOpaqueColor[3];
+	var lstRGBAcolor=[lstRGBcolor[0],lstRGBcolor[1],lstRGBcolor[2],intAcolor];
+	setOpaqueColorRGBA(lstRGBAcolor);
+	updateTxtColorRGBA();
+}
+function FGcolorChanged(event){
+	setFGcolor(event.target.value);
+}
+function predefinedColorClicked(event){
+	var strValue=event.target.value;
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	if(true==chkSetFGcolor.checked){
+		document.getElementById("colorFG").value=strValue;
+		setFGcolor(strValue);
+	}
+	if(true==chkSetBGcolor.checked){
+		document.getElementById("colorBG").value=strValue;
+		setBGcolor(strValue);
+	}
+	if(true==chkSetBGcolor.checked){
+		document.getElementById("colorBG").value=strValue;
+		setBGcolor(strValue);
+	}
+	if(true==chkSetOpaqueColor.checked){
+		document.getElementById("colorOpaque").value=strValue;
+		setOpaqueColor(strValue);
+	}
+}
+function color0clicked(event){
+	predefinedColorClicked(event);
+}
+function color0changed(event){
+	predefinedColorClicked(event);
+}
+function color1clicked(event){
+	predefinedColorClicked(event);
+}
+function color1changed(event){
+	predefinedColorClicked(event);
+}
+function color2clicked(event){
+	predefinedColorClicked(event);
+}
+function color2changed(event){
+	predefinedColorClicked(event);
+}
+function color3clicked(event){
+	predefinedColorClicked(event);
+}
+function color3changed(event){
+	predefinedColorClicked(event);
+}
+function color4clicked(event){
+	predefinedColorClicked(event);
+}
+function color4changed(event){
+	predefinedColorClicked(event);
+}
+function color5clicked(event){
+	predefinedColorClicked(event);
+}
+function color5changed(event){
+	predefinedColorClicked(event);
+}
+function color6clicked(event){
+	predefinedColorClicked(event);
+}
+function color6changed(event){
+	predefinedColorClicked(event);
+}
+function color7clicked(event){
+	predefinedColorClicked(event);
+}
+function color7changed(event){
+	predefinedColorClicked(event);
+}
+function color8clicked(event){
+	predefinedColorClicked(event);
+}
+function color8changed(event){
+	predefinedColorClicked(event);
+}
+function color9clicked(event){
+	predefinedColorClicked(event);
+}
+function color9changed(event){
+	predefinedColorClicked(event);
+}
+function chkSetFGcolorClicked(event){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	if(true==chkSetFGcolor.checked){
+		chkSetBGcolor.checked=false;
+		chkSetOpaqueColor.checked=false;
+		valueToRGB(document.getElementById("colorFG").value);
+		updateTxtColorRGBA();
+	}
+	if(false==chkSetFGcolor.checked){
+		if(false==chkSetBGcolor.checked&&false==chkSetOpaqueColor.checked){
+			chkSetBGcolor.checked=true;
+			valueToRGB(document.getElementById("colorBG").value);
+			updateTxtColorRGBA();
+		}
+	}
+}
+function chkSetBGcolorClicked(event){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	if(true==chkSetBGcolor.checked){
+		chkSetFGcolor.checked=false;
+		chkSetOpaqueColor.checked=false;
+		valueToRGB(document.getElementById("colorBG").value);
+		updateTxtColorRGBA();
+	}
+	if(false==chkSetBGcolor.checked){
+		if(false==chkSetFGcolor.checked&&false==chkSetOpaqueColor.checked){
+			chkSetFGcolor.checked=true;
+			valueToRGB(document.getElementById("colorFG").value);
+			updateTxtColorRGBA();
+	
+		}
+	}
+}
+function chkSetOpaqueColorClicked(event){
+	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
+	var chkSetBGcolor=document.getElementById("chkSetBGcolor");
+	var chkSetOpaqueColor=document.getElementById("chkSetOpaqueColor");
+	if(true==chkSetOpaqueColor.checked){
+		chkSetFGcolor.checked=false;
+		chkSetBGcolor.checked=false;
+		valueToRGB(document.getElementById("colorOpaque").value);
+		updateTxtColorRGBA();
+		document.getElementById("txtColorA").value="0";
+	}
+	if(false==chkSetOpaqueColor.checked){
+		if(false==chkSetFGcolor.checked&&false==chkSetBGcolor.checked){
+			chkSetFGcolor.checked=true;
+			valueToRGB(document.getElementById("colorFG").value);
+			updateTxtColorRGBA();
+	
+		}
+	}
+}
+function txtColorRGBAchanged(event){
+	var txtColorR=document.getElementById("txtColorR");
+	var txtColorG=document.getElementById("txtColorG");
+	var txtColorB=document.getElementById("txtColorB");
+	var txtColorA=document.getElementById("txtColorA");
+	intColorR=parseInt(txtColorR.value);
+	intColorG=parseInt(txtColorG.value);
+	intColorB=parseInt(txtColorB.value);
+	intColorA=parseInt(txtColorA.value);
+	if(true==Number.isNaN(intColorR)){
+		updateTxtColorRGBA();
+		return;
+	}
+	if(true==Number.isNaN(intColorG)){
+		updateTxtColorRGBA();
+		return;
+	}
+	if(true==Number.isNaN(intColorB)){
+		updateTxtColorRGBA();
+		return;
+	}
+	if(true==Number.isNaN(intColorA)){
+		updateTxtColorRGBA();
+		return;
+	}
+	setRGBAcolor([intColorR,intColorG,intColorB,intColorA]);
+};
+function txtColorRchanged(event){
+	txtColorRGBAchanged(event);
+};
+function txtColorGchanged(event){
+	txtColorRGBAchanged(event);
+};
+function txtColorBchanged(event){
+	txtColorRGBAchanged(event);
+};
+function txtColorAchanged(event){
+	txtColorRGBAchanged(event);
+};
+function setBrushFGBG(fltGrayscale,intLineWidth,lstRGBAcolorFG,lstRGBAcolorBG){
+	window.penCanvas.fltGrayscale=fltGrayscale;
+	var txtLineWidth=document.getElementById("txtLineWidth");
+	txtLineWidth.value=""+intLineWidth;
+	var txtLineWidth=document.getElementById("txtLineWidth");
+	var intWidth=parseInt(txtLineWidth.value);
+	if(true==Number.isNaN(intWidth))txtLineWidth.value=window.penCanvas.intLineWidth;
+	else{
+		window.penCanvas.intLineWidth=intWidth;
+	}
+	setFGcolorRGBA(lstRGBAcolorFG);
+	setBGcolorRGBA(lstRGBAcolorBG);
+}
+function setPencilTool(){
+	var rangeGrayscale=document.getElementById("rangeGrayscale");
+	var txtLineWidth=document.getElementById("txtLineWidth");
+	var lstRGBAcolorFG=window.penCanvas.lstFGcolor;
+	var lstRGBAcolorBG=window.penCanvas.lstBGcolor;
+	if(1==window.manualPen.intPrevTool){
+		window.manualPen.intPrevRubberWidth=parseInt(txtLineWidth.value);
+		window.manualPen.fltPrevRubberGrayscale=Math.round(parseInt(rangeGrayscale.value)/100.);
+		rangeGrayscale.value=Math.round(window.manualPen.fltPrevRubberGrayscale*100.);
+		window.penCanvas.rangeGrayscaleChanged();
+		setBrushFGBG(window.manualPen.fltPrevPencilGrayscale,window.manualPen.intPrevPencilWidth,lstRGBAcolorBG,lstRGBAcolorFG);
+	}else{
+		rangeGrayscale.value=100;
+		window.penCanvas.rangeGrayscaleChanged();
+		setBrushFGBG(window.manualPen.fltPrevPencilGrayscale,window.manualPen.intPrevPencilWidth,lstRGBAcolorFG,lstRGBAcolorBG);
+	}
+	updateColorControlsRGBA();
+	window.manualPen.intPrevTool=0;
+}
+function setRubberTool(){
+	var rangeGrayscale=document.getElementById("rangeGrayscale");
+	var txtLineWidth=document.getElementById("txtLineWidth");
+	var lstRGBAcolorFG=window.penCanvas.lstFGcolor;
+	var lstRGBAcolorBG=window.penCanvas.lstBGcolor;
+	if(0==window.manualPen.intPrevTool){
+		window.manualPen.intPrevPencilWidth=parseInt(txtLineWidth.value);
+		window.manualPen.fltPrevPencilGrayscale=Math.round(parseInt(rangeGrayscale.value)/100.);
+		rangeGrayscale.value=Math.round(window.manualPen.fltPrevRubberGrayscale*100.);
+		window.penCanvas.rangeGrayscaleChanged();
+		setBrushFGBG(window.manualPen.fltPrevRubberGrayscale,window.manualPen.intPrevRubberWidth,lstRGBAcolorBG,lstRGBAcolorFG);
+	}else{
+		rangeGrayscale.value=100;
+		window.penCanvas.rangeGrayscaleChanged();
+		setBrushFGBG(window.manualPen.fltPrevRubberGrayscale,window.manualPen.intPrevRubberWidth,lstRGBAcolorFG,lstRGBAcolorBG);
+	}
+	updateColorControlsRGBA();
+	window.manualPen.intPrevTool=1;
+}
+function setBucketTool(){
+	var divBucketTool=document.getElementById("divBucketTool");
+	divBucketTool.style.display="";
+	var colorBucketSetTo=document.getElementById("colorBucketSetTo");
+	colorBucketSetTo.value=rgbToValue(window.penCanvas.lstFGcolor);
+	window.manualPen.intPrevTool=2;
+}
+function btnBucketFillPressed(){
+	var lstColorFrom=window.manualPen.lstBucketColorClicked;	
+	var colorBucketSetTo=document.getElementById("colorBucketSetTo");
+	var lstColorTo=valueToRGB(colorBucketSetTo.value);
+	var lstPointFrom=window.manualPen.lstBucketPointClicked;
+	window.penCanvas.bucketFill(window.manualPen.offlineCanvas,lstColorFrom,lstColorTo,lstPointFrom,true);
+	var theContext;
+}
+function unsetAllTools(){
+	var chkPencilTool=window.penCanvas.chkPencilTool;
+	var chkRubberTool=window.penCanvas.chkRubberTool;
+	var chkBucketTool=window.penCanvas.chkBucketTool;
+	chkPencilTool.checked=false;
+	chkRubberTool.checked=false;
+	chkBucketTool.checked=false;
+	buttonDisabled(document.getElementById("btnBucketFill"),true);
+	window.manualPen.lstBucketColorClicked=null;
+	window.manualPen.lstBucketPointClicked=null;
+	var divBucketTool=document.getElementById("divBucketTool");
+	divBucketTool.style.display="none";
+}
+function chkPencilToolClicked(event){
+	var chkPencilTool=window.penCanvas.chkPencilTool;
+	var chkRubberTool=window.penCanvas.chkRubberTool;
+	var chkBucketTool=window.penCanvas.chkBucketTool;
+	if(true==chkPencilTool.checked){
+		unsetAllTools();
+		chkPencilTool.checked=true;
+		setPencilTool();
+	}
+	if(false==chkPencilTool.checked){
+		if(false==chkRubberTool.checked){
+			unsetAllTools();
+			chkRubberTool.checked=true;
+			setRubberTool();
+	
+		}
+	}
+}
+function chkRubberToolClicked(event){
+	var chkPencilTool=window.penCanvas.chkPencilTool;
+	var chkRubberTool=window.penCanvas.chkRubberTool;
+	var chkBucketTool=window.penCanvas.chkBucketTool;
+	if(true==chkRubberTool.checked){
+		unsetAllTools();
+		chkRubberTool.checked=true;
+		setRubberTool();
+	}
+	if(false==chkRubberTool.checked){
+		if(false==chkPencilTool.checked){
+			unsetAllTools();
+			chkPencilTool.checked=true;
+			setPencilTool();
+		}
+	}
+}
+function chkBucketToolClicked(event){
+	var chkPencilTool=window.penCanvas.chkPencilTool;
+	var chkRubberTool=window.penCanvas.chkRubberTool;
+	var chkBucketTool=window.penCanvas.chkBucketTool;
+	if(true==chkBucketTool.checked){
+		unsetAllTools();
+		chkBucketTool.checked=true;
+		setBucketTool();
+	}
+	if(false==chkBucketTool.checked){
+		if(false==chkPencilTool.checked){
+			unsetAllTools();
+			chkPencilTool.checked=true;
+			setPencilTool();
+		}
+	}
+}
+function btnCopyClicked(event){
+	alert("Functionality will be implemented later.");
+}
+function btnCutClicked(event){
+	alert("Functionality will be implemented later.");
+}
+function btnPasteClicked(event){
+	alert("Functionality will be implemented later.");
+}
+function btnResetToDefaultsClicked(){
+	document.getElementById("color0").value="#ffffff";
+	document.getElementById("color1").value="#000000";
+	document.getElementById("color2").value="#ff3c00";
+	document.getElementById("color3").value="#ffff00";
+	document.getElementById("color4").value="#0000ff";
+	document.getElementById("color5").value="#ff0000";
+	document.getElementById("color6").value="#ff3296";
+	document.getElementById("color7").value="#800080";
+	document.getElementById("color8").value="#643200";
+	document.getElementById("color9").value="#0000ff";
+}
+function colorWebpageChanged(){
+	var strValueBackground,strValueFont,strStyle;
+	var colorWebpageBackground=document.getElementById("colorWebpageBackground");
+	strValueBackground=colorWebpageBackground.value;
+	var colorWebpageFont=document.getElementById("colorWebpageFont");
+	strValueFont=colorWebpageFont.value;
+	strStyle="background-color:"+strValueBackground+";color:"+strValueFont+";"
+	document.body.style=strStyle;
+}
+function chkShowCanvasBorderChanged(event){
+	var penCanvas=document.getElementById("PenCanvas");
+	if(true==event.target.checked)
+		penCanvas.style="border: 1px solid #ff3c00;";
+	else penCanvas.style="";
+}
+function chkDrawRoboticPenCursorChanged(){
+	window.penCanvas.updateScreen(true,true);
+}
+function BGcolorChanged(event){
+	var lstRGBcolor=valueToRGB(event.target.value);
+	updateTxtColorRGBA();
+	window.penCanvas.lstBGcolor=lstRGBcolor;
+	alert("PenCanvas is opaque - change the webpage color to see different background color. Background color will be visible in non opaque images when saved.");
+}
+function buttonDisabled(btnButton,blnDisabled){
+	if(true==blnDisabled){
+		btnButton.disabled=true;
+		btnButton.style="color:gray";//css overwrites default disabled setting
+	}else{
+		btnButton.disabled=false;
+		btnButton.style="color:black";//css overwrites default disabled setting
+	}
+
+}
+function btnClearPressed(){
+	clearScreen();
+}
+function fullScreenPenCanvasSize(){
+	var intWidth=window.innerWidth;
+	var intHeight=(window.innerHeight-100);
+	window.penCanvas.resizeAllCanvases(intWidth,intHeight);
+}
+function btnResizePenCanvasPressed(evtMouse,theNewWidth,theNewHeight){
+	var intNewWidth,intNewHeigth;
+	if(undefined==theNewWidth)intNewWidth=window.penCanvas.intScreenWidth;
+	else intNewWidth=theNewWidth;
+	if(undefined==theNewHeight)intNewHeigth=window.penCanvas.intScreenHeight;
+	else intNewHeigth=theNewHeight;
+	var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+intNewWidth+","+intNewHeigth+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenPenCanvasSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenPenCanvasSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenPenCanvasSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenPenCanvasSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenPenCanvasSize();
+		return;
+	}
+	window.penCanvas.resizeAllCanvases(intWidth,intHeight);
+}
+function btnResetPressed(){
+	window.roboticPen.resetPenState();
+}
+function loadImage(url){
+	var img=new Image();
+	img.onload=function(evtLoad){
+		window.roboticPen.backgroundImageCanvas=document.createElement("canvas");
+		window.roboticPen.backgroundImageCanvas.id="backgroundImageCanvas";
+		window.roboticPen.backgroundImageCanvas.width=this.width;
+		window.roboticPen.backgroundImageCanvas.height=this.height;
+		backgroundImageContext=window.roboticPen.backgroundImageCanvas.getContext("2d");
+		backgroundImageContext.drawImage(this,0,0,this.width,this.height);
+		var divShowBackgroundImage=document.getElementById("divShowBackgroundImage");
+		divShowBackgroundImage.style.display="";
+		btnResetPressed();
+		if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
+			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the PenCanvas has size ["+[window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight]+"]. Resize the penCanvas?");
+			if(true==blnResize)btnResizePenCanvasPressed(null,this.width,this.height);
+		}
+	};
+	img.src=url;
+}
+function openFile2(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			loadImage(evtFile.target.result);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsDataURL(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function btnLoadBackgroundImagePressed(){
+	openFile2();
+}
+function btnExportToAsciiArtTextPressed(){
+	var strAsciiArtScheme=prompt("Actual screen size ==["+window.penCanvas.intScreenWidth+","+window.penCanvas.intScreenHeight+"]. Enter ascii art char size and mode. If non opaque color found in region, whole region will be marked from the predefined in code color <-> char scheme rounding to the closest color. Modes: 0 - whole visible image, 1 - the background image if loaded, 2 - selected layer only.","["+Math.floor(window.penCanvas.intScreenWidth/100)+","+Math.floor(window.penCanvas.intScreenHeight/100)+",0]");
+	var strError="The new size is not in the [width,height,mode] format, where width, height and mode are numbers.";
+	if(null==strAsciiArtScheme)return;
+	if(0==strAsciiArtScheme.length){
+		alert(strError);
+		return;
+	}
+	if("["!=strAsciiArtScheme[0]||"]"!=strAsciiArtScheme.substring(strAsciiArtScheme.length-1,strAsciiArtScheme.length)){
+		alert(strError);
+		return;
+	}
+	var lstDimensions=strAsciiArtScheme.substring(1,strAsciiArtScheme.length-1).split(",");
+	if(3!=lstDimensions.length){
+		alert(strError);
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	var intMode=parseInt(lstDimensions[2]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		return;
+	}
+	if(true==Number.isNaN(intMode)){
+		alert(strError);
+		return;
+	}
+	var strAsciiArt=window.roboticPen.exportToAsciiArt(intWidth,intHeight,intMode);
+	if(null==window.roboticPen.txtAsciiArt){
+		var divAsciiArt=document.getElementById("divAsciiArt");
+		window.roboticPen.txtAsciiArt=document.createElement("textarea");
+		window.roboticPen.txtAsciiArt.id="txtAsciiArt";
+		window.roboticPen.txtAsciiArt.style="font-family:monospace;";
+		window.roboticPen.txtAsciiArt.cols=window.penCanvas.intScreenWidth/intWidth+1;
+		window.roboticPen.txtAsciiArt.rows=window.penCanvas.intScreenHeight/intHeight+1;
+		window.roboticPen.txtAsciiArt.wrap="off";
+		window.roboticPen.txtAsciiArt.value=strAsciiArt;
+		divAsciiArt.appendChild(window.roboticPen.txtAsciiArt);
+		window.roboticPen.btnSaveAsciiArt=document.createElement("button");
+		window.roboticPen.btnSaveAsciiArt.id="btnSaveAsciiArt";
+		window.roboticPen.btnSaveAsciiArt.innerText="Prepare the Ascii Art for saving";
+		window.roboticPen.btnSaveAsciiArt.onclick=window.roboticPen.btnSaveAsciiArtPressed;
+		divAsciiArt.appendChild(window.roboticPen.btnSaveAsciiArt);
+		divAsciiArt.appendChild(document.createTextNode("Ascii Art filename:"));
+		window.roboticPen.txtAsciiArtFilename=document.createElement("input");
+		window.roboticPen.txtAsciiArtFilename.type="text";
+		window.roboticPen.txtAsciiArtFilename.id="txtAsciiArtFilename";
+		window.roboticPen.txtAsciiArtFilename.value="AsciiArt.txt";
+		divAsciiArt.appendChild(window.roboticPen.txtAsciiArtFilename);
+		window.roboticPen.chkLineWrapAsciiArt=document.createElement("input");
+		window.roboticPen.chkLineWrapAsciiArt.type="checkbox";
+		window.roboticPen.chkLineWrapAsciiArt.id="chkLineWrapAsciiArt";
+		window.roboticPen.chkLineWrapAsciiArt.checked=false;
+		window.roboticPen.chkLineWrapAsciiArt.onchange=window.roboticPen.chkLineWrapAsciiArtChanged;
+		divAsciiArt.appendChild(window.roboticPen.chkLineWrapAsciiArt);
+		divAsciiArt.appendChild(document.createTextNode("Line wrap"));
+		window.roboticPen.btnResizeAsciiArt=document.createElement("button");
+		window.roboticPen.btnResizeAsciiArt.id="btnResizeAsciiArt";
+		window.roboticPen.btnResizeAsciiArt.innerText="Resize...";
+		window.roboticPen.btnResizeAsciiArt.onclick=window.roboticPen.btnResizeAsciiArtPressed;
+		divAsciiArt.appendChild(window.roboticPen.btnResizeAsciiArt);
+	}else{
+		window.roboticPen.txtAsciiArt.cols=window.penCanvas.intScreenWidth/intWidth+1;
+		window.roboticPen.txtAsciiArt.rows=window.penCanvas.intScreenHeight/intHeight+1;
+		window.roboticPen.txtAsciiArt.value=strAsciiArt;
+	}
+}
+function btnDrawPressed(){
+	var strCode=document.getElementById("txtText").value;
+	strCode="var roboticPen=window.roboticPen;"+String.fromCharCode(10)+strCode;
+	eval(strCode);
+	window.penCanvas.updateScreen(false,true);
+	//window.roboticPen.callstackFunctions();
+	//window.penCanvas.updateScreen(false,true);
+}
+
+function chkShowBackgroundImageChanged(){
+	window.roboticPen.resetPenState();
+	btnDrawPressed();
+}
+function btnResetAndDrawPressed(){
+	window.roboticPen.resetPenState();
+	btnDrawPressed();
+}
+function btnAnimateRoboticPenPressed(){
+	alert("Functionality to be implemented.");
+}
+function btnRoboticPenAnimationImagesPressed(){
+	alert("Functionality to be implemented. Then export the image sequence to gif e.x. with convert -delay 2 -loop 0 *.png -scale 640x480 animation.gif");
+}
+function btnExportAnimationToAsciiArtPressed(){
+	alert("Functionality to be implemented.");
+}
+function btnAsciiArtAnimationTextfilesPressed(){
+	alert("Functionality to be implemented. Then export the screens sequence to gif e.x. with convert -delay 2 -loop 0 *.png -scale 640x480 animation.gif");
+}
+function btnSaveLstDrawingHistoryVectorGraphicsPressed(){
+	var strDrawingHistory=window.penCanvas.lstDrawingHistoryToString();
+	var strFilename=document.getElementById("txtPenCanvasFilename").value;
+	if (0==strFilename.length)strFilename="lstDrawingHistory.txt";
+	var lnkDownload=document.getElementById("savePenCanvas");
+	prepareFileToSave(strDrawingHistory,strFilename,lnkDownload);
+	alert("File ready for saving. After modifying again, prepare the file for saving again.");
+}
+function openLstDrawingHistoryFile(callback){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var strFilename=document.getElementById("txtPenCanvasFilename");
+		strFilename.value=file.name;
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			callback(contents);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsText(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function btnLoadLstDrawingHistoryVectorGraphicsPressed(){
+	openLstDrawingHistoryFile(window.penCanvas.setLstDrawingHistory);
+}
+function btnPlayLstDrawingHistoryAnimationFromTextfilePressed(){
+	openLstDrawingHistoryFile(window.penCanvas.playLstDrawingHistory);
+}
+function initLayers(){
+	var btnAddLayer=document.getElementById("btnAddLayer").onclick=window.penCanvas.btnAddLayerClicked;
+	window.penCanvas.addLayer(window.manualPen.offlineCanvas,"layer0",true,false);
+	window.penCanvas.addLayer(window.roboticPen.offlineCanvas,"layer1",false,true);
+}
+function chkChatPenChanged(event){
+	if(true==event.target.checked){
+		document.getElementById("divChat").style="";
+		document.getElementById("spanChatMenu").style="";
+		if(false==window.chat.blnConnected)window.chat.init();
+	}else{
+		document.getElementById("divChat").style="display:none";
+		document.getElementById("spanChatMenu").style="display:none";
+	}
+}
+function init(){
+	document.getElementById("btnOpen").onclick=btnOpenPressed;
+	document.getElementById("btnSave").onclick=btnSavePressed;
+	document.getElementById("btnGoto").onclick=btnGotoLinenumber;
+	document.getElementById("chkLineWrap").onclick=chkLineWrapClicked;
+	document.getElementById("btnResize").onclick=btnResizePressed;
+	document.getElementById("btnFind").onclick=btnFindPressed;
+	document.getElementById("btnResetAndDraw").onclick=btnResetAndDrawPressed;
+	document.getElementById("btnReset").onclick=btnResetPressed;
+	document.getElementById("btnDraw").onclick=btnDrawPressed;
+	document.getElementById("btnAnimateRoboticPen").onclick=btnAnimateRoboticPenPressed;
+	document.getElementById("btnRoboticPenAnimationImages").onclick=btnRoboticPenAnimationImagesPressed;
+	document.getElementById("btnClear").onclick=btnClearPressed;
+	document.getElementById("btnResizePenCanvas").onclick=btnResizePenCanvasPressed;
+	document.getElementById("btnLoadBackgroundImage").onclick=btnLoadBackgroundImagePressed;
+	document.getElementById("btnExportToAsciiArtText").onclick=btnExportToAsciiArtTextPressed;
+	document.getElementById("btnExportAnimationToAsciiArt").onclick=btnExportAnimationToAsciiArtPressed;
+	document.getElementById("btnAsciiArtAnimationTextfiles").onclick=btnAsciiArtAnimationTextfilesPressed;
+	document.getElementById("btnSaveLstDrawingHistoryVectorGraphics").onclick=btnSaveLstDrawingHistoryVectorGraphicsPressed;
+	document.getElementById("btnLoadLstDrawingHistoryVectorGraphics").onclick=btnLoadLstDrawingHistoryVectorGraphicsPressed;
+	document.getElementById("btnPlayLstDrawingHistoryAnimationFromTextfile").onclick=btnPlayLstDrawingHistoryAnimationFromTextfilePressed;
+	document.getElementById("chkShowBackgroundImage").onchange=chkShowBackgroundImageChanged;
+	document.getElementById("btnPrepareImage").onclick=btnPrepareImagePressed;
+	var penCanvas=document.getElementById("PenCanvas");
+	window.penCanvas=new PenCanvas(penCanvas);
+	window.roboticPen=new RoboticPen(penCanvas);
+	window.manualPen=new ManualPen(penCanvas);
+	document.getElementById("PenCanvas").onmousedown=window.manualPen.onMouseDown;
+	document.getElementById("PenCanvas").onmousemove=window.manualPen.onMouseMove;
+	document.getElementById("PenCanvas").onmouseup=window.manualPen.onMouseUp;
+	document.getElementById("PenCanvas").onmouseleave=window.manualPen.onMouseLeave;
+	window.onkeydown=window.manualPen.onKeyDown;
+	document.getElementById("chkPencilTool").onclick=chkPencilToolClicked;
+	document.getElementById("chkRubberTool").onclick=chkRubberToolClicked;
+	document.getElementById("btnEsc").onclick=window.manualPen.cancelDrawing;
+	document.getElementById("btnUndo").onclick=window.penCanvas.undoAction;
+	document.getElementById("btnRedo").onclick=window.penCanvas.redoAction;
+	document.getElementById("chkBucketTool").onclick=chkBucketToolClicked;
+	document.getElementById("btnBucketFill").onclick=btnBucketFillPressed;
+	buttonDisabled(document.getElementById("btnBucketFill"),true);
+	buttonDisabled(document.getElementById("btnCopy"),true);
+	document.getElementById("btnCopy").onclick=btnCopyClicked;
+	document.getElementById("btnCut").onclick=btnCutClicked;
+	buttonDisabled(document.getElementById("btnCut"),true);
+	document.getElementById("btnPaste").onclick=btnPasteClicked;
+	buttonDisabled(document.getElementById("btnPaste"),true);
+	document.getElementById("colorFG").onchange=FGcolorChanged;
+	document.getElementById("colorBG").onchange=BGcolorChanged;
+	document.getElementById("color0").onclick=color0clicked;
+	document.getElementById("color0").onchange=color0changed;
+	document.getElementById("color1").onclick=color1clicked;
+	document.getElementById("color1").onchange=color1changed;
+	document.getElementById("color2").onclick=color2clicked;
+	document.getElementById("color2").onchange=color2changed;
+	document.getElementById("color3").onclick=color3clicked;
+	document.getElementById("color3").onchange=color3changed;
+	document.getElementById("color4").onclick=color4clicked;
+	document.getElementById("color4").onchange=color4changed;
+	document.getElementById("color5").onclick=color5clicked;
+	document.getElementById("color5").onchange=color5changed;
+	document.getElementById("color6").onclick=color6clicked;
+	document.getElementById("color6").onchange=color6changed;
+	document.getElementById("color7").onclick=color7clicked;
+	document.getElementById("color7").onchange=color7changed;
+	document.getElementById("color8").onclick=color8clicked;
+	document.getElementById("color8").onchange=color8changed;
+	document.getElementById("color9").onclick=color9clicked;
+	document.getElementById("color9").onchange=color9changed;
+	document.getElementById("chkSetFGcolor").onclick=chkSetFGcolorClicked;
+	document.getElementById("chkSetBGcolor").onclick=chkSetBGcolorClicked;
+	document.getElementById("chkSetOpaqueColor").onclick=chkSetOpaqueColorClicked;
+	document.getElementById("txtColorR").onchange=txtColorRchanged;
+	document.getElementById("txtColorG").onchange=txtColorGchanged;
+	document.getElementById("txtColorB").onchange=txtColorBchanged;
+	document.getElementById("txtColorA").onchange=txtColorAchanged;
+	document.getElementById("btnResetToDefaults").onclick=btnResetToDefaultsClicked;
+	document.getElementById("btnLineLock").onclick=window.manualPen.btnLineLockPressed;
+	document.getElementById("btnDrawMultilines").onclick=window.manualPen.btnDrawMultilinesPressed;
+	buttonDisabled(document.getElementById("btnDrawMultilines"),true);
+	buttonDisabled(document.getElementById("btnUndo"),true);
+	buttonDisabled(document.getElementById("btnRedo"),true);
+	document.getElementById("txtLineWidth").onchange=window.penCanvas.txtLineWidthChanged;
+	document.getElementById("rangeGrayscale").onchange=window.penCanvas.rangeGrayscaleChanged;
+	document.getElementById("colorWebpageBackground").onchange=colorWebpageChanged;
+	document.getElementById("colorWebpageFont").onchange=colorWebpageChanged;
+	document.getElementById("chkShowCanvasBorder").onchange=chkShowCanvasBorderChanged;
+	document.getElementById("chkDrawRoboticPenCursor").onchange=chkDrawRoboticPenCursorChanged;
+	initLayers();
+	window.chat=new Chat();
+	document.getElementById("chkChatPen").onchange=chkChatPenChanged;
+	document.getElementById("txtChatInput").onkeydown=window.chat.txtInputOnKeyDown;
+	document.getElementById("btnChatSend").onclick=window.chat.btnChatSendPressed;
+	document.getElementById("chkChatAutosend").onchange=window.chat.chkChatAutosendChanged;
+	document.getElementById("btnChatConnectDisconnect").onclick=window.chat.btnChatConnectDisconnectPressed;
+}
+window.onload=init;
 </script>
 </head>
 <body style="background-color:black;color:grey;">
@@ -817,19 +3002,112 @@ RoboticPen.prototype.drawRoboticPen_mouse=function(intSize,lstColor,blnInterior)
 		</tr>
 	</table>
 <textarea id="txtText" cols="60" rows="30"></textarea>
-<br/>Quick first version - more commands to be implemented in the RoboticPen class...
-<table><tr>
-<td><button id="btnResetAndDraw">Reset & draw</button></td>
-<td><button id="btnReset">Reset</button></td>
-<td><button id="btnDraw">Draw</button></td>
-<td><button id="btnClear">Clear</button></td>
-<td><button id="btnResizeRoboticCanvas">Resize...</button></td>
-<td><button id="btnExportToAsciiArtText">Export to ascii art text</button></td>
-<td><button id="btnLoadBackgroundImage">Load background image</button></td>
-<td><div id="divShowBackgroundImage" style="display:none"><input type="checkbox" id="chkShowBackgroundImage" checked="true" >Show background image</input></div></td>
+<br/>Quick first version - more commands to be implemented in the RoboticPen class...<br/>
+<button id="btnResetAndDraw">Reset & draw</button>
+<button id="btnReset">Reset</button>
+<button id="btnDraw">Draw</button>
+<button id="btnAnimateRoboticPen">Animate RoboticPen</button>
+<button id="btnRoboticPenAnimationImages">RoboticPen animation images</button>
+<button id="btnClear">Clear</button>
+<button id="btnResizePenCanvas">Resize...</button>
+<button id="btnExportToAsciiArtText">Export to ascii art text</button>
+<button id="btnExportAnimationToAsciiArt">Export animation to ascii art text</button>
+<button id="btnAsciiArtAnimationTextfiles">Ascii art animation textfiles</button>
+<button id="btnSaveLstDrawingHistoryVectorGraphics">Prepare lstDrawingHistory vector graphics textfile</button>
+<button id="btnLoadLstDrawingHistoryVectorGraphics">Load vector graphics from lstDrawingHistory vector graphics textfile...</button>
+<button id="btnPlayLstDrawingHistoryAnimationFromTextfile">Play lstDrawingHistory drawing animation from textfile...</button>
+<button id="btnLoadBackgroundImage">Load background image</button>
+<button id="btnPrepareImage">Prepare image for saving</button>
+<a id="savePenCanvas" download="image.txt" href='data:text/plain,"Prepare for saving" first.&#10;'>Save as:</a>
+<input type="text" id="txtPenCanvasFilename"></input>
+<span id="divShowBackgroundImage" style="display:none"><input type="checkbox" id="chkShowBackgroundImage" checked="true">Show background image</input></span>
+<input type="checkbox" id="chkChatPen">Chat pen</input>
+<span id="spanChatMenu" style="display:none">
+<button id="btnChatConnectDisconnect">Connect...</button>
+<input type="checkbox" id="chkShowChatProtocolMessages" checked="true">Show protocol messages</input>
+<input type="checkbox" id="chkDivideDrawingIntoSmallMessages">Divide drawing into small messages</input>
+</span>
+<br/>
+<div id="divChat" style="display:none">
+<textarea id="txtChatContents" cols="60" rows="30"></textarea> <br/>
+<input id="txtChatInput" type="text" style="width:500px;height:25px;"></input>   
+<button id="btnChatSend">Send</button>
+<input type="checkbox" id="chkChatAutosend">Autosend</input>
+<br/>
+</div>
+<canvas id="PenCanvas" width="500" height="500" style="border: 1px solid #ff3c00;"></canvas>
+<div id="divToolbox">
+Tools:
+<table>
+<tr>
+<td><input type="checkbox" id="chkPencilTool" checked="true">Pencil</input></td>
+<td><input type="checkbox" id="chkRubberTool">Rubber</input></td>
+<td><button id="btnUndo">Undo</button></td>
+<td><button id="btnRedo">Redo</button></td>
+<td><button id="btnEsc">Esc</button></td>
+<td><input type="checkbox" id="chkBucketTool">Bucket</input><div id="divBucketTool" style="display:none">Set to:<input type="color" id="colorBucketSetTo" value="#ff3c00"></input><button id="btnBucketFill">Fill</button></div></td>
+<td><button id="btnCopy">Copy</button></td>
+<td><button id="btnCut">Cut</button></td>
+<td><button id="btnPaste">Paste</button></td>
 </tr>
 </table>
-<canvas id="RoboticPenCanvas" width="500" height="500"></canvas>
+<table>
+<tr>
+<td>Grayscale:<input type="range" id="rangeGrayscale" min="0" max="100" step="1" value="100"></td>
+<td>intLineWidth:<input type="number" id="txtLineWidth" value="1"></td>
+<td><button id="btnLineLock">Draw lines</button></td>
+<td><button id="btnDrawMultilines">Draw multilines</button></td>
+<td>FG color: <input type="color" id="colorFG" value="#ff3c00"</td>
+<td>BG color: <input type="color" id="colorBG" value="#000000"</td>
+<td>Opaque color - zero alpha: <input type="color" id="colorOpaque" value="#000000"</td>
+</tr>
+</table>
+Predefined colors/colours:
+<table>
+<tr>
+<td><input type="checkbox" id="chkSetFGcolor" checked="true">FG color</input></td>
+<td><input type="checkbox" id="chkSetBGcolor">BG color</input></td>
+<td><input type="checkbox" id="chkSetOpaqueColor">Opaque color</input></td>
+</tr>
+</table>
+<table>
+<tr>
+<td><input type="color" id="color0" value="#ffffff"></td>
+<td><input type="color" id="color1" value="#000000"></td>
+<td><input type="color" id="color2" value="#ff3c00"></td>
+<td><input type="color" id="color3" value="#ffff00"></td>
+<td><input type="color" id="color4" value="#00ff00"></td>
+<td><input type="color" id="color5" value="#ff0000"></td>
+<td><input type="color" id="color6" value="#ff3296"></td>
+<td><input type="color" id="color7" value="#800080"></td>
+<td><input type="color" id="color8" value="#643200"></td>
+<td><input type="color" id="color9" value="#0000ff"></td>
+<td><button id="btnResetToDefaults">Reset to defaults</button></td>
+</tr>
+</table>
+<table>
+<tr>
+<td>R:<input type="number" id="txtColorR" value="255"></td>
+<td>G:<input type="number" id="txtColorG" value="60"></td>
+<td>B:<input type="number" id="txtColorB" value="0"></td>
+<td>A:<input type="number" id="txtColorA" value="255"></td>
+</tr>
+</table>
+Layers:
+<button id="btnAddLayer">Add layer</button><button id="btnGridStyle">Grid style</button><button id="btnSpiralStyle">Spiral style</button><input type="checkbox" id="chkShowSpiral">Show spiral</input><input type="checkbox" id="chkShowGrid">Show grid</input>
+<table id="tblLayers">
+<tr><td>manualPen</td><td>roboticPen</td><td>Preview</td><td>Name</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
+
+</tr>
+</table>
+<table><tr>
+<td>Webpage background color:<input type="color" id="colorWebpageBackground" value="#000000"></td>
+<td>Webpage font color:<input type="color" id="colorWebpageFont" value="#bebebe"></td>
+<td><input type="checkbox" id="chkShowCanvasBorder" checked="true">Show canvas border</input></td>
+<td><input type="checkbox" id="chkDrawRoboticPenCursor" checked="true">Draw robotic pen cursor</input></td>
+<td><input type="checkbox" id="chkUsePutpixelLines" checked="true">Use putpixel lines</input></td>
+</tr></table>
+</div>
 <div id="divAsciiArt"></div>
 </body>
 </html>
