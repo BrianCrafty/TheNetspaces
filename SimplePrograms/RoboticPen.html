@@ -58,6 +58,9 @@ PenCanvasConstructor=function(that,penCanvas){
 	that.fltDrawingHistoryToPlayDelay=0;
 	that.lstLayers=[];
 	that.intUniqueNumber_Layers=0;
+	//[intLineSpacing, intLineWidth, lstLineColor]
+	that.lstActualGridStyle=[15,1,[255,60,0,255]];
+	that.chkShowGrid=document.getElementById("chkShowGrid");
 };
 PenCanvasConstructor_strF=function(that,penCanvas){
 };
@@ -239,6 +242,9 @@ PenCanvas.prototype.copyListRecursive=function(lstSrc){
 	}
 	return lstDst;
 };
+PenCanvas.prototype.drawLineImage=function(theImage,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale){
+	this.drawLinePutpixelImage(theImage,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale);
+};
 PenCanvas.prototype.drawLine=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
 	if(true==blnUndo)
 		this.addUndoItem([1,theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale]);
@@ -273,8 +279,10 @@ PenCanvas.prototype.putpixelCanvas=function(theCanvas,theImage,intX,intY,lstColo
 	theContext.fillRect(intX,intY,intLineWidth,intLineWidth);
 };
 PenCanvas.prototype.putpixelMemory=function(theCanvas,theImage,intX,intY,lstColor,intLineWidth){
-	var intImageWidth=theCanvas.width;
-	var intImageHeight=theCanvas.height;
+	//var intImageWidth=theCanvas.width;
+	//var intImageHeight=theCanvas.height;
+	var intImageWidth=window.penCanvas.intScreenWidth;
+	var intImageHeight=window.penCanvas.intScreenHeight;
 	var intIndex;
 	var intR,intG,intB,intA;
 	intR=lstColor[0];
@@ -329,6 +337,22 @@ PenCanvas.prototype.drawLine1=function(theCanvas,theImage,intX0,intY0,intX1,intY
 		}
 		d=d+2*dX;
 		}
+};
+PenCanvas.prototype.drawLinePutpixelImage=function(theImage,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale){
+	//var theContext=theCanvas.getContext('2d');
+	//var theImage=theContext.getImageData(0,0,theCanvas.width,theCanvas.height);
+	var theCanvas=null;
+	var lstGrayscaleColor=[Math.round(fltGrayscale*lstColor[0]),Math.round(fltGrayscale*lstColor[1]),Math.round(fltGrayscale*lstColor[2]),Math.round(fltGrayscale*lstColor[3])];
+	if(Math.abs(intY1-intY0)<=Math.abs(intX1-intX0)){
+		if(intX0>=intX1)
+			this.drawLine0(theCanvas,theImage,intX1,intY1,intX0,intY0,lstGrayscaleColor,intLineWidth);
+		else this.drawLine0(theCanvas,theImage,intX0,intY0,intX1,intY1,lstGrayscaleColor,intLineWidth);
+	}else{
+			if(intY0>=intY1)
+			this.drawLine1(theCanvas,theImage,intX1,intY1,intX0,intY0,lstGrayscaleColor,intLineWidth);
+		else this.drawLine1(theCanvas,theImage,intX0,intY0,intX1,intY1,lstGrayscaleColor,intLineWidth);
+	}
+	//theContext.putImageData(theImage,0,0);
 };
 PenCanvas.prototype.drawLinePutpixel=function(theCanvas,intX0,intY0,intX1,intY1,lstColor,intLineWidth,fltGrayscale,blnUndo){
 	var theContext=theCanvas.getContext('2d');
@@ -501,6 +525,9 @@ PenCanvas.prototype.updateScreen=function(blnAlsoTemporaryCanvas,blnRefreshScree
 	}
 	if(null!=backgroundImage){
 		blnModiff=this.imageToPenCanvasImage(backgroundImage,window.roboticPen.backgroundImageCanvas.width,window.roboticPen.backgroundImageCanvas.height,penImage,blnModiff);
+	}
+	if(true==chkShowGrid.checked){
+		window.penCanvas.drawGrid(penImage);
 	}
 	var layerCanvas;
 	var layerContext;
@@ -885,16 +912,36 @@ PenCanvas.prototype.btnLayerPastePressed=function(intUniqueNumber){
 	alert("Functionality will be implemented later.");
 };
 PenCanvas.prototype.btnLoadImageToLayerPressed=function(intUniqueNumber){
-	alert("Functionality will be implemented later.");
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	theCanvas=window.penCanvas.lstLayers[ii][2];
+	openFile2(theCanvas);
 };
 PenCanvas.prototype.btnSaveLayerToImagePressed=function(intUniqueNumber){
-	alert("Functionality will be implemented later.");
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	theCanvas=window.penCanvas.lstLayers[ii][2];
+	var txtFilename=document.getElementById("txtPenCanvasFilename");
+	var strFilename=txtFilename.value;
+	if (0==strFilename.length)txtFilename.value="PenCanvas.jpg";
+	window.penCanvas.preparePenCanvasToSave(theCanvas);
+	alert("File ready for saving. After modifying again, prepare the file for saving again. E.x. for opacity use png images, for smaller sizes use jpg images.");
 };
 PenCanvas.prototype.btnSaveLayerToLstDrawingHistoryPressed=function(intUniqueNumber){
-	alert("Functionality will be implemented later.");
+	alert("Functionality will be implemented later. For now you can save lstDrawingHistory of the whole image.");
 };
 PenCanvas.prototype.btnAddGridToLayerPressed=function(intUniqueNumber){
-	alert("Functionality will be implemented later.");
+	var ii=window.penCanvas.getLayerNumberByUniqueNumber(intUniqueNumber);
+	theCanvas=window.penCanvas.lstLayers[ii][2];
+	var intWidth=window.penCanvas.intScreenWidth;
+	var intHeight=window.penCanvas.intScreenHeight;
+	var theContext=theCanvas.getContext("2d");
+	var theImage=theContext.getImageData(0,0,intWidth,intHeight);
+	window.penCanvas.drawGrid(theImage);
+	theContext.putImageData(theImage,0,0);
+	window.penCanvas.chkShowGrid.checked=false;
+	window.penCanvas.updateScreen(false,true);
+};
+PenCanvas.prototype.chkShowGridChanged=function(){
+	window.penCanvas.updateScreen(false,true);
 };
 PenCanvas.prototype.btnAddSpiralToLayerPressed=function(intUniqueNumber){
 	alert("Functionality will be implemented later.");
@@ -1029,6 +1076,64 @@ PenCanvas.prototype.btnAddLayerClicked=function(){
 	var strName=prompt("Enter layer name:","layer"+window.penCanvas.lstLayers.length);
 	if(null!=strName)
 		window.penCanvas.addLayer(theCanvas,strName,false,false);
+};
+PenCanvas.prototype.onKeyDown=function(event){
+	if(27==event.keyCode){
+		window.manualPen.cancelDrawing();
+	}
+	
+	if("z"==event.key&&true==event.ctrlKey){
+		window.manualPen.onMouseLeave();
+		window.penCanvas.undoAction();
+	}
+};
+PenCanvas.prototype.btnGridStylePressed=function(event){
+	var intNewLineSpacing,intNewLineWidth,intNewR,intNewG,intNewB,intNewA;
+	var strActualGridStyle="["+window.penCanvas.lstActualGridStyle[0]+","+window.penCanvas.lstActualGridStyle[1]+",["+window.penCanvas.lstActualGridStyle[2][0]+","+window.penCanvas.lstActualGridStyle[2][1]+","+window.penCanvas.lstActualGridStyle[2][2]+","+window.penCanvas.lstActualGridStyle[2][3]+"]]";
+	var strNewGridStyle=prompt("Enter the new grid style in the [intLineSpacing, intLineWidth, lstLineColor] format. Empty text or text with errors will cancel the action.",""+strActualGridStyle);
+	
+	if(null==strNewGridStyle)return;
+	if(0==strNewGridStyle.length)return;
+	var strError="The new size is not in the [intLineSpacing,intLineWidth,lstLineColor] format.";
+	if("["!=strNewGridStyle[0]||"]"!=strNewGridStyle.substring(strNewGridStyle.length-1,strNewGridStyle.length)){
+		alert(strError);
+		return;
+	}
+	strNewGridStyle=strNewGridStyle.substring(1,strNewGridStyle.length-1);
+	
+	var lstNewGridStyle=strNewGridStyle.split(",");
+	if(lstNewGridStyle[2][0]!="["&&lstNewGridStyle[5].substring(strNewGridStyle.length-1,strNewGridStyle.length)!="]"){
+		alert(strError);
+		return;
+	}
+	lstNewGridStyle[2]=lstNewGridStyle[2].substring(1);
+	lstNewGridStyle[5]=lstNewGridStyle[5].substring(0,lstNewGridStyle[5].length-1);
+	intNewLineSpacing=parseInt(lstNewGridStyle[0]);
+	intNewLineWidth=parseInt(lstNewGridStyle[1]);
+	intNewR=parseInt(lstNewGridStyle[2]);
+	intNewG=parseInt(lstNewGridStyle[3]);
+	intNewB=parseInt(lstNewGridStyle[4]);
+	intNewA=parseInt(lstNewGridStyle[5]);
+	if(true==Number.isNaN(intNewLineSpacing)||true==Number.isNaN(intNewLineWidth)||true==Number.isNaN(intNewR)||true==Number.isNaN(intNewG)||true==Number.isNaN(intNewB)||true==Number.isNaN(intNewA)){
+		alert(strError);
+		return;
+	}
+	window.penCanvas.lstActualGridStyle=[intNewLineSpacing,intNewLineWidth,[intNewR,intNewG,intNewB,intNewA]];
+};
+PenCanvas.prototype.drawGrid=function(theImage){
+	var intWidth=this.intScreenWidth;
+	var intHeight=this.intScreenHeight;
+	var intLinesI=intWidth/this.lstActualGridStyle[0];
+	var intLinesJ=intHeight/this.lstActualGridStyle[0];
+	var intI=0,intJ=0;
+	for(var j=1;j<intLinesJ-1;j++){
+		intJ+=this.lstActualGridStyle[0];
+		this.drawLineImage(theImage,0,intJ,intWidth,intJ,this.lstActualGridStyle[2],this.lstActualGridStyle[1],1,false);
+	}
+	for(var i=1;i<intLinesI-1;i++){
+		intI+=this.lstActualGridStyle[0];
+		this.drawLineImage(theImage,intI,0,intI,intHeight,this.lstActualGridStyle[2],this.lstActualGridStyle[1],1,false);
+	}
 };
 RoboticPenConstructor=function(that,penCanvas){
 	//references to PenCanvas objects for easier coding in txtText
@@ -1676,11 +1781,6 @@ ManualPen.prototype.onMouseLeaveLines=function(event){
 		window.manualPen.intDrawingItem++;
 	}
 	window.manualPen.cancelDrawing();
-};
-ManualPen.prototype.onKeyDown=function(event){
-	if(27==event.keyCode){
-		window.manualPen.cancelDrawing();
-	}
 };
 ChatConstructor=function(that){
 	that.txtContents=document.getElementById("txtChatContents");
@@ -2693,26 +2793,30 @@ function btnResizePenCanvasPressed(evtMouse,theNewWidth,theNewHeight){
 function btnResetPressed(){
 	window.roboticPen.resetPenState();
 }
-function loadImage(url){
+function loadImage(url,theCanvas){
 	var img=new Image();
 	img.onload=function(evtLoad){
-		window.roboticPen.backgroundImageCanvas=document.createElement("canvas");
-		window.roboticPen.backgroundImageCanvas.id="backgroundImageCanvas";
-		window.roboticPen.backgroundImageCanvas.width=this.width;
-		window.roboticPen.backgroundImageCanvas.height=this.height;
-		backgroundImageContext=window.roboticPen.backgroundImageCanvas.getContext("2d");
-		backgroundImageContext.drawImage(this,0,0,this.width,this.height);
-		var divShowBackgroundImage=document.getElementById("divShowBackgroundImage");
-		divShowBackgroundImage.style.display="";
-		btnResetPressed();
-		if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
+		if(null==theCanvas){
+			window.roboticPen.backgroundImageCanvas=document.createElement("canvas");
+			window.roboticPen.backgroundImageCanvas.id="backgroundImageCanvas";
+			window.roboticPen.backgroundImageCanvas.width=this.width;
+			window.roboticPen.backgroundImageCanvas.height=this.height;
+			theCanvas=window.roboticPen.backgroundImageCanvas;
+			var divShowBackgroundImage=document.getElementById("divShowBackgroundImage");
+			divShowBackgroundImage.style.display="";
+		}
+		theContext=theCanvas.getContext("2d");
+		theContext.drawImage(this,0,0,this.width,this.height);
+		//if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
+		if(this.width!=window.penCanvas.intScreenWidth||this.height!=window.penCanvas.intScreenHeight){
 			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the PenCanvas has size ["+[window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight]+"]. Resize the penCanvas?");
 			if(true==blnResize)btnResizePenCanvasPressed(null,this.width,this.height);
 		}
+		btnResetPressed();
 	};
 	img.src=url;
 }
-function openFile2(){
+function openFile2(theCanvas){
 	var fileInput=document.createElement("input");
 	fileInput.type="file";
 	fileInput.style.display="none";
@@ -2724,7 +2828,7 @@ function openFile2(){
 		var fileReader=new FileReader();
 		fileReader.onload=function(evtFile) {
 			var contents=evtFile.target.result;
-			loadImage(evtFile.target.result);
+			loadImage(evtFile.target.result,theCanvas);
 			document.body.removeChild(fileInput);
 		};
 		fileReader.readAsDataURL(file);
@@ -2733,7 +2837,7 @@ function openFile2(){
 	click(fileInput);
 }
 function btnLoadBackgroundImagePressed(){
-	openFile2();
+	openFile2(null);
 }
 function btnExportToAsciiArtTextPressed(){
 	var strAsciiArtScheme=prompt("Actual screen size ==["+window.penCanvas.intScreenWidth+","+window.penCanvas.intScreenHeight+"]. Enter ascii art char size and mode. If non opaque color found in region, whole region will be marked from the predefined in code color <-> char scheme rounding to the closest color. Modes: 0 - whole visible image, 1 - the background image if loaded, 2 - selected layer only.","["+Math.floor(window.penCanvas.intScreenWidth/100)+","+Math.floor(window.penCanvas.intScreenHeight/100)+",0]");
@@ -2918,7 +3022,7 @@ function init(){
 	document.getElementById("PenCanvas").onmousemove=window.manualPen.onMouseMove;
 	document.getElementById("PenCanvas").onmouseup=window.manualPen.onMouseUp;
 	document.getElementById("PenCanvas").onmouseleave=window.manualPen.onMouseLeave;
-	window.onkeydown=window.manualPen.onKeyDown;
+	window.onkeydown=window.penCanvas.onKeyDown;
 	document.getElementById("chkPencilTool").onclick=chkPencilToolClicked;
 	document.getElementById("chkRubberTool").onclick=chkRubberToolClicked;
 	document.getElementById("btnEsc").onclick=window.manualPen.cancelDrawing;
@@ -2981,6 +3085,8 @@ function init(){
 	document.getElementById("btnChatSend").onclick=window.chat.btnChatSendPressed;
 	document.getElementById("chkChatAutosend").onchange=window.chat.chkChatAutosendChanged;
 	document.getElementById("btnChatConnectDisconnect").onclick=window.chat.btnChatConnectDisconnectPressed;
+	document.getElementById("btnGridStyle").onclick=window.penCanvas.btnGridStylePressed;
+	document.getElementById("chkShowGrid").onchange=window.penCanvas.chkShowGridChanged;
 }
 window.onload=init;
 </script>
@@ -3094,7 +3200,8 @@ Predefined colors/colours:
 </tr>
 </table>
 Layers:
-<button id="btnAddLayer">Add layer</button><button id="btnGridStyle">Grid style</button><button id="btnSpiralStyle">Spiral style</button><input type="checkbox" id="chkShowSpiral">Show spiral</input><input type="checkbox" id="chkShowGrid">Show grid</input>
+<button id="btnAddLayer">Add layer</button><button id="btnGridStyle">Grid style</button><button id="btnSpiralStyle">Spiral style</button>
+<input type="checkbox" id="chkShowGrid">Show grid</input><input type="checkbox" id="chkShowSpiral">Show spiral</input>
 <table id="tblLayers">
 <tr><td>manualPen</td><td>roboticPen</td><td>Preview</td><td>Name</td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td><td></td></tr>
 
