@@ -2,7 +2,7 @@
 	<head>
 		<meta charset="utf-8">
 <script type="text/javascript">
-var blnLoad3dWorldsOnStart=false;var blnTextEditorOnStart=true;var blnComputerTextDivMode=true;var lstTextScreenSize=[33,18];var strTextEditorCommandLineModeArgs="-maxi";/*var blnComputerTextDivMode=false;*//*var blnComputerTextDivMode=true;*//*var lstTextScreenSize=[33,18];*//*var lstTextScreenSize=[66,36];*//*var lstTextScreenSize=[132,72];*//*var strTextEditorCommandLineModeArgs="";*//*var strTextEditorCommandLineModeArgs="-mini";*//*var strTextEditorCommandLineModeArgs="";*/
+var blnLoad3dWorldsOnStart=true;var blnTextEditorOnStart=true;var blnComputerTextDivMode=true;var lstTextScreenSize=[33,18];var strTextEditorCommandLineModeArgs="-maxi";/*var blnComputerTextDivMode=false;*//*var blnComputerTextDivMode=true;*//*var lstTextScreenSize=[33,18];*//*var lstTextScreenSize=[66,36];*//*var lstTextScreenSize=[132,72];*//*var strTextEditorCommandLineModeArgs="";*//*var strTextEditorCommandLineModeArgs="-mini";*//*var strTextEditorCommandLineModeArgs="";*/
 var intUnitSquareSize=10;
 var lstColors=[[255,255,255,255],
 	[0,0,0,255],
@@ -4513,11 +4513,997 @@ function btnLoadSaveDownloadLinksOptionsClicked(){
 		divLoadSaveDownloadLinksOptions.style.display="";
 	else divLoadSaveDownloadLinksOptions.style.display="none";
 }
+
+function btnAmazingMazeLabyrinthClicked(){
+	loadAmazingMazeLabyrinth();
+	var btnAmazingMazeLabyrinth=document.getElementById("btnAmazingMazeLabyrinth");
+	btnAmazingMazeLabyrinth.outerHTML="";
+	var btnAmazingMazeLabyrinthExtension=document.getElementById("btnAmazingMazeLabyrinthExtension");
+	btnAmazingMazeLabyrinthExtension.outerHTML="";
+}
+function btnAmazingMazeLabyrinthExtension(){
+	if(null==netspace.amazingMazeLabyrinth){
+		btnAmazingMazeLabyrinthClicked();
+	}
+}
+function loadAmazingMazeLabyrinth(){
+var AmazingMazeLabyrinthConstructor=function(that){
+	var chkDrawPointerX=document.getElementById("chkDrawPointerX");
+	chkDrawPointerX.checked=false;
+	chkDrawPointerXChanged();
+	that.intCellScallingFactor=2;
+	/*that.intCellScallingFactor=1;*/
+	that.intNextCellScallingFactor=that.intCellScallingFactor;
+	that.intTextureForWalls=-1;
+	that.intTextureForFloor=-1;
+	that.intTextureForCeil=-1;
+	that.intNextTextureForWalls=that.intTextureForWalls;
+	that.intNextTextureForFloor=that.intTextureForFloor;
+	that.intNextTextureForCeil=that.intTextureForCeil;
+	that.intCameraCellWalkSteps=15;
+	that.fltCameraCellWalkTime=1;/*in seconds*/
+	that.intMapWidth=10;
+	that.intMapHeight=10;
+	that.intNextMapWidth=that.intMapWidth;
+	that.intNextMapHeight=that.intMapHeight;
+	that.strChangesWillHaveEffect="Changes will have effect in the next maze, labyrinth after reset.";
+	that.intWidth=that.intCellScallingFactor*that.intMapWidth;
+	that.intHeight=that.intCellScallingFactor*that.intMapHeight;
+	that.arrMazeMap=new Uint8Array(that.intMapWidth*that.intMapHeight);
+	for(var i=0;i<that.intMapWidth;i++)	
+		for(var j=0;j<that.intMapWidth;j++)	
+			that.setMapIJ(i,j,0);
+	that.lstAmazingMazeLabyrinthEntryPoint=[0,0];
+	that.lstAmazingMazeLabyrinthExitPoint=[that.intMapWidth/2,0];
+	that.lstPosition=[0,0];
+	that.lstCameraWalkStruct=null;
+	that.intCameraWalkingDirection=-1;/*-1 and watchwise*/
+	that.blnCamCrawling=false;
+	that.blnShowGameover=false;
+	that.blnWalkOnlyOnTheFloor=true;
+	that.blnShowCeil=true;
+	that.blnNextShowCeil=that.blnShowCeil;
+	that.lstCameraWalkPath=null;
+	/*0 - fwd
+	1 - turn right
+	2- turn left*/
+	that.blnTurnLeft=true;
+	that.lstCameraWalkCommands=[];
+	that.canvasMapPreview=null;
+	that.intMapPreviewCellSize=3;
+	that.intMapPreviewWallSize=1;
+	that.fltMapPreviewScallingFactor=5;
+	/*if(null==netspace.shaderThinkpad)loadShaderThinkpad();*/
+	netspace.pointLightIslands[0].varietyManifolds3D.splice(0);
+	var fltX,fltY,fltZ;
+	fltX=0;fltY=0;fltZ=0;
+	that.createFloor(fltX,fltY,fltZ,that.intWidth,that.intHeight);
+	if(true==that.blnShowCeil)that.createCeil(fltX,fltY,fltZ,that.intWidth,that.intHeight,that.intCellScallingFactor);
+	that.mazeGenerator=new MazeGenerator(that);
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.addExtension("AmazingMazeLabyrinthManagerExtension","AmazingMazeLabyrinth",function(){});
+	var AmazingMazeLabyrinthManager_btnShowHideMazeMap=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnShowHideMazeMap.innerText="Show maze map";
+	AmazingMazeLabyrinthManager_btnShowHideMazeMap.id="AmazingMazeLabyrinthManager_btnShowHideMazeMap";
+	AmazingMazeLabyrinthManager_btnShowHideMazeMap.onclick=function(){
+		if("none"==that.canvasMapPreview.style.display){
+			this.innerText="Hide maze map";
+			that.canvasMapPreview.style.display="";
+		}else{
+			this.innerText="Show maze map";
+			that.canvasMapPreview.style.display="none";
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnShowHideMazeMap);	
+
+	var AmazingMazeLabyrinthManager_canvasMapPreview=document.createElement("canvas");
+	AmazingMazeLabyrinthManager_canvasMapPreview.width=that.intMapWidth*that.fltMapPreviewScallingFactor*(that.intMapPreviewCellSize+that.intMapPreviewWallSize);
+	AmazingMazeLabyrinthManager_canvasMapPreview.height=that.intMapHeight*that.fltMapPreviewScallingFactor*(that.intMapPreviewCellSize+that.intMapPreviewWallSize);
+	AmazingMazeLabyrinthManager_canvasMapPreview.id="AmazingMazeLabyrinthManager_canvasMapPreview";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_canvasMapPreview);	
+	that.canvasMapPreview=AmazingMazeLabyrinthManager_canvasMapPreview;
+	that.canvasMapPreview.style.display="none";
+	that.updateCanvasMapPreview();
+	var AmazingMazeLabyrinthManager_btnStartStopCamCrawling=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText="Start cam crawling";
+	AmazingMazeLabyrinthManager_btnStartStopCamCrawling.id="AmazingMazeLabyrinthManager_btnStartStopCamCrawling";
+	AmazingMazeLabyrinthManager_btnStartStopCamCrawling.onclick=function(){
+		netspace.amazingMazeLabyrinth.startStopCamCrawling();
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnStartStopCamCrawling);	
+
+	var AmazingMazeLabyrinthManager_txtCellWalkTime=document.createElement("input");
+	AmazingMazeLabyrinthManager_txtCellWalkTime.id="AmazingMazeLabyrinthManager_txtCellWalkTime";
+	AmazingMazeLabyrinthManager_txtCellWalkTime.type="text";
+	AmazingMazeLabyrinthManager_txtCellWalkTime.value=""+that.fltCameraCellWalkTime;
+	AmazingMazeLabyrinthManager_txtCellWalkTime.onchange=function(){
+		var fltCameraCellWalkTime=parseFloat(this.value);
+		if(false==nonNumber(fltCameraCellWalkTime))netspace.amazingMazeLabyrinth.fltCameraCellWalkTime=fltCameraCellWalkTime;
+		else{
+			alert("Incorrect time in seconds.");
+			this.value=netspace.amazingMazeLabyrinth.fltCameraCellWalkTime;
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("fltCameraCellWalkTime="));	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_txtCellWalkTime);	
+	}
+	var AmazingMazeLabyrinthManager_txtCellWalkSteps=document.createElement("input");
+	AmazingMazeLabyrinthManager_txtCellWalkSteps.id="AmazingMazeLabyrinthManager_txtCellWalkSteps";
+	AmazingMazeLabyrinthManager_txtCellWalkSteps.type="text";
+	AmazingMazeLabyrinthManager_txtCellWalkSteps.value=""+that.intCameraCellWalkSteps;
+	AmazingMazeLabyrinthManager_txtCellWalkSteps.onchange=function(){
+		var intCameraCellWalkSteps=parseInt(this.value);
+		if(false==nonNumber(intCameraCellWalkSteps))netspace.amazingMazeLabyrinth.intCameraCellWalkSteps=intCameraCellWalkSteps;
+		else{
+			alert("Incorrect number of steps.");
+			this.value=netspace.amazingMazeLabyrinth.intCameraCellWalkSteps;
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("intCameraCellWalkSteps="));
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_txtCellWalkSteps);	
+	}
+
+	var AmazingMazeLabyrinthManager_btnMoveTheLightFarNear=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnMoveTheLightFarNear.innerText="d=.=b Move the light far away...";
+	AmazingMazeLabyrinthManager_btnMoveTheLightFarNear.id="AmazingMazeLabyrinthManager_btnMoveTheLightFarNear";
+	AmazingMazeLabyrinthManager_btnMoveTheLightFarNear.onclick=function(){
+		var strCommand="";
+		if("d=.=b Move the light far away..."==this.innerText){
+			strCommand="netspace.pointLightIslands[0].vec3positionLight[2]=10000;";
+		}else{
+			strCommand="netspace.pointLightIslands[0].vec3positionLight[2]=0;";
+		}
+		var strFinalCommand=prompt("Enter the command to move the light on the scene:",strCommand);
+		if(null==strFinalCommand)return;
+		eval(strFinalCommand);
+		if("d=.=b Move the light far away..."==this.innerText){
+			this.innerText="d0.0b Move the light near...";
+		}else{
+			this.innerText="d=.=b Move the light far away...";
+		}
+
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnMoveTheLightFarNear);	
+
+	var AmazingMazeLabyrinthManager_chkShowCeil=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkShowCeil.type="checkbox";
+	AmazingMazeLabyrinthManager_chkShowCeil.checked=true;
+	AmazingMazeLabyrinthManager_chkShowCeil.id="AmazingMazeLabyrinthManager_chkShowCeil";
+	AmazingMazeLabyrinthManager_chkShowCeil.onchange=function(){
+		netspace.amazingMazeLabyrinth.blnNextShowCeil=this.checked;
+		alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkShowCeil);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("Show ceil, "));	
+	}
+
+	var AmazingMazeLabyrinthManager_txtCellScallingFactor=document.createElement("input");
+	AmazingMazeLabyrinthManager_txtCellScallingFactor.id="AmazingMazeLabyrinthManager_txtCellScallingFactor";
+	AmazingMazeLabyrinthManager_txtCellScallingFactor.type="text";
+	AmazingMazeLabyrinthManager_txtCellScallingFactor.value=""+that.intCellScallingFactor;
+	AmazingMazeLabyrinthManager_txtCellScallingFactor.onchange=function(){
+		var intCellScallingFactor=parseInt(this.value);
+		if(false==nonNumber(intCellScallingFactor)){
+			netspace.amazingMazeLabyrinth.intNextCellScallingFactor=intCellScallingFactor;
+			alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+		}else{
+			alert("Incorrect cell scalling factor.");
+			this.value=netspace.amazingMazeLabyrinth.intCellScallingFactor;
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("intCellScallingFactor="));
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_txtCellScallingFactor);	
+	}
+
+	var AmazingMazeLabyrinthManager_btnReset=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnReset.innerText="Reset";
+	AmazingMazeLabyrinthManager_btnReset.id="AmazingMazeLabyrinthManager_btnReset";
+	AmazingMazeLabyrinthManager_btnReset.onclick=function(){
+		var blnPrevCamCrawling=netspace.amazingMazeLabyrinth.blnCamCrawling;
+		netspace.amazingMazeLabyrinth.stopCamCrawling();
+		setTimeout(netspace.amazingMazeLabyrinth.resetAmazingMazeLabyrinth,netspace.amazingMazeLabyrinth.fltCameraCellWalkTime*1000);
+		if(true==blnPrevCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.startStopCamCrawling,netspace.amazingMazeLabyrinth.fltCameraCellWalkTime*1000);
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnReset);	
+
+	var AmazingMazeLabyrinthManager_chkShowGameover=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkShowGameover.type="checkbox";
+	AmazingMazeLabyrinthManager_chkShowGameover.checked=false;
+	AmazingMazeLabyrinthManager_chkShowGameover.id="AmazingMazeLabyrinthManager_chkShowGameover";
+	AmazingMazeLabyrinthManager_chkShowGameover.onchange=function(){
+		netspace.amazingMazeLabyrinth.blnShowGameover=this.checked;
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkShowGameover);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("Show gameover"));	
+	}
+	var AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor.type="checkbox";
+	AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor.checked=true;
+	AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor.id="AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor";
+	AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor.onchange=function(){
+		netspace.amazingMazeLabyrinth.blnWalkOnlyOnTheFloor=this.checked;
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkWalkOnlyOnTheFloor);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("Walk only on the floor-r/f up/down, ctrl to block/unblock mouse"));	
+	}
+
+	var AmazingMazeLabyrinthManager_txtMapWidth=document.createElement("input");
+	AmazingMazeLabyrinthManager_txtMapWidth.id="AmazingMazeLabyrinthManager_txtMapWidth";
+	AmazingMazeLabyrinthManager_txtMapWidth.type="text";
+	AmazingMazeLabyrinthManager_txtMapWidth.value=""+that.intMapWidth;
+	AmazingMazeLabyrinthManager_txtMapWidth.onchange=function(){
+		var intMapWidth=parseInt(this.value);
+		if(false==nonNumber(intMapWidth)&&0==intMapWidth%2){
+			netspace.amazingMazeLabyrinth.intNextMapWidth=intMapWidth;
+			alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+		}else{
+			alert("Incorrect cell intMapWidth - it must be even integer.");
+			this.value=netspace.amazingMazeLabyrinth.intMapWidth;
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("intMapWidth="));
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_txtMapWidth);	
+	}
+	var AmazingMazeLabyrinthManager_txtMapHeight=document.createElement("input");
+	AmazingMazeLabyrinthManager_txtMapHeight.id="AmazingMazeLabyrinthManager_txtMapHeight";
+	AmazingMazeLabyrinthManager_txtMapHeight.type="text";
+	AmazingMazeLabyrinthManager_txtMapHeight.value=""+that.intMapHeight;
+	AmazingMazeLabyrinthManager_txtMapHeight.onchange=function(){
+		var intMapHeight=parseInt(this.value);
+		if(false==nonNumber(intMapHeight)&&0==intMapHeight%2){
+			netspace.amazingMazeLabyrinth.intNextMapHeight=intMapHeight;
+			alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+		}else{
+			alert("Incorrect cell intMapHeight- it must be even integer.");
+			this.value=netspace.amazingMazeLabyrinth.intMapHeight;
+		}
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("intMapHeight="));
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_txtMapHeight);	
+	}
+
+	var AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor.innerText="Set selected quick texture for:";
+	AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor.id="AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor";
+	AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor.onclick=function(){
+		var intSelectedQuickTextureNumber=netspace.intBlock;
+		var chkTextureForWalls=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForWalls");
+		var chkTextureForFloor=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForFloor");
+		var chkTextureForCeil=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForCeil");
+		if(true==chkTextureForWalls.checked)netspace.amazingMazeLabyrinth.intNextTextureForWalls=intSelectedQuickTextureNumber;
+		if(true==chkTextureForFloor.checked)netspace.amazingMazeLabyrinth.intNextTextureForFloor=intSelectedQuickTextureNumber;
+		if(true==chkTextureForCeil.checked)netspace.amazingMazeLabyrinth.intNextTextureForCeil=intSelectedQuickTextureNumber;
+		alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnSetSelectedQuickTextureFor);	
+
+	var AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor=document.createElement("button");
+	AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor.innerText="Set texture from default function for:";
+	AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor.id="AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor";
+	AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor.onclick=function(){
+		var chkTextureForWalls=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForWalls");
+		var chkTextureForFloor=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForFloor");
+		var chkTextureForCeil=document.getElementById("AmazingMazeLabyrinthManager_chkTextureForCeil");
+		if(true==chkTextureForWalls.checked)netspace.amazingMazeLabyrinth.intNextTextureForWalls=-1;
+		if(true==chkTextureForFloor.checked)netspace.amazingMazeLabyrinth.intNextTextureForFloor=-1;
+		if(true==chkTextureForCeil.checked)netspace.amazingMazeLabyrinth.intNextTextureForCeil=-1;
+		alert(netspace.amazingMazeLabyrinth.strChangesWillHaveEffect);
+	};
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_btnSetTextureFromDefaultFunctionFor);	
+
+	var AmazingMazeLabyrinthManager_chkTextureForWalls=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkTextureForWalls.type="checkbox";
+	AmazingMazeLabyrinthManager_chkTextureForWalls.checked=false;
+	AmazingMazeLabyrinthManager_chkTextureForWalls.id="AmazingMazeLabyrinthManager_chkTextureForWalls";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkTextureForWalls);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("walls"));	
+	}
+	var AmazingMazeLabyrinthManager_chkTextureForFloor=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkTextureForFloor.type="checkbox";
+	AmazingMazeLabyrinthManager_chkTextureForFloor.checked=false;
+	AmazingMazeLabyrinthManager_chkTextureForFloor.id="AmazingMazeLabyrinthManager_chkTextureForFloor";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkTextureForFloor);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("floor"));	
+	}
+	var AmazingMazeLabyrinthManager_chkTextureForCeil=document.createElement("input");
+	AmazingMazeLabyrinthManager_chkTextureForCeil.type="checkbox";
+	AmazingMazeLabyrinthManager_chkTextureForCeil.checked=false;
+	AmazingMazeLabyrinthManager_chkTextureForCeil.id="AmazingMazeLabyrinthManager_chkTextureForCeil";
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager){
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",AmazingMazeLabyrinthManager_chkTextureForCeil);	
+		netspace.extensionManager.appendChild("AmazingMazeLabyrinthManagerExtension",document.createTextNode("ceil"));	
+	}
+
+	that.mazeGenerator.generateMaze();
+	that.createEntryAndExitObject();
+	setTimeout(that.startStopCamCrawling,that.fltCameraCellWalkTime*1000);
+
+};
+var AmazingMazeLabyrinthConstructor_strF=function(that){
+};
+var AmazingMazeLabyrinth=function(){
+	AmazingMazeLabyrinthConstructor(this);
+	AmazingMazeLabyrinthConstructor_strF(this);
+};
+AmazingMazeLabyrinth.prototype.resetAmazingMazeLabyrinth=function(){
+	var that=netspace.amazingMazeLabyrinth;
+	if(true==that.blnShowGameover)alert("Game over");
+	if(that.intNextCellScallingFactor!=that.intCellScallingFactor)that.intCellScallingFactor=that.intNextCellScallingFactor;
+	if(that.blnNextShowCeil!=that.blnShowCeil)that.blnShowCeil=that.blnNextShowCeil;
+	if(that.intNextMapWidth!=that.intMapWidth||that.intNextMapHeight!=that.intMapHeight){
+		if(that.intNextMapWidth!=that.intMapWidth)that.intMapWidth=that.intNextMapWidth;
+		if(that.intNextMapHeight!=that.intMapHeight)that.intMapHeight=that.intNextMapHeight;
+	}
+	that.arrMazeMap=new Uint8Array(that.intMapWidth*that.intMapHeight);
+	for(var i=0;i<that.intMapWidth;i++)	
+		for(var j=0;j<that.intMapWidth;j++)	
+			that.setMapIJ(i,j,0);
+	that.canvasMapPreview.width=that.intMapWidth*that.fltMapPreviewScallingFactor*(that.intMapPreviewCellSize+that.intMapPreviewWallSize);
+	that.canvasMapPreview.height=that.intMapHeight*that.fltMapPreviewScallingFactor*(that.intMapPreviewCellSize+that.intMapPreviewWallSize);
+	that.intWidth=that.intCellScallingFactor*that.intMapWidth;
+	that.intHeight=that.intCellScallingFactor*that.intMapHeight;
+	if(that.intNextTextureForWalls!=that.intTextureForWalls)that.intTextureForWalls=that.intNextTextureForWalls;
+	if(that.intNextTextureForFloor!=that.intTextureForFloor)that.intTextureForFloor=that.intNextTextureForFloor;
+	if(that.intNextTextureForCeil!=that.intTextureForCeil)that.intTextureForCeil=that.intNextTextureForCeil;
+	netspace.pointLightIslands[0].varietyManifolds3D=[];
+	var fltX,fltY,fltZ;
+	fltX=0;fltY=0;fltZ=0;
+	that.createFloor(fltX,fltY,fltZ,that.intWidth,that.intHeight);
+	if(true==that.blnShowCeil)that.createCeil(fltX,fltY,fltZ,that.intWidth,that.intHeight,that.intCellScallingFactor);
+	that.lstAmazingMazeLabyrinthExitPoint=[that.intMapWidth/2,0];
+	that.lstPosition=[0,0];
+	that.lstCameraWalkStruct=null;
+	that.intCameraWalkingDirection=-1;
+	that.lstCameraWalkPath=null;
+	that.lstCameraWalkCommands=[];
+	that.mazeGenerator.resetGenerator();
+	that.mazeGenerator.generateMaze();
+	that.createEntryAndExitObject();
+	that.moveCameraToPosition(that.lstPosition[0],that.lstPosition[1],true);
+	if(true==that.blnCamCrawling){
+		that.nextCameraMove();
+	}
+};
+AmazingMazeLabyrinth.prototype.getPossibleCellsToEnter=function(lstMapPosition){
+	var lstPossibleCellsToEnter=[];
+	var intDirection=-1;
+	var intRandomChoice=-1;
+	/*amazing bitswise and the watchwise convention*/
+	if(lstMapPosition[1]>0)
+		if(16!=(this.getMapIJ(lstMapPosition[0],lstMapPosition[1]-1)&16))
+			lstPossibleCellsToEnter.push(0);
+	if(lstMapPosition[0]<this.intMapWidth-1)
+		if(16!=(this.getMapIJ(lstMapPosition[0]+1,lstMapPosition[1])&16))
+			lstPossibleCellsToEnter.push(1);
+	if(lstMapPosition[1]<this.intMapHeight-1)
+		if(16!=(this.getMapIJ(lstMapPosition[0],lstMapPosition[1]+1)&16))
+			lstPossibleCellsToEnter.push(2);
+	if(lstMapPosition[0]>0)
+		if(16!=(this.getMapIJ(lstMapPosition[0]-1,lstMapPosition[1])&16))
+			lstPossibleCellsToEnter.push(3);
+	return lstPossibleCellsToEnter;
+};
+AmazingMazeLabyrinth.prototype.startStopCamCrawling=function(){
+	var AmazingMazeLabyrinthManager_btnStartStopCamCrawling=document.getElementById("AmazingMazeLabyrinthManager_btnStartStopCamCrawling");
+	if("Start cam crawling"==AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText){
+		AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText="Stop cam crawling";
+		netspace.amazingMazeLabyrinth.moveCameraToPosition(netspace.amazingMazeLabyrinth.lstPosition[0],netspace.amazingMazeLabyrinth.lstPosition[1],true);
+		netspace.amazingMazeLabyrinth.blnCamCrawling=true;
+		netspace.amazingMazeLabyrinth.nextCameraMove();
+	}else{
+		netspace.amazingMazeLabyrinth.blnCamCrawling=false;
+		AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText="Start cam crawling";
+	}
+};
+AmazingMazeLabyrinth.prototype.stopCamCrawling=function(){
+	var AmazingMazeLabyrinthManager_btnStartStopCamCrawling=document.getElementById("AmazingMazeLabyrinthManager_btnStartStopCamCrawling");
+	if("Start cam crawling"==AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText){
+	}else{
+		netspace.amazingMazeLabyrinth.blnCamCrawling=false;
+		AmazingMazeLabyrinthManager_btnStartStopCamCrawling.innerText="Start cam crawling";
+	}
+};
+AmazingMazeLabyrinth.prototype.nextCameraMove=function(){
+	var lstWalkCommand;
+	if(-1==this.intCameraWalkingDirection){
+		lstWalkCommand=netspace.amazingMazeLabyrinth.lstCameraWalkCommands[netspace.amazingMazeLabyrinth.lstCameraWalkCommands.length-1];
+		if(lstWalkCommand[1]<lstWalkCommand[3])netspace.amazingMazeLabyrinth.intCameraWalkingDirection=1;
+		if(lstWalkCommand[1]>lstWalkCommand[3])netspace.amazingMazeLabyrinth.intCameraWalkingDirection=3;
+		if(lstWalkCommand[2]<lstWalkCommand[4])netspace.amazingMazeLabyrinth.intCameraWalkingDirection=2;
+		if(lstWalkCommand[2]>lstWalkCommand[4])netspace.amazingMazeLabyrinth.intCameraWalkingDirection=0;
+		var fltInitialAngle=-1;
+		if(0==netspace.amazingMazeLabyrinth.intCameraWalkingDirection)fltInitialAngle=Math.PI;
+		if(1==netspace.amazingMazeLabyrinth.intCameraWalkingDirection)fltInitialAngle=Math.PI/2;
+		if(2==netspace.amazingMazeLabyrinth.intCameraWalkingDirection)fltInitialAngle=0;
+		if(3==netspace.amazingMazeLabyrinth.intCameraWalkingDirection)fltInitialAngle=-Math.PI/2;
+		netspace.camera.vec2mousePosition[0]=fltInitialAngle;
+		netspace.camera.updateMouse();
+	}
+	netspace.amazingMazeLabyrinth.updateCanvasMapPreview();
+	if(netspace.amazingMazeLabyrinth.lstCameraWalkCommands.length>0){
+		lstWalkCommand=netspace.amazingMazeLabyrinth.lstCameraWalkCommands.pop();
+		if(0==lstWalkCommand[0]){
+				netspace.amazingMazeLabyrinth.lstPosition[0]=lstWalkCommand[3];
+				netspace.amazingMazeLabyrinth.lstPosition[1]=lstWalkCommand[4];
+				netspace.amazingMazeLabyrinth.walkCameraFromPositionToPosition(lstWalkCommand[1],lstWalkCommand[2],lstWalkCommand[3],lstWalkCommand[4]);
+		}else{
+				netspace.amazingMazeLabyrinth.turnCameraFromAngleToAngle(lstWalkCommand[1],lstWalkCommand[2]);
+		}
+	}else setTimeout(netspace.amazingMazeLabyrinth.resetAmazingMazeLabyrinth,netspace.amazingMazeLabyrinth.fltCameraCellWalkTime*1000);
+};
+AmazingMazeLabyrinth.prototype.moveCameraToPosition=function(i,j,blnOnTheFloor){
+	var fltY;
+	if(true==blnOnTheFloor||true==this.blnWalkOnlyOnTheFloor)
+		fltY=this.intCellScallingFactor/2;
+	else fltY=netspace.camera.vec3position[1];
+	netspace.camera.vec3position=vec3.create([this.intCellScallingFactor*i+this.intCellScallingFactor/2,fltY,this.intCellScallingFactor*j+this.intCellScallingFactor/2]);
+};
+AmazingMazeLabyrinth.prototype.walkCameraFromPositionToPosition_step=function(){
+	netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]++;
+	var dt=1.0/(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[5]);
+	var fltToi=netspace.amazingMazeLabyrinth.lstCameraWalkStruct[0]+netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]*dt*(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[2]-netspace.amazingMazeLabyrinth.lstCameraWalkStruct[0]);
+	var fltToj=netspace.amazingMazeLabyrinth.lstCameraWalkStruct[1]+netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]*dt*(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[3]-netspace.amazingMazeLabyrinth.lstCameraWalkStruct[1]);
+	netspace.amazingMazeLabyrinth.moveCameraToPosition(fltToi,fltToj,false);
+	if(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]<netspace.amazingMazeLabyrinth.lstCameraWalkStruct[5]){
+		if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.walkCameraFromPositionToPosition_step,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+	}else{
+		if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.nextCameraMove,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+	}
+		
+};
+AmazingMazeLabyrinth.prototype.turnCameraFromAngleToAngle_step=function(){
+	netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]++;
+	var dt=(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[7]-netspace.amazingMazeLabyrinth.lstCameraWalkStruct[6])/netspace.amazingMazeLabyrinth.lstCameraWalkStruct[5];
+	var toAngle=netspace.amazingMazeLabyrinth.lstCameraWalkStruct[6]+netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]*dt;
+	netspace.camera.vec2mousePosition[0]=toAngle;
+	netspace.camera.updateMouse();
+	if(netspace.amazingMazeLabyrinth.lstCameraWalkStruct[4]<netspace.amazingMazeLabyrinth.lstCameraWalkStruct[5]){
+		if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.turnCameraFromAngleToAngle_step,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+	}else{
+		if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.nextCameraMove,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+	}
+};
+AmazingMazeLabyrinth.prototype.turnCameraFromAngleToAngle=function(fromAngle,toAngle){
+	var fltFromAngle=-1,fltToAngle=-1;
+	if(0==fromAngle)fltFromAngle=Math.PI;
+	if(1==fromAngle)fltFromAngle=Math.PI/2;
+	if(2==fromAngle)fltFromAngle=0;
+	if(3==fromAngle)fltFromAngle=-Math.PI/2;
+	if(0==toAngle)fltToAngle=Math.PI;
+	if(1==toAngle)fltToAngle=Math.PI/2;
+	if(2==toAngle)fltToAngle=0;
+	if(3==toAngle)fltToAngle=-Math.PI/2;
+	if(Math.PI==fltFromAngle&&-Math.PI/2==fltToAngle)fltFromAngle=-Math.PI;
+	if(Math.PI==fltToAngle&&-Math.PI/2==fltFromAngle)fltToAngle=-Math.PI;
+	if(-1==fltFromAngle)return;
+	if(-1==fltToAngle)return;
+	var intStepNumber=0;
+	var intStepsNumber=netspace.amazingMazeLabyrinth.intCameraCellWalkSteps;
+	netspace.amazingMazeLabyrinth.lstCameraWalkStruct=[null,null,null,null,intStepNumber,intStepsNumber,fltFromAngle,fltToAngle];
+	if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.turnCameraFromAngleToAngle_step,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+
+};
+AmazingMazeLabyrinth.prototype.walkCameraFromPositionToPosition=function(fromI,fromJ,toI,toJ){
+	var intStepNumber=0;
+	var intStepsAmount=netspace.amazingMazeLabyrinth.intCameraCellWalkSteps;
+	netspace.amazingMazeLabyrinth.lstCameraWalkStruct=[fromI,fromJ,toI,toJ,intStepNumber,intStepsAmount,null,null];
+	if(true==netspace.amazingMazeLabyrinth.blnCamCrawling)setTimeout(netspace.amazingMazeLabyrinth.walkCameraFromPositionToPosition_step,1000*netspace.amazingMazeLabyrinth.fltCameraCellWalkTime/netspace.amazingMazeLabyrinth.intCameraCellWalkSteps);
+};
+AmazingMazeLabyrinth.prototype.canvasMapPreview_drawGrid=function(previewImage,intPreviewWidth,intPreviewHeight){
+	var I,J;
+	var intDisplay_i,intDisplay_j;
+	var intWallToDraw=(this.intMapPreviewCellSize+this.intMapPreviewWallSize)*this.fltMapPreviewScallingFactor;
+	for(var i=0;i<intPreviewWidth;i++){
+		for(var j=0;j<intPreviewHeight;j++){
+			I=Math.floor(i/intWallToDraw);
+			J=Math.floor(j/intWallToDraw);
+			intDisplay_i=intPreviewWidth-i;
+			intDisplay_j=intPreviewHeight-j;
+			index=(intDisplay_j*intPreviewWidth+intDisplay_i)*4;
+			if((i%intWallToDraw>=0&&i%intWallToDraw<intWallToDraw/4.)||(j%intWallToDraw>=0&&j%intWallToDraw<intWallToDraw/4.)){
+				if(i%intWallToDraw>=0&&i%intWallToDraw<intWallToDraw/4.){
+					/*vertical*/
+					if(this.arrMazeMap[ij(I,J,this.intMapWidth,this.intMapHeight)]&2||this.arrMazeMap[ij(I-1,J,this.intMapWidth,this.intMapHeight)]&8){
+						previewImage.data[index+0]=255;
+						previewImage.data[index+1]=255;
+						previewImage.data[index+2]=255;
+						previewImage.data[index+3]=255;
+					}else{
+						previewImage.data[index+0]=0;
+						previewImage.data[index+1]=0;
+						previewImage.data[index+2]=255;
+						previewImage.data[index+3]=255;
+					}
+				}
+				if(j%intWallToDraw>=0&&j%intWallToDraw<intWallToDraw/4.){
+					/*horizontal*/
+					if(this.arrMazeMap[ij(I,J-1,this.intMapWidth,this.intMapHeight)]&1||this.arrMazeMap[ij(I,J,this.intMapWidth,this.intMapHeight)]&4){
+						previewImage.data[index+0]=255;
+						previewImage.data[index+1]=255;
+						previewImage.data[index+2]=255;
+						previewImage.data[index+3]=255;
+					}else{
+						previewImage.data[index+0]=0;
+						previewImage.data[index+1]=255;
+						previewImage.data[index+2]=0;
+						previewImage.data[index+3]=255;
+					}
+				}
+			}else{
+				if(16==(this.arrMazeMap[ij(I,J,this.intMapWidth,this.intMapHeight)]&16)){
+					if(I==this.lstPosition[0]&&J==this.lstPosition[1]){
+						previewImage.data[index+0]=255;
+						previewImage.data[index+1]=100;
+						previewImage.data[index+2]=0;
+						previewImage.data[index+3]=255;
+					}else if(I==this.lstAmazingMazeLabyrinthExitPoint[0]&&J==this.lstAmazingMazeLabyrinthExitPoint[1]){
+						previewImage.data[index+0]=120;
+						previewImage.data[index+1]=110;
+						previewImage.data[index+2]=110;
+						previewImage.data[index+3]=255;
+					}else if(I==this.lstAmazingMazeLabyrinthEntryPoint[0]&&J==this.lstAmazingMazeLabyrinthEntryPoint[1]){
+						previewImage.data[index+0]=lstColors[3][0];
+						previewImage.data[index+1]=lstColors[3][1];
+						previewImage.data[index+2]=lstColors[3][2];
+						previewImage.data[index+3]=255;
+					}else{
+						previewImage.data[index+0]=255;
+						previewImage.data[index+1]=255;
+						previewImage.data[index+2]=255;
+						previewImage.data[index+3]=255;
+					}
+				}else{
+					previewImage.data[index+0]=0;
+					previewImage.data[index+1]=0;
+					previewImage.data[index+2]=0;
+					previewImage.data[index+3]=255;
+				}
+			}
+		}
+	}
+};
+AmazingMazeLabyrinth.prototype.updateCanvasMapPreview=function(){
+	var btnShowHideMazeMap=document.getElementById("AmazingMazeLabyrinthManager_btnShowHideMazeMap");
+	if("Show maze map"==btnShowHideMazeMap.innerText)return;
+	var previewContext=this.canvasMapPreview.getContext("2d");
+	var previewImage=previewContext.createImageData(this.canvasMapPreview.width,this.canvasMapPreview.height);
+	this.canvasMapPreview_drawGrid(previewImage,this.canvasMapPreview.width,this.canvasMapPreview.height);
+	previewContext.putImageData(previewImage,0,0);
+};
+AmazingMazeLabyrinth.prototype.createEntryAndExitObject=function(){
+	var fltX,fltY,fltZ;
+	var fltHeight=0.01;
+	fltY=fltHeight;
+	/*entry*/
+	this.lstAmazingMazeLabyrinthEntryPoint[0]=this.lstPosition[0];
+	this.lstAmazingMazeLabyrinthEntryPoint[1]=this.lstPosition[1];
+	fltX=this.lstPosition[0]*this.intCellScallingFactor;
+	fltZ=this.lstPosition[1]*this.intCellScallingFactor;
+	this.createCeil(fltX,fltY,fltZ,this.intCellScallingFactor,this.intCellScallingFactor,fltHeight);
+	/*exit*/
+	fltY=this.intCellScallingFactor-0.01;
+	fltX=this.lstAmazingMazeLabyrinthExitPoint[0]*this.intCellScallingFactor;
+	fltZ=this.lstAmazingMazeLabyrinthExitPoint[1]*this.intCellScallingFactor;
+	fltY=this.intCellScallingFactor-fltHeight;
+	this.createFloor(fltX,fltY,fltZ,this.intCellScallingFactor,this.intCellScallingFactor);
+};
+AmazingMazeLabyrinth.prototype.createWallTexture_defaultFunction=function(){
+	var textureCanvas=document.createElement("canvas");
+	var intTextureWidth=netspace.intQuickTexturesHeight;
+	var intTextureHeight=netspace.intQuickTexturesHeight;
+	/*intTextureNumber=this.quickNetspacesTextureTypes.indexOf("brick");*/
+	intTextureNumber=0;
+	var color0=lstColors[1];
+	var color1=[255,60,0,255];
+	var intDivision=intTextureHeight/4;
+	var lstDivision=[0.25*intTextureHeight,0.5*intTextureHeight,0.75*intTextureHeight,1*intTextureHeight];
+	textureCanvas.width=intTextureWidth;
+	textureCanvas.height=intTextureHeight;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(intTextureWidth,intTextureHeight);
+	for(var i=0;i<intTextureHeight;i++){
+		for(var j=0;j<intTextureHeight;j++){
+			I=i+intTextureHeight*intTextureNumber;J=j;
+			index=(J*intTextureWidth+I)*4;
+			if(0==j%intDivision){
+				textureImage.data[index+0]=color0[0];
+				textureImage.data[index+1]=color0[1];
+				textureImage.data[index+2]=color0[2];
+				textureImage.data[index+3]=color0[3];
+			}else{
+				textureImage.data[index+0]=color1[0];
+				textureImage.data[index+1]=color1[1];
+				textureImage.data[index+2]=color1[2];
+				textureImage.data[index+3]=color1[3];
+				if((i==lstDivision[0]||i==lstDivision[2]-1)&&(j<lstDivision[0]||(j>lstDivision[1]&&j<lstDivision[2]))){
+					textureImage.data[index+0]=color0[0];
+					textureImage.data[index+1]=color0[1];
+					textureImage.data[index+2]=color0[2];
+					textureImage.data[index+3]=color0[3];
+				}
+				if((i==lstDivision[1]-1||i==lstDivision[3]-1)&&((j>lstDivision[0]&&j<lstDivision[1])||(j>lstDivision[2]))){
+					textureImage.data[index+0]=color0[0];
+					textureImage.data[index+1]=color0[1];
+					textureImage.data[index+2]=color0[2];
+					textureImage.data[index+3]=color0[3];
+				}
+
+			}
+		}
+
+	}
+	textureContext.putImageData(textureImage,0,0);
+	return textureCanvas;
+};
+AmazingMazeLabyrinth.prototype.createWallTexture=function(){
+	if(-1==this.intTextureForWalls)return this.createWallTexture_defaultFunction();
+	else{
+		var intTextureWidth=netspace.intQuickTexturesHeight;
+		var intTextureHeight=netspace.intQuickTexturesHeight;
+		return netspace.quickTextureForObject(this.intTextureForWalls,intTextureWidth,intTextureHeight);
+	}
+};
+AmazingMazeLabyrinth.prototype.createCeilTexture_defaultFunction=function(){
+	var textureCanvas=document.createElement("canvas");
+	var intTextureWidth=netspace.intQuickTexturesHeight;
+	var intTextureHeight=netspace.intQuickTexturesHeight;
+	/*intTextureNumber=this.quickNetspacesTextureTypes.indexOf("sand");*/
+	intTextureNumber=0;
+	var color0=lstColors[1];
+	var color1=[255,60,0,255];
+	var intDivision=intTextureHeight/4;
+	var lstDivision=[0.25*intTextureHeight,0.5*intTextureHeight,0.75*intTextureHeight,1*intTextureHeight];
+	textureCanvas.width=intTextureWidth;
+	textureCanvas.height=intTextureHeight;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(intTextureWidth,intTextureHeight);
+	for(var i=0;i<intTextureHeight;i++){
+		for(var j=0;j<intTextureHeight;j++){
+			I=i+intTextureHeight*intTextureNumber;J=j;
+			index=(J*intTextureWidth+I)*4;
+			textureImage.data[index+0]=lstColors[3][0];
+			textureImage.data[index+1]=lstColors[3][1];
+			textureImage.data[index+2]=lstColors[3][2];
+			textureImage.data[index+3]=255;
+		}
+	}
+	var intAmount=100;
+	for(var ii=0;ii<intAmount;ii++){
+		x=floorRand(0,intTextureWidth);y=floorRand(0,intTextureHeight);
+		I=x+intTextureHeight*intTextureNumber;J=y;
+		index=(J*intTextureWidth+I)*4;
+		textureImage.data[index+0]=lstColors[2][0];
+		textureImage.data[index+1]=lstColors[2][1];
+		textureImage.data[index+2]=lstColors[2][2];
+		textureImage.data[index+3]=lstColors[2][3];
+	}
+
+	textureContext.putImageData(textureImage,0,0);
+	return textureCanvas;
+};
+AmazingMazeLabyrinth.prototype.createCeilTexture=function(){
+	if(-1==this.intTextureForCeil)return this.createCeilTexture_defaultFunction();
+	else{
+		var intTextureWidth=netspace.intQuickTexturesHeight;
+		var intTextureHeight=netspace.intQuickTexturesHeight;
+		return netspace.quickTextureForObject(this.intTextureForCeil,intTextureWidth,intTextureHeight);
+	}
+};
+AmazingMazeLabyrinth.prototype.createFloorTexture_defaultFunction=function(){
+	var textureCanvas=document.createElement("canvas");
+	var intTextureWidth=netspace.intQuickTexturesHeight;
+	var intTextureHeight=netspace.intQuickTexturesHeight;
+	/*intTextureNumber=this.quickNetspacesTextureTypes.indexOf("sidewalk");*/
+	intTextureNumber=0;
+	var color0=lstColors[1];
+	var color1=[255,60,0,255];
+	var intDivision=intTextureHeight/4;
+	var lstDivision=[0.25*intTextureHeight,0.5*intTextureHeight,0.75*intTextureHeight,1*intTextureHeight];
+	textureCanvas.width=intTextureWidth;
+	textureCanvas.height=intTextureHeight;
+	var textureContext=textureCanvas.getContext("2d");
+	var textureImage=textureContext.createImageData(intTextureWidth,intTextureHeight);
+	for(var i=0;i<intTextureHeight;i++){
+		for(var j=0;j<intTextureHeight;j++){
+			if(7==i%8||7==j%8){
+				I=i+intTextureHeight*intTextureNumber;J=j;
+				index=(J*intTextureWidth+I)*4;
+				textureImage.data[index+0]=0;
+				textureImage.data[index+1]=0;
+				textureImage.data[index+2]=0;
+				textureImage.data[index+3]=255;
+			}else{
+				I=i+intTextureHeight*intTextureNumber;J=j;
+				index=(J*intTextureWidth+I)*4;
+				textureImage.data[index+0]=120;
+				textureImage.data[index+1]=110;
+				textureImage.data[index+2]=110;
+				textureImage.data[index+3]=255;
+			}
+		}
+	}
+
+	textureContext.putImageData(textureImage,0,0);
+	return textureCanvas;
+};
+AmazingMazeLabyrinth.prototype.createFloorTexture=function(){
+	if(-1==this.intTextureForFloor)return this.createFloorTexture_defaultFunction();
+	else{
+		var intTextureWidth=netspace.intQuickTexturesHeight;
+		var intTextureHeight=netspace.intQuickTexturesHeight;
+		return netspace.quickTextureForObject(this.intTextureForFloor,intTextureWidth,intTextureHeight);
+	}
+};
+AmazingMazeLabyrinth.prototype.createSurface=function(strName,arrVertices,arrIndices,arrNormals,arrTextureUVs,canvasTexture,vec4color){
+	var intTextures=2, intBlnTextureUVmapping=1;
+	if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)objectsIsland=netspace.pointLightIslands[netspace.loadObjectsConfiguration.intPointLightIslandNumber];var varietyManifolds3D=[];if(netspace.loadObjectsConfiguration.intPointLightIslandNumber<netspace.pointLightIslands.length)varietyManifolds3D=objectsIsland.varietyManifolds3D;
+	var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+	mat4.rotateY(mat4transformation,mat4transformation,toRadian(0));
+	mat4.rotateX(mat4transformation,mat4transformation,toRadian(0));
+	var wallVarietyManifold3D=new VarietyManifold3D(netspace.gl,strName,arrVertices,arrIndices,arrNormals,vec4color,vec4color,0.5,vec4color,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,canvasTexture,mat4transformation,intTextures,arrTextureUVs,null);
+	varietyManifolds3D.push(wallVarietyManifold3D);
+};
+AmazingMazeLabyrinth.prototype.getMapIJ=function(i,j){
+	return this.arrMazeMap[ij(i,j,this.intMapWidth,this.intMapHeight)];
+};
+AmazingMazeLabyrinth.prototype.setMapIJ=function(i,j,byteValue){
+	this.arrMazeMap[ij(i,j,this.intMapWidth,this.intMapHeight)]=byteValue;
+};
+AmazingMazeLabyrinth.prototype.createWall=function(fltX,fltY,fltZ,intCellScallingFactor,blnRotation){
+	var arrWallVertices;
+	if(false==blnRotation)
+		arrWallVertices=[fltX+0,fltY+0,fltZ+0,fltX+intCellScallingFactor,fltY+0,fltZ+0,fltX+intCellScallingFactor,fltY+intCellScallingFactor,fltZ+0,fltX+0,fltY+intCellScallingFactor,fltZ+0];
+	else
+		arrWallVertices=[fltX+0,fltY+0,fltZ+0,fltX+0,fltY+0,fltZ+intCellScallingFactor,fltX+0,fltY+intCellScallingFactor,fltZ+intCellScallingFactor,fltX+0,fltY+intCellScallingFactor,fltZ+0];
+	var arrWallIndices=[0,1,2,0,3,2];
+	var arrWallNormals=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1];
+
+	var arrWallTextureUVs=[0,0,intCellScallingFactor,0,intCellScallingFactor,intCellScallingFactor,0,intCellScallingFactor];
+	var floorTextureCanvas=this.createWallTexture();
+	var vec4color=vec4.create([1,0.39215686274509803,0,1]);
+	this.createSurface("Wall",arrWallVertices,arrWallIndices,arrWallNormals,arrWallTextureUVs,floorTextureCanvas,vec4color);
+};
+AmazingMazeLabyrinth.prototype.createFloor=function(fltX,fltY,fltZ,intWidth,intHeight){
+	var arrFloorVertices=[fltX+0,fltY+0,fltZ+0,fltX+intWidth,fltY+0,fltZ+0,fltX+intWidth,fltY+0,fltZ+intHeight,fltX+0,fltY+0,fltZ+intHeight];
+	var arrFloorIndices=[0,1,2,0,3,2];
+	var arrFloorNormals=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1];
+
+	var arrFloorTextureUVs=[0,0,intWidth,0,intWidth,intHeight,0,intHeight];
+	var floorTextureCanvas=this.createFloorTexture();
+	var vec4color=vec4.create([1,0.39215686274509803,0,1]);
+	this.createSurface("Floor",arrFloorVertices,arrFloorIndices,arrFloorNormals,arrFloorTextureUVs,floorTextureCanvas,vec4color);
+};
+AmazingMazeLabyrinth.prototype.createCeil=function(fltX,fltY,fltZ,intWidth,intHeight,intBuildingHeight){
+	var arrCeilVertices=[fltX+0,fltY+intBuildingHeight,fltZ+0,fltX+intWidth,fltY+intBuildingHeight,fltZ+0,fltX+intWidth,fltY+intBuildingHeight,fltZ+intHeight,fltX+0,fltY+intBuildingHeight,fltZ+intHeight];
+	var arrCeilIndices=[0,1,2,0,3,2];
+	var arrCeilNormals=[0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1,0,0,-1];
+
+	var arrCeilTextureUVs=[0,0,intWidth,0,intWidth,intHeight,0,intHeight];
+	var ceilTextureCanvas=this.createCeilTexture();
+	var vec4color=vec4.create([1,0.39215686274509803,0,1]);
+	this.createSurface("Ceil",arrCeilVertices,arrCeilIndices,arrCeilNormals,arrCeilTextureUVs,ceilTextureCanvas,vec4color);
+};
+var MazeGeneratorConstructor=function(that,amazingMazeLabyrinth){
+	that.amazingMazeLabyrinth=amazingMazeLabyrinth;
+	that.resetGenerator();
+};
+var MazeGeneratorConstructor_strF=function(that){
+
+};
+var MazeGenerator=function(amazingMazeLabyrinth){
+	MazeGeneratorConstructor(this,amazingMazeLabyrinth);
+	MazeGeneratorConstructor_strF(this);
+}; 
+MazeGenerator.prototype.resetGenerator=function(){
+	for(var i=0;i<this.amazingMazeLabyrinth.intMapWidth;i++)	
+		for(var j=0;j<this.amazingMazeLabyrinth.intMapWidth;j++)	
+			this.amazingMazeLabyrinth.setMapIJ(i,j,0);
+	this.intVisited=1;
+	this.lstPath=[[this.amazingMazeLabyrinth.lstAmazingMazeLabyrinthExitPoint[0],this.amazingMazeLabyrinth.lstAmazingMazeLabyrinthExitPoint[1]]];
+	this.amazingMazeLabyrinth.lstCameraWalkPath=[[this.amazingMazeLabyrinth.lstAmazingMazeLabyrinthExitPoint[0],this.amazingMazeLabyrinth.lstAmazingMazeLabyrinthExitPoint[1]]];
+	this.amazingMazeLabyrinth.setMapIJ(this.lstPath[this.lstPath.length-1][0],this.lstPath[this.lstPath.length-1][1],16);
+};
+MazeGenerator.prototype.generateWalls=function(){
+	var fltX,fltY,fltZ;
+	fltY=0;
+	for(var I=0;I<this.amazingMazeLabyrinth.intMapWidth;I++){
+		for(var J=0;J<this.amazingMazeLabyrinth.intMapHeight;J++){
+			fltX=I*this.amazingMazeLabyrinth.intCellScallingFactor;
+			fltZ=J*this.amazingMazeLabyrinth.intCellScallingFactor;
+			if(this.amazingMazeLabyrinth.arrMazeMap[ij(I,J,this.amazingMazeLabyrinth.intMapWidth,this.amazingMazeLabyrinth.intMapHeight)]&2||this.amazingMazeLabyrinth.arrMazeMap[ij(I-1,J,this.amazingMazeLabyrinth.intMapWidth,this.amazingMazeLabyrinth.intMapHeight)]&8){
+			}else{
+				/*adding vertical wall,blue, rgb(0.,0.,1.)*/
+				this.amazingMazeLabyrinth.createWall(fltX,fltY,fltZ,this.amazingMazeLabyrinth.intCellScallingFactor,true);
+			}
+			if(this.amazingMazeLabyrinth.arrMazeMap[ij(I,J-1,this.amazingMazeLabyrinth.intMapWidth,this.amazingMazeLabyrinth.intMapHeight)]&1||this.amazingMazeLabyrinth.arrMazeMap[ij(I,J,this.amazingMazeLabyrinth.intMapWidth,this.amazingMazeLabyrinth.intMapHeight)]&4){
+			}else{
+				/*adding horizontal wall, green, rgb(0.,1.,0.)*/
+				this.amazingMazeLabyrinth.createWall(fltX,fltY,fltZ,this.amazingMazeLabyrinth.intCellScallingFactor,false);
+			}
+		}
+	}
+	for(var I=0;I<this.amazingMazeLabyrinth.intMapWidth;I++){
+		J=this.amazingMazeLabyrinth.intMapHeight;
+		fltX=I*this.amazingMazeLabyrinth.intCellScallingFactor;
+		fltZ=(J)*this.amazingMazeLabyrinth.intCellScallingFactor;
+		/*adding horizontal wall, green, rgb(0.,1.,0.)*/
+		this.amazingMazeLabyrinth.createWall(fltX,fltY,fltZ,this.amazingMazeLabyrinth.intCellScallingFactor,false);
+	}
+	for(var J=0;J<this.amazingMazeLabyrinth.intMapHeight;J++){
+		I=this.amazingMazeLabyrinth.intMapWidth;
+		fltX=I*this.amazingMazeLabyrinth.intCellScallingFactor;
+		fltZ=J*this.amazingMazeLabyrinth.intCellScallingFactor;
+		/*adding vertical wall,blue, rgb(0.,0.,1.)*/
+		this.amazingMazeLabyrinth.createWall(fltX,fltY,fltZ,this.amazingMazeLabyrinth.intCellScallingFactor,true);
+	}
+};
+MazeGenerator.prototype.generateMazeStep=function(){
+	if(this.intVisited==this.amazingMazeLabyrinth.intMapWidth*this.amazingMazeLabyrinth.intMapHeight)
+		return this.generateWalls();
+	var lstPosition=this.lstPath[this.lstPath.length-1];
+	var lstPossibleCellsToEnter=this.amazingMazeLabyrinth.getPossibleCellsToEnter(lstPosition);
+	if(0==lstPossibleCellsToEnter.length){
+		this.lstPath.pop();
+		this.amazingMazeLabyrinth.lstCameraWalkPath.push(this.lstPath[this.lstPath.length-1]);
+	}else{
+		intRandomChoice=floorRand(0,lstPossibleCellsToEnter.length);
+		if(intRandomChoice==lstPossibleCellsToEnter.length)intRandomChoice--;
+		intDirection=lstPossibleCellsToEnter[intRandomChoice];
+		/*amazing bitswise and the watchwise convention*/
+		switch(intDirection){
+			case 0:
+			this.amazingMazeLabyrinth.setMapIJ(lstPosition[0],lstPosition[1]-1,17);
+			this.lstPath.push([lstPosition[0],lstPosition[1]-1]);
+			this.amazingMazeLabyrinth.lstCameraWalkPath.push([lstPosition[0],lstPosition[1]-1]);
+			break;
+			case 1:
+			this.amazingMazeLabyrinth.setMapIJ(lstPosition[0]+1,lstPosition[1],18);
+			this.lstPath.push([lstPosition[0]+1,lstPosition[1]]);
+			this.amazingMazeLabyrinth.lstCameraWalkPath.push([lstPosition[0]+1,lstPosition[1]]);
+			break;
+			case 2:
+			this.amazingMazeLabyrinth.setMapIJ(lstPosition[0],lstPosition[1]+1,20);
+			this.lstPath.push([lstPosition[0],lstPosition[1]+1]);
+			this.amazingMazeLabyrinth.lstCameraWalkPath.push([lstPosition[0],lstPosition[1]+1]);
+			break;
+			case 3:
+			this.amazingMazeLabyrinth.setMapIJ(lstPosition[0]-1,lstPosition[1],24);
+			this.lstPath.push([lstPosition[0]-1,lstPosition[1]]);
+			this.amazingMazeLabyrinth.lstCameraWalkPath.push([lstPosition[0]-1,lstPosition[1]]);
+			break;
+		}
+		this.intVisited++;
+	}
+	this.amazingMazeLabyrinth.updateCanvasMapPreview();
+};
+MazeGenerator.prototype.inverseCameraWalkPath=function(){
+	var lstCameraInversedWalkingPath=[];
+	while(this.amazingMazeLabyrinth.lstCameraWalkPath.length>0)
+		lstCameraInversedWalkingPath.push(this.amazingMazeLabyrinth.lstCameraWalkPath.pop());
+	this.amazingMazeLabyrinth.lstCameraWalkPath=lstCameraInversedWalkingPath;
+};
+MazeGenerator.prototype.generateCameraWalkingCommands=function(){
+	this.inverseCameraWalkPath();
+	var lstActualPosition,lstNextPosition;
+	while(this.amazingMazeLabyrinth.lstCameraWalkPath.length>1){
+		lstActualPosition=this.amazingMazeLabyrinth.lstCameraWalkPath.pop();
+		lstNextPosition=this.amazingMazeLabyrinth.lstCameraWalkPath[this.amazingMazeLabyrinth.lstCameraWalkPath.length-1];
+		this.amazingMazeLabyrinth.lstCameraWalkCommands.push([0,lstNextPosition[0],lstNextPosition[1],lstActualPosition[0],lstActualPosition[1]]);
+	}
+	this.generateCameraWalkingTurns();
+};
+MazeGenerator.prototype.generateCameraWalkingTurns=function(){
+	var lstCameraWalkCommands=[];
+	var lstActualWalkCommand,lstNextWalkCommand;
+	var intActualDirection,intNewDirection;
+	for(var ii=0;ii<this.amazingMazeLabyrinth.lstCameraWalkCommands.length-1;ii++){
+		lstActualWalkCommand=this.amazingMazeLabyrinth.lstCameraWalkCommands[ii];
+		lstNextWalkCommand=this.amazingMazeLabyrinth.lstCameraWalkCommands[ii+1];
+		if(lstActualWalkCommand[1]<lstActualWalkCommand[3])intNextDirection=1;
+		if(lstActualWalkCommand[1]>lstActualWalkCommand[3])intNextDirection=3;
+		if(lstActualWalkCommand[2]<lstActualWalkCommand[4])intNextDirection=2;
+		if(lstActualWalkCommand[2]>lstActualWalkCommand[4])intNextDirection=0;
+		if(lstNextWalkCommand[1]<lstNextWalkCommand[3])intActualDirection=1;
+		if(lstNextWalkCommand[1]>lstNextWalkCommand[3])intActualDirection=3;
+		if(lstNextWalkCommand[2]<lstNextWalkCommand[4])intActualDirection=2;
+		if(lstNextWalkCommand[2]>lstNextWalkCommand[4])intActualDirection=0;
+		if(intActualDirection==intNextDirection)lstCameraWalkCommands.push(lstActualWalkCommand);
+		else{
+			lstCameraWalkCommands.push(lstActualWalkCommand);
+			if(intActualDirection==1&&intNextDirection==3){
+				if(true==this.amazingMazeLabyrinth.blnTurnLeft){
+					lstCameraWalkCommands.push([2,0,3]);
+					lstCameraWalkCommands.push([2,1,0]);
+				}else{
+					lstCameraWalkCommands.push([1,2,3]);
+					lstCameraWalkCommands.push([1,1,2]);
+				}
+			}
+			if(intActualDirection==3&&intNextDirection==1){
+				if(true==this.amazingMazeLabyrinth.blnTurnLeft){
+					lstCameraWalkCommands.push([2,2,1]);
+					lstCameraWalkCommands.push([2,3,2]);
+				}else{
+					lstCameraWalkCommands.push([1,0,1]);
+					lstCameraWalkCommands.push([1,3,0]);
+				}
+			}
+			if(intActualDirection==0&&intNextDirection==2){
+				if(true==this.amazingMazeLabyrinth.blnTurnLeft){
+					lstCameraWalkCommands.push([2,3,2]);
+					lstCameraWalkCommands.push([2,0,3]);
+				}else{
+					lstCameraWalkCommands.push([1,1,2]);
+					lstCameraWalkCommands.push([1,0,1]);
+				}
+			}
+			if(intActualDirection==2&&intNextDirection==0){
+				if(true==this.amazingMazeLabyrinth.blnTurnLeft){
+					lstCameraWalkCommands.push([2,1,0]);
+					lstCameraWalkCommands.push([2,2,1]);
+				}else{
+					lstCameraWalkCommands.push([1,3,0]);
+					lstCameraWalkCommands.push([1,2,3]);
+				}
+			}
+			if(intActualDirection==0&&intNextDirection==1)
+				lstCameraWalkCommands.push([1,0,1]);
+			if(intActualDirection==1&&intNextDirection==2)
+				lstCameraWalkCommands.push([1,1,2]);
+			if(intActualDirection==2&&intNextDirection==3)
+				lstCameraWalkCommands.push([1,2,3]);
+			if(intActualDirection==3&&intNextDirection==0)
+				lstCameraWalkCommands.push([1,3,0]);
+
+			if(intActualDirection==0&&intNextDirection==3)
+				lstCameraWalkCommands.push([2,0,3]);
+			if(intActualDirection==3&&intNextDirection==2)
+				lstCameraWalkCommands.push([2,3,2]);
+			if(intActualDirection==2&&intNextDirection==1)
+				lstCameraWalkCommands.push([2,2,1]);
+			if(intActualDirection==1&&intNextDirection==0)
+				lstCameraWalkCommands.push([2,1,0]);
+		}
+	}
+	this.amazingMazeLabyrinth.lstCameraWalkCommands=lstCameraWalkCommands;
+};
+MazeGenerator.prototype.moveCameraToStartPosition=function(){
+	var lstPosition=this.lstPath[this.lstPath.length-1];
+	this.amazingMazeLabyrinth.lstPosition[0]=lstPosition[0];
+	this.amazingMazeLabyrinth.lstPosition[1]=lstPosition[1];
+	this.amazingMazeLabyrinth.moveCameraToPosition(lstPosition[0],lstPosition[1],true);
+};
+MazeGenerator.prototype.generateMaze=function(){
+	while(this.intVisited<this.amazingMazeLabyrinth.intMapWidth*this.amazingMazeLabyrinth.intMapHeight)
+		this.generateMazeStep();
+	this.generateWalls();
+	this.generateCameraWalkingCommands();
+	this.moveCameraToStartPosition();
+};
+netspace.amazingMazeLabyrinth=new AmazingMazeLabyrinth();
+};
 var loadShaderThinkpad=function(){
 	if(undefined==netspace)
 		return;
 	if(undefined==netspace.computer){
-		alert("Load computer extension first - shaderThinkpad is compatible only with computer.");
+		alert("Load computer extension first - shaderThinkpad is compatible only with computer object in memory.");
 		return;
 	}
 var ShaderThinkpadConstructor_strF=function(that,blnExternalTextureRenderer,superShaderThinkpad){
@@ -5594,6 +6580,7 @@ var ExtensionManagerConstructor=function(that){
 	var strExtensionInnerHTML="<button id="+String.fromCharCode(34)+"btnLoadComputer"+String.fromCharCode(34)+" onclick="+String.fromCharCode(34)+"loadComputer()"+String.fromCharCode(34)+">Load computer</button>";
 	strExtensionInnerHTML+="<button id="+String.fromCharCode(34)+"btnLoadMusicTools"+String.fromCharCode(34)+" onclick="+String.fromCharCode(34)+"loadMusicTools()"+String.fromCharCode(34)+">Load music tools</button>";
 	strExtensionInnerHTML+="<button id="+String.fromCharCode(34)+"btnLoadShaderThinkpad"+String.fromCharCode(34)+" onclick="+String.fromCharCode(34)+"loadShaderThinkpad()"+String.fromCharCode(34)+">Load shader thinkpad</button>";
+	strExtensionInnerHTML+="<button id="+String.fromCharCode(34)+"btnAmazingMazeLabyrinthExtension"+String.fromCharCode(34)+" onclick="+String.fromCharCode(34)+"btnAmazingMazeLabyrinthExtension()"+String.fromCharCode(34)+">Amazing Maze/Labyrinth...</button>";
 	var divLoadSaveDownloadLinksOptions=document.getElementById("divLoadSaveDownloadLinksOptions");
 	var divExtensionManager=document.createElement("div");
 	divExtensionManager.id="divExtensionManager";
@@ -29473,6 +30460,7 @@ function init(){
 		txtPointLightIslandNumber.value="0";
 		defaultNetspace3dPutpixelizationFunction();
 	}
+	alert("Handy version, but 3d worlds on - if too slow set the flag blnLoad3dWorldsOnStart=false in one of the first lines.");
 	strNickname=prompt("Please provide your nickname:","");
 	if(null==strNickname)strNickname="";
 	canvas=document.getElementById("maincanvas");
@@ -29488,6 +30476,11 @@ function init(){
 	netspace=new The_Netspace(canvas,gl,null);
 	netspace.sessionStart();
 	if(true==blnLoad3dWorldsOnStart){
+		var btnAmazingMazeLabyrinth=document.createElement("button");
+		btnAmazingMazeLabyrinth.innerText="Amazing Maze/Labyrinth";
+		btnAmazingMazeLabyrinth.id="btnAmazingMazeLabyrinth";
+		btnAmazingMazeLabyrinth.onclick=btnAmazingMazeLabyrinthClicked;
+		divProgressSection.appendChild(btnAmazingMazeLabyrinth);
 		var btnPressToPlay=document.createElement("button");
 		btnPressToPlay.innerText="y=f("+String.fromCharCode(34)+"Press to play"+String.fromCharCode(34)+")";
 		btnPressToPlay.id="btnPressToPlay";
