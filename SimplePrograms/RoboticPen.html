@@ -1643,12 +1643,33 @@ ManualPen.prototype.btnDrawMultilinesPressed=function(){
 
 	}
 };
+function getOffsetPosition(evt, parent){
+    var position = {
+        x: (evt.targetTouches) ? evt.targetTouches[0].pageX : evt.clientX,
+        y: (evt.targetTouches) ? evt.targetTouches[0].pageY : evt.clientY
+    };
+
+    while(parent.offsetParent){
+        position.x -= parent.offsetLeft - parent.scrollLeft;
+        position.y -= parent.offsetTop - parent.scrollTop;
+
+        parent = parent.offsetParent;
+    }
+
+    return position;
+}
 ManualPen.prototype.onMouseDown=function(event){
 	if(true==window.penCanvas.chkBucketTool.checked){
 		window.manualPen.onMouseDownBucketTool(event);
 		return;
 	}
 	window.manualPen.onMouseDownLines(event);
+};
+ManualPen.prototype.onTouchStart=function(event){
+	var position=getOffsetPosition(event,event.target);
+	event.offsetX=Math.round(position.x);
+	event.offsetY=Math.round(position.y);
+	window.manualPen.onMouseDown(event);
 };
 ManualPen.prototype.onMouseDownBucketTool=function(event){
 };
@@ -1675,7 +1696,14 @@ ManualPen.prototype.onMouseMove=function(event){
 		window.manualPen.onMouseMoveBucketTool(event);
 		return;
 	}
+	window.manualPen.prevMouseMoveEvent=event;
 	window.manualPen.onMouseMoveLines(event);
+};
+ManualPen.prototype.onTouchMove=function(event){
+	var position=getOffsetPosition(event,event.target);
+	event.offsetX=Math.round(position.x);
+	event.offsetY=Math.round(position.y);
+	window.manualPen.onMouseMove(event);
 };
 ManualPen.prototype.onMouseMoveBucketTool=function(event){
 };
@@ -1720,6 +1748,12 @@ ManualPen.prototype.onMouseUp=function(event){
 		return;
 	}
 	window.manualPen.onMouseUpLines(event);
+};
+ManualPen.prototype.onTouchEnd=function(event){
+	var position=getOffsetPosition(event,event.target);
+	event.offsetX=Math.round(position.x);
+	event.offsetY=Math.round(position.y);
+	window.manualPen.onMouseUp(event);
 };
 ManualPen.prototype.onMouseUpBucketTool=function(event){
 	window.manualPen.lstBucketPointClicked=[event.offsetX,event.offsetY];
@@ -2698,6 +2732,30 @@ function btnCutClicked(event){
 function btnPasteClicked(event){
 	alert("Functionality will be implemented later.");
 }
+function btnTurnMouseEventsOnOffClicked(event){
+	var chkShowButtonsInfo=document.getElementById("chkShowButtonsInfo");
+	if(true==chkShowButtonsInfo.checked)
+		alert("Normally there is no need to turn the mouse events off with that button - on most devices touch events trigger touch events, mouse events trigger mouse events and don't double itself when e.x. you have both mouse and touchscreen connected for input. For compatibility using the most portable version with both mouse and touch events, but on newer devices you could use instead only one pointer event for both.");
+	var btnTurnMouseEventsOnOff=document.getElementById("btnTurnMouseEventsOnOff");
+	if("Turn mouse events off"==btnTurnMouseEventsOnOff.innerText){
+		btnTurnMouseEventsOnOff.innerText="Turn mouse events on";
+		document.getElementById("PenCanvas").onmousedown=null;
+		document.getElementById("PenCanvas").onmousemove=null;
+		document.getElementById("PenCanvas").onmouseup=null;
+	}else{
+		btnTurnMouseEventsOnOff.innerText="Turn mouse events off";
+		document.getElementById("PenCanvas").onmousedown=window.manualPen.onMouseDown;
+		document.getElementById("PenCanvas").onmousemove=window.manualPen.onMouseMove;
+		document.getElementById("PenCanvas").onmouseup=window.manualPen.onMouseUp;
+
+	}
+}
+function btnArtificialMouseUpClicked(event){
+	var chkShowButtonsInfo=document.getElementById("chkShowButtonsInfo");
+	if(true==chkShowButtonsInfo.checked)
+		alert("On some devices to have the mouseup or more precisely touchend event comfortably try to draw with two fingers both down and up or draw with one finger and push with second finger and get two fingers up when wishing the mouseup, touchend event. For freehand drawing mouseup, touchend event is not necessary. For compatibility using the most portable version with both mouse and touch events, but on newer devices you could use instead only one pointer event for both.");
+	window.manualPen.onMouseUp(window.manualPen.prevMouseMoveEvent);
+};
 function btnResetToDefaultsClicked(){
 	document.getElementById("color0").value="#ffffff";
 	document.getElementById("color1").value="#000000";
@@ -3021,6 +3079,9 @@ function init(){
 	document.getElementById("PenCanvas").onmousedown=window.manualPen.onMouseDown;
 	document.getElementById("PenCanvas").onmousemove=window.manualPen.onMouseMove;
 	document.getElementById("PenCanvas").onmouseup=window.manualPen.onMouseUp;
+	document.getElementById("PenCanvas").ontouchstart=window.manualPen.onTouchStart;
+	document.getElementById("PenCanvas").ontouchmove=window.manualPen.onTouchMove;
+	document.getElementById("PenCanvas").ontouchend=window.manualPen.onTouchEnd;
 	document.getElementById("PenCanvas").onmouseleave=window.manualPen.onMouseLeave;
 	window.onkeydown=window.penCanvas.onKeyDown;
 	document.getElementById("chkPencilTool").onclick=chkPencilToolClicked;
@@ -3037,6 +3098,8 @@ function init(){
 	buttonDisabled(document.getElementById("btnCut"),true);
 	document.getElementById("btnPaste").onclick=btnPasteClicked;
 	buttonDisabled(document.getElementById("btnPaste"),true);
+	document.getElementById("btnTurnMouseEventsOnOff").onclick=btnTurnMouseEventsOnOffClicked;
+	document.getElementById("btnArtificialMouseUp").onclick=btnArtificialMouseUpClicked;
 	document.getElementById("colorFG").onchange=FGcolorChanged;
 	document.getElementById("colorBG").onchange=BGcolorChanged;
 	document.getElementById("color0").onclick=color0clicked;
@@ -3091,7 +3154,7 @@ function init(){
 window.onload=init;
 </script>
 </head>
-<body style="background-color:black;color:grey;">
+<body id="RoboticPenBody" style="background-color:black;color:grey;" > 
 	<table><tr>	
 		<td><button id="btnOpen">Open...</button></td>
 		<td><button id="btnSave">Prepare for saving</button></td>
@@ -3103,7 +3166,7 @@ window.onload=init;
 	<table><tr>
 		<td><button id="btnGoto">Goto line number:</button></td>
 		<td><input type="text" id="txtLineNumber"></input></td>
-		<td><input type="checkbox" id="chkLineWrap" checked="true" >Line wrap</input></td>
+		<td><input type="checkbox" id="chkLineWrap" checked="true">Line wrap</input></td>
 		<td><button id="btnFind">Find...</button></td>
 		</tr>
 	</table>
@@ -3141,7 +3204,7 @@ window.onload=init;
 <input type="checkbox" id="chkChatAutosend">Autosend</input>
 <br/>
 </div>
-<canvas id="PenCanvas" width="500" height="500" style="border: 1px solid #ff3c00;"></canvas>
+<canvas id="PenCanvas" width="500" height="500" style="touch-action: none; border: 1px solid #ff3c00;"></canvas>
 <div id="divToolbox">
 Tools:
 <table>
@@ -3155,6 +3218,9 @@ Tools:
 <td><button id="btnCopy">Copy</button></td>
 <td><button id="btnCut">Cut</button></td>
 <td><button id="btnPaste">Paste</button></td>
+<td><button id="btnTurnMouseEventsOnOff">Turn mouse events off</button></td>
+<td><button id="btnArtificialMouseUp">Artificial mouseup for touch events</button></td>
+<td><input type="checkbox" id="chkShowButtonsInfo" checked="true">Show buttons info</input></td>
 </tr>
 </table>
 <table>
