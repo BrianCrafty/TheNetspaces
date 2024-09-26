@@ -42,7 +42,9 @@ PenCanvasConstructor=function(that,penCanvas){
 	that.fltGrayscale=1;
 	that.lstUndoItems=[];
 	that.lstRedoItems=[];
-	that.intUndoItem=0;
+	/*no touchend event on some touch screens - moving to mouse down*/
+	/*that.intUndoItem=0;*/
+	that.intUndoItem=-1;
 	that.intRedoItem=0;
 	that.lstDrawingHistory=[];
 	that.intDrawingItem=0;
@@ -452,6 +454,7 @@ PenCanvas.prototype.penCanvasToBlobCallback=function(blob){
 	a.setAttribute("download",strFilename);
 	var downloadUrl=URL.createObjectURL(blob);
 	a.setAttribute("href",downloadUrl);
+	alert("File ready for saving. After modifying again, prepare the file for saving again. E.x. for opacity use png images, for smaller sizes use jpg images.");
 };
 PenCanvas.prototype.preparePenCanvasToSave=function(penCanvas){
 	var strType="image/jpeg";
@@ -799,10 +802,10 @@ PenCanvas.prototype.undoAction=function(){
 };
 PenCanvas.prototype.redoAction=function(){
 	var lstItems=window.penCanvas.lstRedoItems.pop();
-	window.penCanvas.lstUndoItems[window.penCanvas.intUndoItem]=lstItems;
-	window.penCanvas.lstDrawingHistory[window.penCanvas.intDrawingItem]=window.penCanvas.copyLstUndoItemsWithOpaqueColor(lstItems);
 	window.penCanvas.intUndoItem++;
 	window.penCanvas.intDrawingItem++;
+	window.penCanvas.lstUndoItems[window.penCanvas.intUndoItem]=lstItems;
+	window.penCanvas.lstDrawingHistory[window.penCanvas.intDrawingItem]=window.penCanvas.copyLstUndoItemsWithOpaqueColor(lstItems);
 	window.penCanvas.btnUndoRedoDisabledEnabled();
 	if(undefined!=lstItems)
 		window.penCanvas.drawItems(lstItems,false,false);
@@ -923,7 +926,6 @@ PenCanvas.prototype.btnSaveLayerToImagePressed=function(intUniqueNumber){
 	var strFilename=txtFilename.value;
 	if (0==strFilename.length)txtFilename.value="PenCanvas.jpg";
 	window.penCanvas.preparePenCanvasToSave(theCanvas);
-	alert("File ready for saving. After modifying again, prepare the file for saving again. E.x. for opacity use png images, for smaller sizes use jpg images.");
 };
 PenCanvas.prototype.btnSaveLayerToLstDrawingHistoryPressed=function(intUniqueNumber){
 	alert("Functionality will be implemented later. For now you can save lstDrawingHistory of the whole image.");
@@ -1675,6 +1677,8 @@ ManualPen.prototype.onMouseDownBucketTool=function(event){
 };
 ManualPen.prototype.onMouseDownLines=function(event){
 	window.manualPen.blnDrawing=true;
+	/*no touchend event on some touch screens - moving to mouse down*/
+	window.penCanvas.intUndoItem++;
 	if(false==window.manualPen.blnConstructingMultiline||null==window.manualPen.intPrevX||null==window.manualPen.intPrevY){
 		window.manualPen.intPrevX=event.offsetX;
 		window.manualPen.intPrevY=event.offsetY;
@@ -1784,7 +1788,8 @@ ManualPen.prototype.onMouseUpLines=function(event){
 		}
 	}
 	window.manualPen.blnDrawing=false;
-	window.penCanvas.intUndoItem++;
+	/*no touchend event on some touch screens - moving to mouse down*/
+	/*window.penCanvas.intUndoItem++;*/
 	window.penCanvas.intDrawingItem++;
 	if(false==window.manualPen.blnConstructingMultiline){
 		window.manualPen.intPrevX=null;
@@ -2274,7 +2279,6 @@ function btnPrepareImagePressed(){
 	var strFilename=txtFilename.value;
 	if (0==strFilename.length)txtFilename.value="PenCanvas.jpg";
 	window.penCanvas.preparePenCanvasToSave(penCanvas);
-	alert("File ready for saving. After modifying again, prepare the file for saving again. E.x. for opacity use png images, for smaller sizes use jpg images.");
 }
 function setRGBAcolor(lstRGBAcolor){
 	var chkSetFGcolor=document.getElementById("chkSetFGcolor");
@@ -3204,9 +3208,9 @@ window.onload=init;
 <input type="checkbox" id="chkChatAutosend">Autosend</input>
 <br/>
 </div>
-<canvas id="PenCanvas" width="500" height="500" style="touch-action: none; border: 1px solid #ff3c00;"></canvas>
+&nbsp; &nbsp; <canvas id="PenCanvas" width="500" height="500" style="touch-action: none; border: 1px solid #ff3c00;"></canvas>
 <div id="divToolbox">
-Tools:
+&nbsp; &nbsp; Tools:
 <table>
 <tr>
 <td><input type="checkbox" id="chkPencilTool" checked="true">Pencil</input></td>
