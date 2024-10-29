@@ -1832,7 +1832,7 @@ ChatConstructor=function(that){
 	that.lstConversation=[];
 	that.blnConnected=false;
 	that.chkShowChatProtocolMessages=document.getElementById("chkShowChatProtocolMessages");
-	that.chkDivideDrawingIntoSmallMessages=document.getElementById("chkDivideDrawingIntoSmallMessages");
+	that.chkSendBinaryLstDrawingHistory=document.getElementById("chkSendBinaryLstDrawingHistory");
 	that.intLstDrawingHistorySent=0;
 	that.blnDrawing=false;
 	that.tmpLstDrawingHistory=[];
@@ -1943,45 +1943,34 @@ Chat.prototype.textSend=function(txtValue){
 		window.chat.LoadTextResource(strCallstring,window.chat.getServerContent);
 	}
 };
-Chat.prototype.lstDrawingHistorySendWithoutDivision=function(){
+Chat.prototype.textSendOnly=function(txtValue){
+	if(txtValue.length>0){
+		window.chat.txtInput.value="";
+		var strDate=window.chat.getDateString();
+		/*window.chat.appendMessage([window.chat.strNickname,strDate,txtValue]);*/
+		var strCallstring=window.chat.interpretCommand(txtValue);
+		window.chat.LoadTextResource(strCallstring,window.chat.getServerContent);
+	}
+};
+Chat.prototype.lstDrawingHistorySendWithoutConversion=function(){
 	var lstDrawingHistoryToSend=[];
 	if(window.penCanvas.lstDrawingHistory.length>this.intLstDrawingHistorySent){
 		for(var ii=this.intLstDrawingHistorySent;ii<window.penCanvas.lstDrawingHistory.length;ii++)
 			lstDrawingHistoryToSend.push(window.penCanvas.lstDrawingHistory[ii]);
 		var strDrawingHistoryToSend=window.penCanvas.listToStringRecursiveDrawingHistory(lstDrawingHistoryToSend);
 		strDrawingHistoryToSend="lstDrawingHistory="+strDrawingHistoryToSend;
-		window.chat.textSend(strDrawingHistoryToSend);
+		if(true==this.chkShowChatProtocolMessages.checked)
+			window.chat.textSend(strDrawingHistoryToSend);
+		else
+			window.chat.textSendOnly(strDrawingHistoryToSend);
 		this.intLstDrawingHistorySent=window.penCanvas.lstDrawingHistory.length;
-	}
-};
-Chat.prototype.lstDrawingHistorySendWithDivision=function(){
-	//temporary solution for small messages requirements
-	var lstDrawingHistoryToSend=[];
-	var strDrawingHistoryToSend="",strDrawingHistoryToSend_="";;
-	var lstItems;
-	if(window.penCanvas.lstDrawingHistory.length>this.intLstDrawingHistorySent){
-		for(var ii=this.intLstDrawingHistorySent;ii<window.penCanvas.lstDrawingHistory.length;ii++){
-			lstItems=window.penCanvas.lstDrawingHistory[ii];
-			if(undefined==lstItems)return;
-			for(var jj=0;jj<lstItems.length;jj++){
-				strDrawingHistoryToSend_=window.penCanvas.listToStringRecursiveDrawingHistory(lstItems[jj]);
-				switch(jj){
-					case this.intLstDrawingHistorySent:strDrawingHistoryToSend="|>"+strDrawingHistoryToSend_;break;
-					case window.penCanvas.lstDrawingHistory.length-1:strDrawingHistoryToSend=">|"+strDrawingHistoryToSend_;break;
-					default:
-					case window.penCanvas.lstDrawingHistory.length-1:strDrawingHistoryToSend=">>"+strDrawingHistoryToSend_;break;
-				}
-				window.chat.textSend(strDrawingHistoryToSend);
-			}
-		this.intLstDrawingHistorySent=window.penCanvas.lstDrawingHistory.length;
-		}
 	}
 };
 Chat.prototype.lstDrawingHistorySend=function(){
-	if(true==this.chkDivideDrawingIntoSmallMessages.checked)
-		this.lstDrawingHistorySendWithDivision();//not perfect yet
+	if(true==this.chkSendBinaryLstDrawingHistory.checked)
+		this.lstDrawingHistorySendWithoutConversion();//todo
 	else
-		this.lstDrawingHistorySendWithoutDivision();
+		this.lstDrawingHistorySendWithoutConversion();
 };
 Chat.prototype.btnChatSendPressed=function(){
 	window.chat.textSend(window.chat.txtInput.value);
@@ -1989,6 +1978,11 @@ Chat.prototype.btnChatSendPressed=function(){
 };
 Chat.prototype.chkChatAutosendChanged=function(){
 	alert("Functionality will be implemented later.");
+	document.getElementById("chkChatAutosend").checked=false;
+};
+Chat.prototype.chkSendBinaryLstDrawingHistoryChanged=function(){
+	alert("Encoding and deencoding lstDrawingHistory from strings to binaries will be implemented later. It will reduce demand for the connection bandwidth and accelerate sending smaller amounts of data with drawing in binary form.");
+	document.getElementById("chkSendBinaryLstDrawingHistory").checked=false;
 };
 Chat.prototype.txtInputOnKeyDown=function(evtKey){
 	if("Enter"==evtKey.key){
@@ -2020,8 +2014,7 @@ Chat.prototype.finalizeLstDrawingHistory=function(strItem){
 	this.blnDrawing=false;
 	this.tmpLstDrawingHistory=[];
 };
-Chat.prototype.interpretResultsWithoutDivision=function(loadResults){
-	//temporary solution for small messages requirements
+Chat.prototype.interpretResultsWithoutConversion=function(loadResults){
 	loadResults=unescape(loadResults);
 	var intMessage=loadResults.indexOf("strMessage");
 	var blnPenCanvas=false;
@@ -2063,67 +2056,11 @@ Chat.prototype.interpretResultsWithoutDivision=function(loadResults){
 		return;
 	}
 };
-Chat.prototype.interpretResultsWithDivision=function(loadResults){
-	loadResults=unescape(loadResults);
-	var intMessage=loadResults.indexOf("strMessage");
-	var blnPenCanvas=false;
-	if(-1!=intMessage){
-		//temporary solution for small messages requirements
-		var intLstDrawingHistory=loadResults.indexOf("|>");
-		if(-1!=intLstDrawingHistory){
-			blnPenCanvas=true;
-			this.collectLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+18),true);
-			if(true==this.chkShowChatProtocolMessages.checked)
-				this.appendMessage_(loadResults);
-			return;
-
-		}
-		intLstDrawingHistory=loadResults.indexOf(">>");
-		if(-1!=intLstDrawingHistory){
-			blnPenCanvas=true;
-			this.collectLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+2));
-		}
-		intLstDrawingHistory=loadResults.indexOf(">|");
-		if(-1!=intLstDrawingHistory){
-			blnPenCanvas=true;
-			this.finalizeLstDrawingHistory(unescape(loadResults).substring(intLstDrawingHistory+2));
-		}
-		if(false==blnPenCanvas)	this.appendMessage_(loadResults);
-		return;
-	}
-	intMessage=loadResults.indexOf("changedNickname");
-	if(-1!=intMessage){
-		var intNickname=loadResults.indexOf("strNickname=");
-		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
-		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
-		theNickname=unescape(theNickname);
-		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
-		this.appendText(strMessage);
-		this.strNickname=theNickname;
-		this.appendText("nickname set");
-		var strCallstring=this.strServerAddress+"/index.html?intID="+this.intMyID+"&strCommand=changedNickname("+this.intInterlocutorID+","+escape(this.strNickname)+")";
-		this.LoadTextResource(strCallstring,this.getServerContent);
-		return;
-	}
-	intMessage=loadResults.indexOf("interlocutorChangedNickname");
-	if(-1!=intMessage){
-		var intNickname=loadResults.indexOf("strNickname=");
-		var strId=loadResults.substring(loadResults.indexOf("intID=")+6,intNickname-1);
-		var theNickname=loadResults.substring(intNickname+12,loadResults.length-1);
-		theNickname=unescape(theNickname);
-		strMessage="User nr. "+strId+" changed nickname: "+theNickname;
-		this.appendText(strMessage);
-		this.appendText("interlocutor nickname set");
-		var intId=parseInt(strId);
-		this.dctInterlocutorNicknames[intId]=theNickname;
-		return;
-	}
-};
 Chat.prototype.interpretResults=function(loadResults){
-	if(true==this.chkDivideDrawingIntoSmallMessages.checked)
-		this.interpretResultsWithoutDivision(loadResults);//not perfect yet
+	if(true==this.chkSendBinaryLstDrawingHistory.checked)
+		this.interpretResultsWithoutConversion(loadResults);//todo
 	else
-		this.interpretResultsWithoutDivision(loadResults);
+		this.interpretResultsWithoutConversion(loadResults);
 };
 Chat.prototype.getServerContent=function(loadError,loadResults){
 	if(loadResults){
@@ -3151,6 +3088,7 @@ function init(){
 	document.getElementById("txtChatInput").onkeydown=window.chat.txtInputOnKeyDown;
 	document.getElementById("btnChatSend").onclick=window.chat.btnChatSendPressed;
 	document.getElementById("chkChatAutosend").onchange=window.chat.chkChatAutosendChanged;
+	document.getElementById("chkSendBinaryLstDrawingHistory").onchange=window.chat.chkSendBinaryLstDrawingHistoryChanged;
 	document.getElementById("btnChatConnectDisconnect").onclick=window.chat.btnChatConnectDisconnectPressed;
 	document.getElementById("btnGridStyle").onclick=window.penCanvas.btnGridStylePressed;
 	document.getElementById("chkShowGrid").onchange=window.penCanvas.chkShowGridChanged;
@@ -3197,13 +3135,13 @@ window.onload=init;
 <input type="checkbox" id="chkChatPen">Chat pen</input>
 <span id="spanChatMenu" style="display:none">
 <button id="btnChatConnectDisconnect">Connect...</button>
-<input type="checkbox" id="chkShowChatProtocolMessages" checked="true">Show protocol messages</input>
-<input type="checkbox" id="chkDivideDrawingIntoSmallMessages">Divide drawing into small messages</input>
+<input type="checkbox" id="chkShowChatProtocolMessages" checked="true">Show chat protocol messages</input>
+<input type="checkbox" id="chkSendBinaryLstDrawingHistory">Send lstDrawingHistory in binary form</input>
 </span>
 <br/>
 <div id="divChat" style="display:none">
-<textarea id="txtChatContents" cols="60" rows="30"></textarea> <br/>
-<input id="txtChatInput" type="text" style="width:500px;height:25px;"></input>   
+&nbsp; &nbsp; <textarea id="txtChatContents" cols="60" rows="30"></textarea> <br/>
+&nbsp; &nbsp; <input id="txtChatInput" type="text" style="width:500px;height:25px;"></input>   
 <button id="btnChatSend">Send</button>
 <input type="checkbox" id="chkChatAutosend">Autosend</input>
 <br/>
