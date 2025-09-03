@@ -1,0 +1,8 @@
+p=window.roboticPen3D;
+p.fltAngleNS=15.;
+p.fltAngleWE=90.;
+p.forward(1);
+p.fltAngleNS=45;
+p.fltAngleWE=45;
+p.forward(1);
+p.tri();
