@@ -1280,7 +1280,7 @@ RoboticPen.prototype.forward=function(intLength){
 	this.intX=this.intX;
 	this.intY=this.intY;
 };
-RoboticPen.prototype.fd=function(intLength){
+RoboticPen.prototype.fwd=function(intLength){
 	this.forward(intLength);
 };
 RoboticPen.prototype.backward=function(intLength){
@@ -1296,10 +1296,7 @@ RoboticPen.prototype.backward=function(intLength){
 	this.intX=this.intX;
 	this.intY=this.intY;
 };
-RoboticPen.prototype.bk=function(intLength){
-	this.backward(intLength);
-};
-RoboticPen.prototype.back=function(intLength){
+RoboticPen.prototype.bwd=function(intLength){
 	this.backward(intLength);
 };
 RoboticPen.prototype.left=function(degrees){
