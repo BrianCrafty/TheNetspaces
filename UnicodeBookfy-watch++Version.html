@@ -169,6 +169,60 @@ function cellClicked(i,j){
 	theHighlightedJ=j;
 	writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ);
 }
+function drawClassicWatch(current_hour,current_minute,current_second){
+	var classicWatchCanvas=document.getElementById("classicWatchCanvas");
+	var intWidth=classicWatchCanvas.width;
+	var intHeight=classicWatchCanvas.height;
+	var intSize=Math.min(intWidth,intHeight);
+	var intRadius=intSize/2;
+	var intHourAngle=2*Math.PI*((current_hour-3)%12)/12.;
+	var intMinuteAngle=2*Math.PI*(current_minute-15)/60.;
+	var intSecondAngle=2*Math.PI*(current_second-15)/60.;
+	var intHourLength=intSize/3.5;
+	var intMinuteLength=intSize/2.5;
+	var intSecondLength=intSize/2.5;
+	var intScaleLength=intSize/2;
+	ctx=classicWatchCanvas.getContext("2d");
+	ctx.beginPath();
+	ctx.fillStyle="black";
+	ctx.rect(0,0,intWidth,intHeight);
+	ctx.fill();
+	ctx.beginPath();
+	ctx.fill();
+	ctx.strokeStyle="grey";
+	ctx.lineWidth=1;
+	ctx.arc(intRadius,intRadius,intRadius,0,2*Math.PI,false);
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.lineWidth=5;
+	ctx.moveTo(intRadius,intRadius);
+	ctx.lineTo(intRadius+intHourLength*Math.cos(intHourAngle),intRadius+intHourLength*Math.sin(intHourAngle));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.lineWidth=1;
+	ctx.moveTo(intRadius,intRadius);
+	ctx.lineTo(intRadius+intMinuteLength*Math.cos(intMinuteAngle),intRadius+intMinuteLength*Math.sin(intMinuteAngle));
+	ctx.stroke();
+	ctx.beginPath();
+	ctx.lineWidth=1;
+	ctx.moveTo(intRadius,intRadius);
+	ctx.lineTo(intRadius+intSecondLength*Math.cos(intSecondAngle),intRadius+intSecondLength*Math.sin(intSecondAngle));
+	ctx.stroke();
+	ctx.beginPath();
+	var intScaleStartX=0;
+	var intScaleStartY=0;
+	var intScaleStopX=0;
+	var intScaleStopY=0;
+	for(var ii=0;ii<12;ii++){
+		intScaleStartX=intRadius+intScaleLength*0.9*Math.cos(2*Math.PI*ii/12);
+		intScaleStartY=intRadius+intScaleLength*0.9*Math.sin(2*Math.PI*ii/12);
+		intScaleEndX=intRadius+(1.*intScaleLength)*Math.cos(2*Math.PI*ii/12);
+		intScaleEndY=intRadius+(1.*intScaleLength)*Math.sin(2*Math.PI*ii/12);
+     		ctx.moveTo(intScaleStartX,intScaleStartY);
+     		ctx.lineTo(intScaleEndX,intScaleEndY);
+	}
+     	ctx.stroke();
+}
 function writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ){
 	var thePrevCharmingOffset=theCharmingOffset;
 	var txtInnerHTML="<table border='1' style='border-collapse: collapse'>";
@@ -235,6 +289,7 @@ function writeCharsTable(theCharmingOffset,theHighlightedI,theHighlightedJ){
 	if (current_hour_extra40<0) current_hour_extra40 = 23;
 	document.title=String.fromCharCode(100*current_hour+current_minute);
 	txtInnerHTML+=" &nbsp &nbsp &nbsp Watch: "+flush(""+current_hour_prev,2)+" : "+flush(""+current_minute_prev,2)+" &nbsp &nbsp &nbsp "+String.fromCharCode(100*current_hour_prev+current_minute_prev)+ " Random char: "+ randomChar+String.fromCharCode(randomChar) +" </font> ";
+     	drawClassicWatch(current_hour,current_minute,current_second);
 	charsTable.innerHTML=txtInnerHTML;
 	var divWatch = document.getElementById("divWatch");
 	var tmpStrHex=finalizeDec2Hex(100*current_hour+current_minute);
@@ -512,9 +567,7 @@ window.onload=init
 	</script>
 </head>
 <body style="background-color:black; color:grey; ">
-<div id="divBinarish"></div><br/>
-<input type="text" id="txtBinarish"> </input> <input type="button" id="btnBinarish" value="Binarish ->"> <br/>
-<input type="text" id="txtToBinarish"> </input> <input type="button" id="btnToBinarish" value="Binarish <-"> <br/>
+<canvas id="classicWatchCanvas" width=300 height=300></canvas>
  <table rows=1 cols=3> <tr><td><input type="button" class="button button" id="btnTimeDiffMM" value="<" style="height:200px; width:50px"> </td><td>
 <div id="divWatch">
 </div>
@@ -522,6 +575,9 @@ window.onload=init
 <div id="timeDiff">
 	<input type="button" value="time diff" id="btnTimeDiff" />
 </div>
+<div id="divBinarish"></div><br/>
+<input type="text" id="txtBinarish"> </input> <input type="button" id="btnBinarish" value="Binarish ->"> <br/>
+<input type="text" id="txtToBinarish"> </input> <input type="button" id="btnToBinarish" value="Binarish <-"> <br/>
 <div id="divHiddenDiv" >
 	 <div id="caption"></div>
 	<table><tr><td>	
