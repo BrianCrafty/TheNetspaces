@@ -18,7 +18,7 @@ textarea{background-color:black;
 	scrollbar-darkshadow-color:orange;
 }
 </style>
-<script type-"text/javascript">
+<script type="text/javascript">
 PenCanvasConstructor=function(that,penCanvas){
 	that.penCanvas=penCanvas;
 	that.lstColors=[[255,255,255,255],
@@ -2802,12 +2802,11 @@ function loadImage(url,theCanvas){
 			divShowBackgroundImage.style.display="";
 		}
 		theContext=theCanvas.getContext("2d");
-		theContext.drawImage(this,0,0,this.width,this.height);
-		//if(this.width!=window.roboticPen.intWidth||this.height!=window.roboticPen.intHeight){
 		if(this.width!=window.penCanvas.intScreenWidth||this.height!=window.penCanvas.intScreenHeight){
 			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the PenCanvas has size ["+[window.penCanvas.intScreenWidth,window.penCanvas.intScreenHeight]+"]. Resize the penCanvas?");
 			if(true==blnResize)btnResizePenCanvasPressed(null,this.width,this.height);
 		}
+		theContext.drawImage(this,0,0,this.width,this.height);
 		btnResetPressed();
 	};
 	img.src=url;
