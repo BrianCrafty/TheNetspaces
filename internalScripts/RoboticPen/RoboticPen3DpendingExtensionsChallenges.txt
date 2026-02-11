@@ -1,0 +1,19 @@
+-gluing stuff, union, difference, intersection,
+-various rendering pens - near to "pointsStrip" as we called it now, triangle strips, fourangle strips, quad strips, strips and fans etc.
+-we already have finalizeTriangleFace, the tri function - we plan to add more such functions to make faces in different ways.
+-concise rendering and exporting objects without faces, vertices and edges only - for now we usually draw object, wireframe that you can turn on and off and export/import complete objects, rendering single edges and points also possible but concise system required
+-things like loop cut, knife pen, select all the linked stuff etc.
+-curve modifier - just move the RoboticPen3D along the path and at every stop call the callback function or set some option like pen to make an action at every stop,
+-deforming vertices with f(x) e.x. translate with radial weight,
+-background image on the grid floor - probably next grid floor with be opaque. Anyway, the first quick version with axes to show and hide very important to get orientation in 3d space. Naturally OpenGL XYZ axes orientation - the most popular in computer graphics in our opinion - even in naming, where depth buffer is traditionally called Z-buffer,
+-texturing - when loading images you can draw 2d with RoboticPen2D.html by simply exporting to images and loading them in RoboticPen3D.
+
+-pen avatar rotation w.r.t. fltAngleNS, fltAngleWE
+-normal vectors computations on geometries
+-even better wireframe rendering
+-even better edges and faces selection
+-even better extrusion, extend extrusion to extrude single vertices and edges
+-pen sphere selector, select linked
+-knife tool to divide faces, edges and procedural cuts e.x. "loop cut"
+-pens automatic triangulation of polygons in loops instead of tri(), triFan()
+-merge selected vertices

@@ -1,0 +1,23 @@
+var p=window.roboticPen3D;
+p.fltAngleWE=0.;                                                   
+p.fltAngleNS=90.;
+p.fwd(1.00)                                                    
+p.fltAngleWE+=120.;
+p.fwd(1.15);
+p.triFan(0);                                                       
+for(var ii=0;ii<5;ii++){
+	p.fltAngleWE+=60.;
+	p.fwd(1.15);
+	p.triFan(0);                                               
+}
+p.extrudeFullySelectedFaces(true);                                 
+p.translateSelectedVertices([0,0,2]);
+p.extrudeFullySelectedFaces(true);                                 
+p.translateSelectedVertices([0,0,2]);
+p.extrudeFullySelectedFaces(true);                                 
+p.translateSelectedVertices([0,0,2]);                              
+p.scaleSelectedVerticesAroundMedian([0.1,0.1,0.1]);
+p.selectAllVertices();
+p.translateSelectedVertices([0.125,0.,-3.3]);
+p.scaleSelectedVerticesAroundMedian([0.1,0.1,0.1]);
+

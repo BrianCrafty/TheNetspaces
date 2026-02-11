@@ -1,0 +1,62 @@
+var p=window.roboticPen3D;
+p.fltAngleWE=0.;
+p.fltAngleNS=90.;
+p.fwd(1.00);
+p.fltAngleWE+=120.;
+p.fwd(1.15);
+p.triFan(0);
+for(var ii=0;ii<5;ii++){
+	p.fltAngleWE+=60.;
+	p.fwd(1.15);
+	p.triFan(0);
+}
+
+p.extrudeFullySelectedFaces(true);
+p.translateSelectedVertices([0,0,2]);
+p.extrudeFullySelectedFaces(true);
+p.translateSelectedVertices([0,0,2]);
+p.selectAllVertices();
+p.duplicateFullySelectedFaces(true);
+p.translateSelectedVertices([5,0,0]);
+
+p.deselectAllVertices();
+p.penUp();
+p.penDown();
+p.fltX=5;p.fltY=+5;p.fltZ=+5;
+var intTriangles=p.getMaximalIndex()+0;
+p.fltAngleNS=15.;p.fltAngleWE=90.;p.fwd(1);
+p.fltAngleNS=45;p.fltAngleWE=45;p.fwd(1);
+p.triFan(intTriangles);
+p.fltAngleNS+=15.;p.fltAngleWE+=15.;p.fwd(1);
+p.fltAngleNS+=45;p.fltAngleWE+=45;p.fwd(1);
+p.tri();
+
+p.deselectAllVertices();
+p.penUp();
+p.fwd(5.00);
+p.penDown();
+p.fltX=2;p.fltY=0;p.fltZ=0;
+var intCube=p.getMaximalIndex()+1;
+p.fltAngleWE=0.;
+p.fltAngleNS=90.;
+p.fwd(1.00);
+p.fltAngleWE+=90.;
+p.fwd(1.00);
+p.triFan(intCube);
+p.fltAngleWE+=90.;
+p.fwd(1.00);
+p.triFan(intCube);
+p.extrudeFullySelectedFaces(true);
+p.translateSelectedVertices([0,0,2]);
+
+var lstNewIndices=[];
+for(var ii=0;ii<3*2;ii++)p.lstIndices.pop();
+p.refresh();
+
+//p.createSimpleCube(5,0,7,1,1,1);
+var vm3dCube=p.createAdvancedCube(5,0,7,1,1,1);
+vm3dCube=netspace.pointLightIslands[0].varietyManifolds3D[netspace.pointLightIslands[0].varietyManifolds3D.length-1];
+vm3dCube.arrVertices[25]+=2.;
+vm3dCube.refresh();
+p.createSphere(0,0,7,1,1,1,1,16,32);
+
