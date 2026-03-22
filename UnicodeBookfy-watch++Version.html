@@ -107,6 +107,244 @@ function btnDecodePressed(){
 		document.getElementById("txtImpresionismArts").value="";
 		writeQueryHistory();
 	} 
+
+}
+function btnIconicDecodeNumbers(intArray){
+	var intColor0R=255,intColor0G=255,intColor0B=255;
+	var intColor1R=0,intColor1G=0,intColor1B=0;
+	var intColorR=-1,intColorG=-1,intColorB=-1;
+	randomChar=Math.floor(Math.random()*maxRandomChar);
+	var intHeightInWhiteAndBlackBits=intArray.length;
+	var intWidthInWhiteAndBlackBits=Math.floor(Math.log(maxValue(intArray))/Math.log(2,10))+1;
+	var strDimensions=prompt("Icon dimensions=["+intWidthInWhiteAndBlackBits+", "+intHeightInWhiteAndBlackBits+"]. Enter [intPixelSize, blnDrawGrid], where intPixelSize>=1 is the size of the square pixel and blnDrawGrid drawing grid, true or false:","[10,false]");
+	if(null==strDimensions)return;
+	var strDim=strDimensions.substring(1,strDimensions.length-1);	
+	var arrDim=strDim.split(",");
+	var intNumber=-1;
+	var intPixelSize=parseInt(arrDim[0]);
+	var blnDrawGrid=arrDim[1];
+	if(arrDim.length!=2){
+		alert("Incorrect format, please enter [intPixelSize,blnDrawGrid].");
+	}
+	if(intPixelSize<0||Number.isNaN(intPixelSize)){
+			alert("Incorrect intPixelSize found");
+			return;
+	}
+	if(intPixelSize<1){
+		alert("intPixelSize<1");
+		return;
+	}
+	if("false"!=blnDrawGrid&&"true"!=blnDrawGrid){
+		alert('"false"!=blnDrawGrid&&"true"!=blnDrawGrid');
+		return;
+	}
+	var intImageWidth=intPixelSize*intWidthInWhiteAndBlackBits;
+	var intImageHeight=intPixelSize*intHeightInWhiteAndBlackBits;
+	var divResponseData=document.getElementById("responseData");
+	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas>"
+	var iconicCanvas=document.getElementById("iconicCanvas");
+	iconicCanvas.style="border: 1px solid #ff3c00";
+	var iconicContext=iconicCanvas.getContext("2d");
+	var iconicImage=iconicContext.getImageData(0,0,intImageWidth,intImageHeight);
+	var index=-1;
+	var i=-1,j=-1;
+	var ii=-1,jj=-1;
+	//var intColor=-1;
+	for(jj=0;jj<intHeightInWhiteAndBlackBits;jj++){
+		if(jj<intArray.length)
+			intNumber=intArray[jj];
+		else
+			intNumber=0;
+		for(ii=intWidthInWhiteAndBlackBits;ii>0;ii--){
+			//intColor=(intNumber%2)?0:255;
+			if(intNumber%2){
+				intColorR=intColor1R;
+				intColorG=intColor1G;
+				intColorB=intColor1B;
+			}else{
+				intColorR=intColor0R;
+				intColorG=intColor0G;
+				intColorB=intColor0B;
+			}
+			intNumber/=2;
+			intNumber=Math.floor(intNumber);
+			
+			for(j=(jj)*intPixelSize;j<(jj+1)*intPixelSize;j++){
+				for(i=(ii-1)*intPixelSize;i<(ii)*intPixelSize;i++){
+					index=(j*intImageWidth+i)*4;
+					iconicImage.data[index+0]=intColorR;
+					iconicImage.data[index+1]=intColorG;
+					iconicImage.data[index+2]=intColorB;
+					iconicImage.data[index+3]=255;
+
+				}
+			
+			}
+		}
+	}
+	if("true"==blnDrawGrid){
+		for(j=0;j<intImageHeight;j++)
+			for(i=0;i<intImageWidth;i++){
+				indexImage=(j*intImageWidth+i)*4;
+				indexBits=(Math.floor(j/intPixelSize))*intWidthInWhiteAndBlackBits+Math.floor(i/intPixelSize);
+				if(0==i%intPixelSize||0==j%intPixelSize){
+					iconicImage.data[indexImage+0]=255;
+					iconicImage.data[indexImage+1]=60;
+					iconicImage.data[indexImage+2]=0;
+					iconicImage.data[indexImage+3]=255;
+				}
+			}
+
+	}
+	iconicContext.putImageData(iconicImage,0,0);
+}
+function btnIconicDecodeData(varArray){
+	var intArray=[];
+	var intNumber=-1;
+	for(var ii=0;ii<varArray.length;ii++){
+		if(0!=varArray[ii].length)
+			intNumber=parseInt(varArray[ii]);
+		else
+			break;
+		if(intNumber<0||Number.isNaN(intNumber)){
+			alert("Incorrect number found");
+			return;
+		}
+		intArray.push(intNumber);
+	}
+	btnIconicDecodeNumbers(intArray);
+}
+function btnIconicDecodePressed(){
+	var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+	btnIconicDecodeData(varArray);
+}
+function encodeString(txtString){
+	var varArray=txtString.split("");
+	var ii;
+	var txtText="";
+	for (ii=0; ii<varArray.length; ii++){
+		txtText+=(varArray[ii].charCodeAt(0));
+		if (ii<(varArray.length-1)){
+			txtText+=',';
+		}
+	}
+	return txtText;
+}
+function btnStringIconicEndecodeStringPressed(){
+	var varString=document.getElementById("txtImpresionismArts").value;
+	var txtText=encodeString(varString);	
+	btnIconicDecodeData(txtText.split(","));
+}
+function btnIconicEncodeEditor(){
+	var intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits;
+	var strDimensions=prompt('Enter 0 and 1, white and black icon dimensions in format [intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits] to convert later with the "Iconic encode" button that will appear to intWidthInWhiteAndBlackBits-bit digits, amount of digits intHeightInWhiteAndBlackBits:',"[10,16,16]");
+	if(null==strDimensions)return;
+	var strDim=strDimensions.substring(1,strDimensions.length-1);	
+	var arrDim=strDim.split(",");
+	var arrIntDim=[];
+	var intNumber=-1;
+	for(var ii=0;ii<arrDim.length;ii++){
+		if(0!=arrDim[ii].length)
+			intNumber=parseInt(arrDim[ii]);
+		else
+			break;
+		if(intNumber<0||Number.isNaN(intNumber)){
+			alert("Incorrect number found");
+			return;
+		}
+		arrIntDim.push(intNumber);
+	}
+	if(arrIntDim.length!=3){
+		alert("Incorrect format, please enter [intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits].");
+	}
+	var intPixelSize=arrIntDim[0];
+	var intWidthInWhiteAndBlackBits=arrIntDim[1];
+	var intHeightInWhiteAndBlackBits=arrIntDim[2];
+	var intImageWidth=intPixelSize*intWidthInWhiteAndBlackBits;
+	var intImageHeight=intPixelSize*intHeightInWhiteAndBlackBits;
+	var divResponseData=document.getElementById("responseData");
+	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas><button id='btnIconicEncode'>Iconic encode</button>"
+	var iconicCanvas=document.getElementById("iconicCanvas");
+	iconicCanvas.style="border: 1px solid #ff3c00";
+	iconicCanvas.intPixelSize=intPixelSize;
+	iconicCanvas.intWidthInWhiteAndBlackBits=intWidthInWhiteAndBlackBits;
+	iconicCanvas.intHeightInWhiteAndBlackBits=intHeightInWhiteAndBlackBits;
+	iconicCanvas.intImageWidth=intImageWidth;
+	iconicCanvas.intImageHeight=intImageHeight;
+	iconicCanvas.arrBits=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
+	iconicCanvas.update=function(){
+		var iconicContext=this.getContext("2d");
+		var iconicImage=iconicContext.getImageData(0,0,intImageWidth,intImageHeight);
+	
+		var indexImage=-1,indexBits=-1;
+		var i=-1,j=-1;
+		var ii=-1,jj=-1;
+		//var intColor0=255, intColor1=0;
+		var intColor0R=255,intColor0G=255,intColor0B=255;
+		var intColor1R=0,intColor1G=0,intColor1B=0;
+		var intColorR=-1,intColorG=-1,intColorB=-1;
+		for(j=0;j<this.intImageHeight;j++)
+			for(i=0;i<this.intImageWidth;i++){
+				indexImage=(j*this.intImageWidth+i)*4;
+				indexBits=(Math.floor(j/this.intPixelSize))*this.intWidthInWhiteAndBlackBits+Math.floor(i/this.intPixelSize);
+				if(0==i%this.intPixelSize||0==j%this.intPixelSize){
+					iconicImage.data[indexImage+0]=255;
+					iconicImage.data[indexImage+1]=60;
+					iconicImage.data[indexImage+2]=0;
+					iconicImage.data[indexImage+3]=255;
+				}else{
+					if(this.arrBits[indexBits]){
+						intColorR=intColor1R;
+						intColorG=intColor1G;
+						intColorB=intColor1B;
+					}else{
+						intColorR=intColor0R;
+						intColorG=intColor0G;
+						intColorB=intColor0B;
+					}
+					iconicImage.data[indexImage+0]=intColorR;
+					iconicImage.data[indexImage+1]=intColorG;
+					iconicImage.data[indexImage+2]=intColorB;
+					iconicImage.data[indexImage+3]=255;
+			}
+		}
+
+
+	iconicContext.putImageData(iconicImage,0,0);
+	}
+	iconicCanvas.onmousedown=function(evtEvent){
+		var i=evtEvent.offsetX;
+		var j=evtEvent.offsetY;
+		var indexBits=(Math.floor(j/this.intPixelSize))*this.intWidthInWhiteAndBlackBits+Math.floor(i/this.intPixelSize);
+		this.arrBits[indexBits]^=1;
+		this.update();
+	}
+	window.iconicCanvas=iconicCanvas;
+	var btnIconicEncode=document.getElementById("btnIconicEncode").onclick=function(){
+		var lstNumbers=[];	
+		var txtText="";
+		var intNumber=0;
+		var indexBits=-1;
+		var ii=-1,jj=-1;
+		var intMultiplier=-1;
+		for(jj=0;jj<window.iconicCanvas.intHeightInWhiteAndBlackBits;jj++){
+			intNumber=0;
+			intMultiplier=1;
+			for(ii=window.iconicCanvas.intWidthInWhiteAndBlackBits-1;ii>=0;ii--){
+				indexBits=(jj*window.iconicCanvas.intWidthInWhiteAndBlackBits+ii);
+				if(window.iconicCanvas.arrBits[indexBits])intNumber+=intMultiplier;
+				intMultiplier*=2;
+			}
+			lstNumbers.push(intNumber);
+		}
+		for(ii=0;ii<lstNumbers.length;ii++){
+			txtText+=lstNumbers[ii];
+			if(ii<lstNumbers.length-1)txtText+=",";
+		}
+		document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+txtText+"</textarea>";
+		window.iconicCanvas=null;
+};
+	iconicCanvas.update();
 }
 function encodeData(varString){
 	var ii;
@@ -538,7 +776,10 @@ function btnToBinarishBindings(){
 function init(){
 	document.getElementById("btnEncode").onclick=btnEncodePressed;
 	document.getElementById("btnDecode").onclick=btnDecodePressed;
+	document.getElementById("btnIconicDecode").onclick=btnIconicDecodePressed;
+	document.getElementById("btnStringIconicEndecodeString").onclick=btnStringIconicEndecodeStringPressed;
 	document.getElementById("btnDeencodeString").onclick=btnDeencodeStringPressed;
+	document.getElementById("btnIconicEncodeEditor").onclick=btnIconicEncodeEditor;
 	document.getElementById("txtImpresionismArts").focus();
 	document.getElementById("btnPrevCharsSide").onclick=btnPrevCharsSidePressed;
 	document.getElementById("btnNextCharsSide").onclick=btnNextCharsSidePressed;
@@ -583,7 +824,7 @@ window.onload=init
 	<table><tr><td>	
 	<table>	
 		<tr><td><textarea id="txtImpresionismArts" cols="30" rows="10">Impresionism arts </textarea></td></tr>
-		<tr><td><table><tr><td><button id="btnDecode">Decode</button> </td><td><div id="divFlush"> </div></td><td><button id="btnDeencodeString">|{[(%Deencode string,s,%)]}| </button> </td><td> <input type="checkbox" id="chkFlush" value="Flush"> Flush to queries </input> </td><td><button id="btnEncode">Encode</button></td></tr></table></td></tr>
+		<tr><td><table><tr><td><button id="btnDecode">Decode</button></td><td><button id="btnIconicDecode">Iconic decode</button></td><td><button id="btnStringIconicEndecodeString">String iconic endecode</button></td><td><div id="divFlush"> </div></td><td><button id="btnDeencodeString">|{[(%Deencode string,s,%)]}| </button> </td><td> <input type="checkbox" id="chkFlush" value="Flush"> Flush to queries </input> </td><td><button id="btnEncode">Encode</button></td><td><button id="btnIconicEncodeEditor">Iconic encode editor...</button></td></tr></table></td></tr>
 </table>
 </td></tr> 
 <td><tr> 
