@@ -109,6 +109,32 @@ function btnDecodePressed(){
 	} 
 
 }
+function iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits){
+	var txtFunFunFunIntHeightInWhiteAndBlackBits=intArray.length;
+	var txtFunFunFunIntWidthInWhiteAndBlackBits=Math.floor(Math.log(maxValue(intArray))/Math.log(2,10))+1;
+	if((txtFunFunFunIntHeightInWhiteAndBlackBits>intHeightInWhiteAndBlackBits)||(txtFunFunFunIntWidthInWhiteAndBlackBits>intWidthInWhiteAndBlackBits))alert("Actual iconic dimensions are ["+intWidthInWhiteAndBlackBits+","+intHeightInWhiteAndBlackBits+"], when iconic dimensions from txtFunFunFun are ["+txtFunFunFunIntWidthInWhiteAndBlackBits+","+txtFunFunFunIntHeightInWhiteAndBlackBits+"]. Image will be trimmed.");
+	var arrBits=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
+	var indexBits=-1;
+	var i=-1,j=-1;
+	var ii=-1,jj=-1;
+	for(jj=0;jj<intHeightInWhiteAndBlackBits;jj++){
+		if(jj<intArray.length)
+			intNumber=intArray[jj];
+		else
+			intNumber=0;
+		for(ii=intWidthInWhiteAndBlackBits-1;ii>=0;ii--){
+			indexBits=(Math.floor(jj))*intWidthInWhiteAndBlackBits+Math.floor(ii);
+			if(intNumber%2){
+				arrBits[indexBits]=1;
+			}else{
+				arrBits[indexBits]=0;
+			}
+			intNumber/=2;
+			intNumber=Math.floor(intNumber);
+		}
+	}
+	return arrBits;
+}
 function btnIconicDecodeNumbers(intArray){
 	var intColor0R=255,intColor0G=255,intColor0B=255;
 	var intColor1R=0,intColor1G=0,intColor1B=0;
@@ -235,9 +261,14 @@ function btnStringIconicEndecodeStringPressed(){
 	var txtText=encodeString(varString);	
 	btnIconicDecodeData(txtText.split(","));
 }
-function btnIconicEncodeEditor(){
+function btnIconicEncodeEditorPressed(){
 	var intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits;
 	var strDimensions=prompt('Enter 0 and 1, white and black icon dimensions in format [intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits] to convert later with the "Iconic encode" button that will appear to intWidthInWhiteAndBlackBits-bit digits, amount of digits intHeightInWhiteAndBlackBits:',"[10,16,16]");
+	var blnLoadImage=confirm("Load image from txtFunFunFun with iconic encode?");
+	var blnIconicDecodeLoad=true;
+	if(true==blnLoadImage){
+		blnIconicDecodeLoad=confirm("Press ok to decode numbers, press cancel to endecode strings.");
+	}
 	if(null==strDimensions)return;
 	var strDim=strDimensions.substring(1,strDimensions.length-1);	
 	var arrDim=strDim.split(",");
@@ -263,7 +294,7 @@ function btnIconicEncodeEditor(){
 	var intImageWidth=intPixelSize*intWidthInWhiteAndBlackBits;
 	var intImageHeight=intPixelSize*intHeightInWhiteAndBlackBits;
 	var divResponseData=document.getElementById("responseData");
-	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas><button id='btnIconicEncode'>Iconic encode</button>"
+	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas><button id='btnIconicEncode'>Iconic encode</button><button id=btnIconicFreehandLinesDrawing>Lines drawing mode</button><input type='checkbox' id='chkIconicModify'>Modify pixel mode in freehand drawing mode</input>";
 	var iconicCanvas=document.getElementById("iconicCanvas");
 	iconicCanvas.style="border: 1px solid #ff3c00";
 	iconicCanvas.intPixelSize=intPixelSize;
@@ -272,6 +303,32 @@ function btnIconicEncodeEditor(){
 	iconicCanvas.intImageWidth=intImageWidth;
 	iconicCanvas.intImageHeight=intImageHeight;
 	iconicCanvas.arrBits=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
+	iconicCanvas.arrBitsWithoutEditedLine=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
+	iconicCanvas.intX0=-1;
+	iconicCanvas.intY0=-1;
+	iconicCanvas.blnFreehandMode=true;
+	iconicCanvas.blnMouseDown=false;
+	iconicCanvas.lastI=-1;
+	iconicCanvas.lastJ=-1;
+	iconicCanvas.blnFirstClick=true;
+	iconicCanvas.chkIconicModify=document.getElementById("chkIconicModify");
+	iconicCanvas.modifypixel=function(intI,intJ){
+		var indexBits=(Math.floor(intJ))*this.intWidthInWhiteAndBlackBits+Math.floor(intI);
+		this.arrBits[indexBits]^=1;
+		this.update();
+	};
+	iconicCanvas.putpixel=function(intI,intJ){
+		var indexBits=(Math.floor(intJ))*this.intWidthInWhiteAndBlackBits+Math.floor(intI);
+		this.arrBits[indexBits]=1;
+		this.update();
+	};
+	iconicCanvas.dopixel=function(intI,intJ){
+		if(true==window.iconicCanvas.chkIconicModify.checked)window.iconicCanvas.modifypixel(intI,intJ);
+		else window.iconicCanvas.putpixel(intI,intJ);
+	};
+	iconicCanvas.copyBuffer=function(dst,src){
+		for(var ii=0;ii<dst.length;ii++)dst[ii]=src[ii];
+	};
 	iconicCanvas.update=function(){
 		var iconicContext=this.getContext("2d");
 		var iconicImage=iconicContext.getImageData(0,0,intImageWidth,intImageHeight);
@@ -310,17 +367,164 @@ function btnIconicEncodeEditor(){
 		}
 
 
-	iconicContext.putImageData(iconicImage,0,0);
-	}
+		iconicContext.putImageData(iconicImage,0,0);
+	};
 	iconicCanvas.onmousedown=function(evtEvent){
 		var i=evtEvent.offsetX;
 		var j=evtEvent.offsetY;
-		var indexBits=(Math.floor(j/this.intPixelSize))*this.intWidthInWhiteAndBlackBits+Math.floor(i/this.intPixelSize);
-		this.arrBits[indexBits]^=1;
-		this.update();
-	}
+		var currentI=Math.floor(i/this.intPixelSize);
+		var currentJ=Math.floor(j/this.intPixelSize);
+
+		if((true==window.iconicCanvas.blnFirstClick)||(currentI!=window.iconicCanvas.lastI&&currentJ!=window.iconicCanvas.lastJ)){
+			window.iconicCanvas.dopixel(currentI,currentJ);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,window.iconicCanvas.arrBits);
+		}
+		if(true==window.iconicCanvas.blnFirstClick){
+			window.iconicCanvas.lastI=currentI;
+			window.iconicCanvas.lastJ=currentJ;
+			window.iconicCanvas.intX0=currentI;
+			window.iconicCanvas.intY0=currentJ;
+		}
+		window.iconicCanvas.blnFirstClick=false;
+		window.iconicCanvas.blnMouseDown=true;
+	};
+	iconicCanvas.onmousemove=function(evtEvent){
+		var blnModify=false;
+		var i=evtEvent.offsetX;
+		var j=evtEvent.offsetY;
+		var currentI=Math.floor(i/this.intPixelSize);
+		var currentJ=Math.floor(j/this.intPixelSize);
+		if(true==window.iconicCanvas.blnFreehandMode){
+			if(true==window.iconicCanvas.blnMouseDown){
+			//console.log([currentI,currentJ,window.iconicCanvas.lastI,window.iconicCanvas.lastJ]);
+				if(currentI!=window.iconicCanvas.lastI||currentJ!=window.iconicCanvas.lastJ){
+					window.iconicCanvas.lastI=currentI;
+					window.iconicCanvas.lastJ=currentJ;
+					window.iconicCanvas.dopixel(currentI,currentJ);
+				}
+			}
+		}else{
+			if(true==window.iconicCanvas.blnMouseDown){
+				window.iconicCanvas.lastI=currentI;
+				window.iconicCanvas.lastJ=currentJ;
+				window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBits,window.iconicCanvas.arrBitsWithoutEditedLine);
+				window.iconicCanvas.drawLine(window.iconicCanvas.intX0,window.iconicCanvas.intY0,currentI,currentJ);
+
+			}
+		}
+	};
+	iconicCanvas.onmouseup=function(evtEvent){
+		window.iconicCanvas.blnMouseDown=false;
+		window.iconicCanvas.blnFirstClick=true;
+		window.intX0=-1;
+		window.intY0=-1;
+		var i=evtEvent.offsetX;
+		var j=evtEvent.offsetY;
+		var currentI=Math.floor(i/this.intPixelSize);
+		var currentJ=Math.floor(j/this.intPixelSize);
+		if(false==window.iconicCanvas.blnFreehandMode){
+			window.iconicCanvas.drawLine(window.iconicCanvas.intX0,window.iconicCanvas.intY0,currentI,currentJ);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,window.iconicCanvas.arrBits);
+		}
+	};
+	iconicCanvas.drawLine0=function(intX0,intY0,intX1,intY1){
+		var dX=intX1-intX0;
+		var dY=intY1-intY0;
+		var intYi=1;
+		if(dY<0){
+			intYi=-1;
+			dY=-dY;
+		}
+		var d=2*dY-dX;
+		var intY =intY0;
+
+		for(var intX=intX0;intX<=intX1;intX++){
+			this.putpixel(intX,intY);
+		if(d>0){
+			intY=intY+intYi;
+			d=d-2*dX;
+		}
+		d=d+2*dY;
+		}
+
+	};
+	iconicCanvas.drawLine1=function(intX0,intY0,intX1,intY1){
+		var dX=intX1-intX0;
+		var dY=intY1-intY0;
+		var intXi=1;
+		if(dX<0){
+			intXi=-1;
+			dX=-dX;
+		}
+		var d=2*dX-dY;
+		var intX=intX0;
+
+		for(var intY=intY0;intY<=intY1;intY++){
+			this.putpixel(intX,intY);
+			if(d>0){
+				intX=intX+intXi;
+				d=d-2*dY;
+			}
+			d=d+2*dX;
+			}
+
+	};
+	iconicCanvas.drawLine=function(intX0,intY0,intX1,intY1){
+		if(Math.abs(intY1-intY0)<=Math.abs(intX1-intX0)){
+			if(intX0>=intX1)
+				this.drawLine0(intX1,intY1,intX0,intY0);
+			else this.drawLine0(intX0,intY0,intX1,intY1);
+		}else{
+				if(intY0>=intY1)
+				this.drawLine1(intX1,intY1,intX0,intY0);
+			else this.drawLine1(intX0,intY0,intX1,intY1);
+		}
+	};
 	window.iconicCanvas=iconicCanvas;
-	var btnIconicEncode=document.getElementById("btnIconicEncode").onclick=function(){
+	if(true==blnLoadImage){
+		if(true==blnIconicDecodeLoad){
+			var varArray=document.getElementById("txtImpresionismArts").value.split(',');
+			var intArray=[];
+			var intNumber=-1;
+			for(var ii=0;ii<varArray.length;ii++){
+				if(0!=varArray[ii].length)
+					intNumber=parseInt(varArray[ii]);
+				else
+					break;
+				if(intNumber<0||Number.isNaN(intNumber)){
+					alert("Incorrect number found");
+					return;
+				}
+				intArray.push(intNumber);
+			}
+			var arrBits=iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBits,arrBits);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,arrBits);
+
+		}else{
+			var varString=document.getElementById("txtImpresionismArts").value;
+			var txtText=encodeString(varString);	
+			var varArray=txtText.split(",");
+			var intArray=[];
+			var intNumber=-1;
+			for(var ii=0;ii<varArray.length;ii++){
+				if(0!=varArray[ii].length)
+					intNumber=parseInt(varArray[ii]);
+				else
+					break;
+				if(intNumber<0||Number.isNaN(intNumber)){
+					alert("Incorrect number found");
+					return;
+				}
+				intArray.push(intNumber);
+			}
+			var arrBits=iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBits,arrBits);
+			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,arrBits);
+		}
+	}
+	var btnIconicEncode=document.getElementById("btnIconicEncode");
+	btnIconicEncode.onclick=function(){
 		var lstNumbers=[];	
 		var txtText="";
 		var intNumber=0;
@@ -343,9 +547,15 @@ function btnIconicEncodeEditor(){
 		}
 		document.getElementById("responseData").innerHTML="<textarea id='txtResponse' style='font-size: 30pt'  cols='15' rows='5' >"+txtText+"</textarea>";
 		window.iconicCanvas=null;
-};
+	};
+	var btnIconicFreehandLinesDrawing=document.getElementById("btnIconicFreehandLinesDrawing");
+	btnIconicFreehandLinesDrawing.onclick=function(){
+		window.iconicCanvas.blnFreehandMode=!window.iconicCanvas.blnFreehandMode;
+		if(true==window.iconicCanvas.blnFreehandMode)this.innerText="Lines drawing mode";
+		else this.innerText="Freehand drawing mode";
+	};
 	iconicCanvas.update();
-}
+};
 function encodeData(varString){
 	var ii;
 	var varArray=varString.split('');
@@ -779,7 +989,7 @@ function init(){
 	document.getElementById("btnIconicDecode").onclick=btnIconicDecodePressed;
 	document.getElementById("btnStringIconicEndecodeString").onclick=btnStringIconicEndecodeStringPressed;
 	document.getElementById("btnDeencodeString").onclick=btnDeencodeStringPressed;
-	document.getElementById("btnIconicEncodeEditor").onclick=btnIconicEncodeEditor;
+	document.getElementById("btnIconicEncodeEditor").onclick=btnIconicEncodeEditorPressed;
 	document.getElementById("txtImpresionismArts").focus();
 	document.getElementById("btnPrevCharsSide").onclick=btnPrevCharsSidePressed;
 	document.getElementById("btnNextCharsSide").onclick=btnNextCharsSidePressed;
