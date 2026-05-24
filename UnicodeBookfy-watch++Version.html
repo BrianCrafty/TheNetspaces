@@ -109,7 +109,7 @@ function btnDecodePressed(){
 	} 
 
 }
-function iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits){
+function iconicDecodeNumbersToarrBits(intArray,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits){
 	var txtFunFunFunIntHeightInWhiteAndBlackBits=intArray.length;
 	var txtFunFunFunIntWidthInWhiteAndBlackBits=Math.floor(Math.log(maxValue(intArray))/Math.log(2,10))+1;
 	if((txtFunFunFunIntHeightInWhiteAndBlackBits>intHeightInWhiteAndBlackBits)||(txtFunFunFunIntWidthInWhiteAndBlackBits>intWidthInWhiteAndBlackBits))alert("Actual iconic dimensions are ["+intWidthInWhiteAndBlackBits+","+intHeightInWhiteAndBlackBits+"], when iconic dimensions from txtFunFunFun are ["+txtFunFunFunIntWidthInWhiteAndBlackBits+","+txtFunFunFunIntHeightInWhiteAndBlackBits+"]. Image will be trimmed.");
@@ -123,10 +123,17 @@ function iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBl
 		else
 			intNumber=0;
 		for(ii=intWidthInWhiteAndBlackBits-1;ii>=0;ii--){
+			//intColor=(intNumber%2)?0:255;
 			indexBits=(Math.floor(jj))*intWidthInWhiteAndBlackBits+Math.floor(ii);
 			if(intNumber%2){
+				//intColorR=intColor1R;
+				//intColorG=intColor1G;
+				//intColorB=intColor1B;
 				arrBits[indexBits]=1;
 			}else{
+				//intColorR=intColor0R;
+				//intColorG=intColor0G;
+				//intColorB=intColor0B;
 				arrBits[indexBits]=0;
 			}
 			intNumber/=2;
@@ -142,30 +149,40 @@ function btnIconicDecodeNumbers(intArray){
 	randomChar=Math.floor(Math.random()*maxRandomChar);
 	var intHeightInWhiteAndBlackBits=intArray.length;
 	var intWidthInWhiteAndBlackBits=Math.floor(Math.log(maxValue(intArray))/Math.log(2,10))+1;
-	var strDimensions=prompt("Icon dimensions=["+intWidthInWhiteAndBlackBits+", "+intHeightInWhiteAndBlackBits+"]. Enter [intPixelSize, blnDrawGrid], where intPixelSize>=1 is the size of the square pixel and blnDrawGrid drawing grid, true or false:","[10,false]");
+	var strDimensions=prompt("Icon dimensions=["+intWidthInWhiteAndBlackBits+", "+intHeightInWhiteAndBlackBits+"]. Enter [intPixelWidth,intPixelHeight, blnDrawGrid], where intPixelWidth>=1 and intPixelHeight>=1 is the size of the square pixel and blnDrawGrid drawing grid, true or false:","[10,10,false]");
 	if(null==strDimensions)return;
 	var strDim=strDimensions.substring(1,strDimensions.length-1);	
 	var arrDim=strDim.split(",");
 	var intNumber=-1;
-	var intPixelSize=parseInt(arrDim[0]);
-	var blnDrawGrid=arrDim[1];
-	if(arrDim.length!=2){
-		alert("Incorrect format, please enter [intPixelSize,blnDrawGrid].");
+	var intPixelWidth=parseInt(arrDim[0]);
+	var intPixelHeight=parseInt(arrDim[1]);
+	var blnDrawGrid=arrDim[2];
+	if(arrDim.length!=3){
+		alert("Incorrect format, please enter [intPixelWidth,intPixelHeight,blnDrawGrid].");
+		return;
 	}
-	if(intPixelSize<0||Number.isNaN(intPixelSize)){
-			alert("Incorrect intPixelSize found");
+	if(intPixelWidth<0||Number.isNaN(intPixelWidth)){
+			alert("Incorrect intPixelWidth found");
 			return;
 	}
-	if(intPixelSize<1){
-		alert("intPixelSize<1");
+	if(intPixelWidth<1){
+		alert("intPixelWidth<1");
+		return;
+	}
+	if(intPixelHeight<0||Number.isNaN(intPixelHeight)){
+			alert("Incorrect intPixelHeight found");
+			return;
+	}
+	if(intPixelHeight<1){
+		alert("intPixelHeight<1");
 		return;
 	}
 	if("false"!=blnDrawGrid&&"true"!=blnDrawGrid){
 		alert('"false"!=blnDrawGrid&&"true"!=blnDrawGrid');
 		return;
 	}
-	var intImageWidth=intPixelSize*intWidthInWhiteAndBlackBits;
-	var intImageHeight=intPixelSize*intHeightInWhiteAndBlackBits;
+	var intImageWidth=intPixelWidth*intWidthInWhiteAndBlackBits;
+	var intImageHeight=intPixelHeight*intHeightInWhiteAndBlackBits;
 	var divResponseData=document.getElementById("responseData");
 	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas>"
 	var iconicCanvas=document.getElementById("iconicCanvas");
@@ -195,8 +212,8 @@ function btnIconicDecodeNumbers(intArray){
 			intNumber/=2;
 			intNumber=Math.floor(intNumber);
 			
-			for(j=(jj)*intPixelSize;j<(jj+1)*intPixelSize;j++){
-				for(i=(ii-1)*intPixelSize;i<(ii)*intPixelSize;i++){
+			for(j=(jj)*intPixelHeight;j<(jj+1)*intPixelHeight;j++){
+				for(i=(ii-1)*intPixelWidth;i<(ii)*intPixelWidth;i++){
 					index=(j*intImageWidth+i)*4;
 					iconicImage.data[index+0]=intColorR;
 					iconicImage.data[index+1]=intColorG;
@@ -212,8 +229,8 @@ function btnIconicDecodeNumbers(intArray){
 		for(j=0;j<intImageHeight;j++)
 			for(i=0;i<intImageWidth;i++){
 				indexImage=(j*intImageWidth+i)*4;
-				indexBits=(Math.floor(j/intPixelSize))*intWidthInWhiteAndBlackBits+Math.floor(i/intPixelSize);
-				if(0==i%intPixelSize||0==j%intPixelSize){
+				indexBits=(Math.floor(j/intPixelHeight))*intWidthInWhiteAndBlackBits+Math.floor(i/intPixelWidth);
+				if(0==i%intPixelWidth||0==j%intPixelHeight){
 					iconicImage.data[indexImage+0]=255;
 					iconicImage.data[indexImage+1]=60;
 					iconicImage.data[indexImage+2]=0;
@@ -262,13 +279,8 @@ function btnStringIconicEndecodeStringPressed(){
 	btnIconicDecodeData(txtText.split(","));
 }
 function btnIconicEncodeEditorPressed(){
-	var intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits;
-	var strDimensions=prompt('Enter 0 and 1, white and black icon dimensions in format [intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits] to convert later with the "Iconic encode" button that will appear to intWidthInWhiteAndBlackBits-bit digits, amount of digits intHeightInWhiteAndBlackBits:',"[10,16,16]");
-	var blnLoadImage=confirm("Load image from txtFunFunFun with iconic encode?");
-	var blnIconicDecodeLoad=true;
-	if(true==blnLoadImage){
-		blnIconicDecodeLoad=confirm("Press ok to decode numbers, press cancel to endecode strings.");
-	}
+	var intPixelWidth,intHeight,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits;
+	var strDimensions=prompt('Enter 0 and 1, white and black icon dimensions in format [intPixelWidth,intPixelHeight,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits] to convert later with the "Iconic encode" button that will appear to intWidthInWhiteAndBlackBits-bit digits, amount of digits intHeightInWhiteAndBlackBits:',"[10,10,16,16]");
 	if(null==strDimensions)return;
 	var strDim=strDimensions.substring(1,strDimensions.length-1);	
 	var arrDim=strDim.split(",");
@@ -285,23 +297,29 @@ function btnIconicEncodeEditorPressed(){
 		}
 		arrIntDim.push(intNumber);
 	}
-	if(arrIntDim.length!=3){
-		alert("Incorrect format, please enter [intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits].");
+	if(arrIntDim.length!=4){
+		alert("Incorrect format, please enter [intPixelWidth,intPixelHeight,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits].");
+		return;
 	}
-	var intPixelSize=arrIntDim[0];
-	var intWidthInWhiteAndBlackBits=arrIntDim[1];
-	var intHeightInWhiteAndBlackBits=arrIntDim[2];
-	var intImageWidth=intPixelSize*intWidthInWhiteAndBlackBits;
-	var intImageHeight=intPixelSize*intHeightInWhiteAndBlackBits;
+	var blnLoadImage=confirm("Load image from txtFunFunFun with iconic encode?");
+	var blnIconicDecodeLoad=true;
+	if(true==blnLoadImage){
+		blnIconicDecodeLoad=confirm("Press ok to decode numbers, press cancel to endecode strings.");
+	}
+	var intPixelWidth=arrIntDim[0];
+	var intPixelHeight=arrIntDim[1];
+	var intWidthInWhiteAndBlackBits=arrIntDim[2];
+	var intHeightInWhiteAndBlackBits=arrIntDim[3];
+	var intImageWidth=intPixelWidth*intWidthInWhiteAndBlackBits;
+	var intImageHeight=intPixelHeight*intHeightInWhiteAndBlackBits;
 	var divResponseData=document.getElementById("responseData");
-	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas><button id='btnIconicEncode'>Iconic encode</button><button id=btnIconicFreehandLinesDrawing>Lines drawing mode</button><input type='checkbox' id='chkIconicModify'>Modify pixel mode in freehand drawing mode</input>";
+	divResponseData.innerHTML="<canvas id='iconicCanvas' width='"+intImageWidth+"' height='"+intImageHeight+" '></canvas><button id='btnIconicEncode'>Iconic encode</button><button id=btnIconicFreehandLinesDrawing>Lines drawing mode</button><input type='checkbox' id='chkIconicModify'>Freehand modify pixel mode</input><button id='btnIconicBackgroundImage'>Load backgound image...</button>";
 	var iconicCanvas=document.getElementById("iconicCanvas");
 	iconicCanvas.style="border: 1px solid #ff3c00";
-	iconicCanvas.intPixelSize=intPixelSize;
+	iconicCanvas.intPixelWidth=intPixelWidth;
+	iconicCanvas.intPixelHeight=intPixelHeight;
 	iconicCanvas.intWidthInWhiteAndBlackBits=intWidthInWhiteAndBlackBits;
 	iconicCanvas.intHeightInWhiteAndBlackBits=intHeightInWhiteAndBlackBits;
-	iconicCanvas.intImageWidth=intImageWidth;
-	iconicCanvas.intImageHeight=intImageHeight;
 	iconicCanvas.arrBits=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
 	iconicCanvas.arrBitsWithoutEditedLine=new Int8Array(intWidthInWhiteAndBlackBits*intHeightInWhiteAndBlackBits);
 	iconicCanvas.intX0=-1;
@@ -331,7 +349,7 @@ function btnIconicEncodeEditorPressed(){
 	};
 	iconicCanvas.update=function(){
 		var iconicContext=this.getContext("2d");
-		var iconicImage=iconicContext.getImageData(0,0,intImageWidth,intImageHeight);
+		var iconicImage=iconicContext.getImageData(0,0,this.width,this.height);
 	
 		var indexImage=-1,indexBits=-1;
 		var i=-1,j=-1;
@@ -340,11 +358,17 @@ function btnIconicEncodeEditorPressed(){
 		var intColor0R=255,intColor0G=255,intColor0B=255;
 		var intColor1R=0,intColor1G=0,intColor1B=0;
 		var intColorR=-1,intColorG=-1,intColorB=-1;
-		for(j=0;j<this.intImageHeight;j++)
-			for(i=0;i<this.intImageWidth;i++){
-				indexImage=(j*this.intImageWidth+i)*4;
-				indexBits=(Math.floor(j/this.intPixelSize))*this.intWidthInWhiteAndBlackBits+Math.floor(i/this.intPixelSize);
-				if(0==i%this.intPixelSize||0==j%this.intPixelSize){
+		var backgroundImageContext=null;
+		var backgroundImage=null;
+		if(null!=window.iconicCanvas.backgroundImageCanvas){
+			backgroundContext=window.iconicCanvas.backgroundImageCanvas.getContext("2d");
+			backgroundImage=backgroundContext.getImageData(0,0,this.width,this.height);
+		}
+		for(j=0;j<this.height;j++)
+			for(i=0;i<this.width;i++){
+				indexImage=(j*this.width+i)*4;
+				indexBits=(Math.floor(j/this.intPixelHeight))*this.intWidthInWhiteAndBlackBits+Math.floor(i/this.intPixelWidth);
+				if(0==i%this.intPixelWidth||0==j%this.intPixelHeight){
 					iconicImage.data[indexImage+0]=255;
 					iconicImage.data[indexImage+1]=60;
 					iconicImage.data[indexImage+2]=0;
@@ -355,9 +379,15 @@ function btnIconicEncodeEditorPressed(){
 						intColorG=intColor1G;
 						intColorB=intColor1B;
 					}else{
-						intColorR=intColor0R;
-						intColorG=intColor0G;
-						intColorB=intColor0B;
+						if(null==window.iconicCanvas.backgroundImageCanvas){
+							intColorR=intColor0R;
+							intColorG=intColor0G;
+							intColorB=intColor0B;
+						}else{
+							intColorR=backgroundImage.data[indexImage+0];
+							intColorG=backgroundImage.data[indexImage+1];
+							intColorB=backgroundImage.data[indexImage+2];
+						}
 					}
 					iconicImage.data[indexImage+0]=intColorR;
 					iconicImage.data[indexImage+1]=intColorG;
@@ -372,8 +402,8 @@ function btnIconicEncodeEditorPressed(){
 	iconicCanvas.onmousedown=function(evtEvent){
 		var i=evtEvent.offsetX;
 		var j=evtEvent.offsetY;
-		var currentI=Math.floor(i/this.intPixelSize);
-		var currentJ=Math.floor(j/this.intPixelSize);
+		var currentI=Math.floor(i/this.intPixelWidth);
+		var currentJ=Math.floor(j/this.intPixelHeight);
 
 		if((true==window.iconicCanvas.blnFirstClick)||(currentI!=window.iconicCanvas.lastI&&currentJ!=window.iconicCanvas.lastJ)){
 			window.iconicCanvas.dopixel(currentI,currentJ);
@@ -392,11 +422,10 @@ function btnIconicEncodeEditorPressed(){
 		var blnModify=false;
 		var i=evtEvent.offsetX;
 		var j=evtEvent.offsetY;
-		var currentI=Math.floor(i/this.intPixelSize);
-		var currentJ=Math.floor(j/this.intPixelSize);
+		var currentI=Math.floor(i/this.intPixelWidth);
+		var currentJ=Math.floor(j/this.intPixelHeight);
 		if(true==window.iconicCanvas.blnFreehandMode){
 			if(true==window.iconicCanvas.blnMouseDown){
-			//console.log([currentI,currentJ,window.iconicCanvas.lastI,window.iconicCanvas.lastJ]);
 				if(currentI!=window.iconicCanvas.lastI||currentJ!=window.iconicCanvas.lastJ){
 					window.iconicCanvas.lastI=currentI;
 					window.iconicCanvas.lastJ=currentJ;
@@ -420,8 +449,8 @@ function btnIconicEncodeEditorPressed(){
 		window.intY0=-1;
 		var i=evtEvent.offsetX;
 		var j=evtEvent.offsetY;
-		var currentI=Math.floor(i/this.intPixelSize);
-		var currentJ=Math.floor(j/this.intPixelSize);
+		var currentI=Math.floor(i/this.intPixelWidth);
+		var currentJ=Math.floor(j/this.intPixelHeight);
 		if(false==window.iconicCanvas.blnFreehandMode){
 			window.iconicCanvas.drawLine(window.iconicCanvas.intX0,window.iconicCanvas.intY0,currentI,currentJ);
 			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,window.iconicCanvas.arrBits);
@@ -480,6 +509,63 @@ function btnIconicEncodeEditorPressed(){
 			else this.drawLine1(intX0,intY0,intX1,intY1);
 		}
 	};
+
+	iconicCanvas.resizeCanvas=function(theNewWidth,theNewHeight){
+			var intNewWidth,intNewHeigth;
+			if(undefined==theNewWidth)intNewWidth=window.iconicCanvas.width;
+			else intNewWidth=theNewWidth;
+			if(undefined==theNewHeight)intNewHeigth=window.iconicCanvas.height;
+			else intNewHeigth=theNewHeight;
+			var strNewSize=prompt("Enter the new size in the [width,height] format, where width and height are the pixels amount. Empty text or text with errors will set the full screen size.","["+intNewWidth+","+intNewHeigth+"]");
+			if(null==strNewSize)return;
+			if(0==strNewSize.length){
+				return;
+			}
+			var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+			if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+				alert(strError);
+				return;
+			}
+			var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+			if(2!=lstDimensions.length){
+				alert(strError);
+				return;
+			}
+			var intWidth=parseInt(lstDimensions[0]);
+			var intHeight=parseInt(lstDimensions[1]);
+			if(true==Number.isNaN(intWidth)){
+				alert(strError);
+				return;
+			}
+			if(true==Number.isNaN(intHeight)){
+				alert(strError);
+				return;
+			}
+			this.resizeAllCanvases(intWidth,intHeight);
+	}
+	iconicCanvas.resizeAllCanvases=function(intNewWidth,intNewHeight){
+		var blnRoundToWhiteAndBlackBits=true;
+		var intPixelWidth=Math.ceil(intNewWidth/iconicCanvas.intWidthInWhiteAndBlackBits);
+		var intPixelHeight=Math.ceil(intNewHeight/iconicCanvas.intHeightInWhiteAndBlackBits);
+		var intImageWidth,intImageHeight;
+		if(false==blnRoundToWhiteAndBlackBits){
+			intImageWidth=intNewWidth;
+			intImageHeight=intNewHeight;
+		}else{
+			intImageWidth=intPixelWidth*intWidthInWhiteAndBlackBits;
+			intImageHeight=intPixelHeight*intHeightInWhiteAndBlackBits;
+		}
+		this.width=intImageWidth;
+		this.height=intImageHeight;
+		this.intPixelWidth=intPixelWidth;
+		this.intPixelHeight=intPixelHeight;
+		if(null!=this.backgroundImageCanvas){
+			this.backgroundImageCanvas.width=intImageWidth;
+			this.backgroundImageCanvas.height=intImageHeight;
+		}
+		alert("All canvases resized, intPixelWidth="+this.intPixelWidth+" intPixelHeight="+this.intPixelHeight);
+		this.update();
+	}
 	window.iconicCanvas=iconicCanvas;
 	if(true==blnLoadImage){
 		if(true==blnIconicDecodeLoad){
@@ -497,7 +583,7 @@ function btnIconicEncodeEditorPressed(){
 				}
 				intArray.push(intNumber);
 			}
-			var arrBits=iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
+			var arrBits=iconicDecodeNumbersToarrBits(intArray,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
 			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBits,arrBits);
 			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,arrBits);
 
@@ -518,7 +604,7 @@ function btnIconicEncodeEditorPressed(){
 				}
 				intArray.push(intNumber);
 			}
-			var arrBits=iconicDecodeNumbersToarrBits(intArray,intPixelSize,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
+			var arrBits=iconicDecodeNumbersToarrBits(intArray,intWidthInWhiteAndBlackBits,intHeightInWhiteAndBlackBits);
 			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBits,arrBits);
 			window.iconicCanvas.copyBuffer(window.iconicCanvas.arrBitsWithoutEditedLine,arrBits);
 		}
@@ -554,8 +640,72 @@ function btnIconicEncodeEditorPressed(){
 		if(true==window.iconicCanvas.blnFreehandMode)this.innerText="Lines drawing mode";
 		else this.innerText="Freehand drawing mode";
 	};
+	var btnIconicBackgroundImage=document.getElementById("btnIconicBackgroundImage");
+	btnIconicBackgroundImage.onclick=function(){
+		if(null==window.iconicCanvas.backgroundImageCanvas){
+			window.iconicCanvas.backgroundImageCanvas=document.createElement("canvas");
+			window.iconicCanvas.backgroundImageCanvas.id="backgroundImageCanvas";
+			window.iconicCanvas.backgroundImageCanvas.width=window.iconicCanvas.width;
+			window.iconicCanvas.backgroundImageCanvas.height=window.iconicCanvas.height;
+		}
+		openFile(window.iconicCanvas.backgroundImageCanvas);
+	};
 	iconicCanvas.update();
-};
+}
+function click(elem){
+	var eventMouse=document.createEvent("MouseEvents");
+	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	elem.dispatchEvent(eventMouse);
+}
+function loadImage(url,theCanvas){
+	var img=new Image();
+	img.onload=function(evtLoad){
+		var theContext=theCanvas.getContext("2d");
+
+		if(this.width!=window.iconicCanvas.width||this.height!=window.iconicCanvas.height){
+			var blnResize=confirm("Loaded image has size ["+[this.width,this.height]+"] and the IconicCanvas has size ["+[window.iconicCanvas.width,window.iconicCanvas.height]+"]. Resize the IconicCanvas?");
+			if(true==blnResize)window.iconicCanvas.resizeCanvas(this.width,this.height);
+		}
+
+		if(this.width!=window.iconicCanvas.width||this.height!=window.iconicCanvas.height){
+			var blnDrawZoomed=confirm("Canvases have different sizes? Image can be resized to fit into the canvas or drawn in orginal size even if only part of it? Resize image? Image dimanensions "+[this.width,this.height]+" when canvas dimensions="+[window.iconicCanvas.width,window.iconicCanvas.height]);
+		}
+		var intWidth=(this.width<=theCanvas.width)?this.width:theCanvas.width;
+		var intHeight=(this.height<=theCanvas.height)?this.height:theCanvas.height;
+		if(true==blnDrawZoomed){
+			var intWidthDiff=(window.iconicCanvas.width-this.width);
+			var intHeightDiff=(window.iconicCanvas.height-this.height);
+			if(intWidthDiff<0)intWidthDiff=0;
+			if(intHeightDiff<0)intHeightDiff=0;
+			
+			//theContext.drawImage(this,intWidthDiff,intHeightDiff,intWidth,intHeight);
+			theContext.drawImage(this,intWidthDiff,0,intWidth,intHeight);
+		}else
+			theContext.drawImage(this,0,0,this.width,this.height);
+		window.iconicCanvas.update();
+	}
+	img.src=url;
+}
+function openFile(theCanvas){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			loadImage(evtFile.target.result,theCanvas);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsDataURL(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
 function encodeData(varString){
 	var ii;
 	var varArray=varString.split('');
