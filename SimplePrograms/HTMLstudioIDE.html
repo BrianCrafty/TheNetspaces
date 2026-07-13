@@ -1,0 +1,419 @@
+<html>
+<head>
+	<meta charset="utf-8">
+	<title>HTML studio IDE</title>
+<style>
+input,button,a{background-color:rgba(255,60,0,255);
+	border:none;
+	color: black;}
+textarea{background-color:black;
+	border-color:rgba(255,60,0,255);
+	color:grey;
+	scrollbar-face-color:black;
+	scrollbar-track-color:rgba(255,60,0,255);
+	scrollbar-arrow-color:black;
+	scrollbar-highlight-color:orange;
+	scrollbar-shadow-color:orange;
+	scrollbar-3dlight-color:orange;
+	scrollbar-darkshadow-color:orange;
+}
+</style>
+<script type="text/javascript">
+window.onerror=function(strMessage,strUrl,intLine){
+	console.log("Line: "+(intLine-1)+" from "+String.fromCharCode(60)+"script><\/script>, strMessage: "+strMessage+", strUrl: "+strUrl+" or code evaluated from it.");
+};
+function receiveMessage(evt){
+	console.log(evt.data);
+}
+if(window.addEventListener){
+	window.addEventListener("message", receiveMessage, false);
+}else{
+	window.attachEvent("onmessage", receiveMessage);
+}
+function setContents(contents){
+	var txtText=document.getElementById("txtText");
+	txtText.value=contents;
+	document.getElementById("txtLineNumber").value="1";
+}
+function openFile(){
+	var fileInput=document.createElement("input");
+	fileInput.type="file";
+	fileInput.style.display="none";
+	fileInput.onchange=function(evtChange){
+		var file=evtChange.target.files[0];
+		if(!file){
+			return;
+		}	
+		var strFilename=document.getElementById("txtFilename");
+		strFilename.value=file.name;
+		var fileReader=new FileReader();
+		fileReader.onload=function(evtFile) {
+			var contents=evtFile.target.result;
+			setContents(contents);
+			document.body.removeChild(fileInput);
+		};
+		fileReader.readAsText(file);
+	};
+	document.body.appendChild(fileInput);
+	click(fileInput);
+}
+function click(elem){
+	var eventMouse=document.createEvent("MouseEvents");
+	eventMouse.initMouseEvent("click",true,false,window,0,0,0,0,0,false,false,false,false,0,null);
+	elem.dispatchEvent(eventMouse);
+}
+function prepareFileToSave(contents,fileName){
+	var a=document.getElementById("save");
+	if(fileName)a.setAttribute("download",fileName);
+	var blob=new Blob([contents],{type:"text/plain;charset=utf-8"});
+	var downloadUrl=URL.createObjectURL(blob);
+	a.setAttribute("href",downloadUrl);
+}
+function btnOpenPressed(){
+	openFile();
+}
+function btnSavePressed(){
+	var txtText=document.getElementById("txtText");
+	var strFilename=document.getElementById("txtFilename").value;
+	if (0==strFilename.length)strFilename="webpage.html";
+	prepareFileToSave(txtText.value,strFilename);
+	alert("File ready for saving. After modifying again, prepare the file for saving again.");
+}
+function btnNewOrangeHTMLexamplePressed(){
+	var txtText=document.getElementById("txtText");
+	var txtFilename=document.getElementById("txtFilename");
+	var strText='<html> \n'+
+'<head> \n'+
+'	<meta charset="utf-8"> \n'+
+'	<title>HTML studio IDE</title> \n'+
+'<style> \n'+
+'input,button,a{background-color:rgba(255,60,0,255); \n'+
+'	border:none; \n'+
+'	color: black;} \n'+
+'textarea{background-color:black; \n'+
+'	border-color:rgba(255,60,0,255); \n'+
+'	color:grey; \n'+
+'	scrollbar-face-color:black; \n'+
+'	scrollbar-track-color:rgba(255,60,0,255); \n'+
+'	scrollbar-arrow-color:black; \n'+
+'	scrollbar-highlight-color:orange; \n'+
+'	scrollbar-shadow-color:orange; \n'+
+'	scrollbar-3dlight-color:orange; \n'+
+'	scrollbar-darkshadow-color:orange; \n'+
+'} \n'+
+'<\/style> \n'+
+String.fromCharCode(60)+'script type="text/javascript"> \n'+
+'var exampleFunction=function(){ \n'+
+'	alert("exampleFunction();"); \n'+
+'	console.log("exampleFunction();"); \n'+
+'} \n'+
+'function init(){ \n'+
+'	exampleFunction(); \n'+
+'} \n'+
+'window.onload=init; \n'+
+'<\/script> \n'+
+'<\/head> \n'+
+'<body style="background-color:black;color:grey;"> \n'+
+'<h1>Example webpage:</h1> \n'+
+'Content: \n'+
+'	<table><tr>	 \n'+
+'		<td><button id="btnButton">Button...</button></td> \n'+
+'		<td><input type="text" id="txtTextinput" value="Textinput"></input></td> \n'+
+'	</tr><tr> \n'+
+'		<td><a id="link" download="text.txt" href='+String.fromCharCode(39)+'data:text/plain,"Prepare for saving" first.&#10;'+String.fromCharCode(39)+'>Link</a></td> \n'+
+'		<td><input type="checkbox" id="chkCheckbox" checked="true" >Checkbox</input></td> \n'+
+'	<\/tr><\/table>	 \n'+
+'<br\/> \n'+
+'<textarea id="txtTextarea" cols="60" rows="30">Textarea</textarea> \n'+
+'<\/body> \n'+
+'<\/html>';
+	txtText.value=strText;
+	txtFilename.value="";
+}
+function btnNewPressed(){
+	var txtText=document.getElementById("txtText");
+	var txtFilename=document.getElementById("txtFilename");
+	txtText.value="";
+	txtFilename.value="";
+}
+function gotoLine(line){
+	alert("Scroll will be estimated and the line number is usually not exact.");
+
+	var txtText=document.getElementById("txtText");
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	var scrollTop=(line-1)*(lineHeight);
+	txtText.scrollTop=scrollTop;
+}
+function btnGotoLinenumber(){
+	gotoLine(parseInt(document.getElementById("txtLineNumber").value));	
+}
+function chkLineWrapClicked(){
+	var chkLineWrap=document.getElementById("chkLineWrap");
+	var txtText=document.getElementById("txtText");
+	if (true==chkLineWrap.checked)txtText.wrap="on";
+	if (false==chkLineWrap.checked)txtText.wrap="off";
+}
+function fullScreenSize(txtText){
+	//var txtText=document.getElementById("txtText");
+	//var lineWidth=txtText.scrollWidth/txtText.cols;//depending on the webbrowser
+	var lineWidth=txtText.clientWidth/txtText.cols;
+	//var lineHeight=txtText.scrollHeight/txtText.rows;//depending on the webbrowser
+	var lineHeight=txtText.clientHeight/txtText.rows;
+	txtText.cols=window.innerWidth/lineWidth;
+	txtText.rows=(window.innerHeight-100)/lineHeight;
+}
+function fullScreenSizePreview(){
+	var htmlPreviewIFrame=document.getElementById("htmlPreviewIFrame");
+	htmlPreviewIFrame.width=window.innerWidth;
+	htmlPreviewIFrame.rows=(window.innerHeight-100);
+}
+function btnResizeTextarea_(txtText){
+	//var txtText=document.getElementById("txtText");
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+txtText.cols+","+txtText.rows+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenSize();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenSize();
+		return;
+	}
+	txtText.cols=intWidth;
+	txtText.rows=intHeight;
+}
+function btnResizeTextareaPressed(){
+	var txtText=document.getElementById("txtText");
+	btnResizeTextarea_(txtText);
+}
+function btnResizeConsolePressed(){
+	var txtConsole=document.getElementById("txtConsole");
+	btnResizeTextarea_(txtConsole);
+}
+function btnResizeHTMLpreviewIFramePressed(){
+	var htmlPreviewIFrame=document.getElementById("htmlPreviewIFrame");
+	var strNewSize=prompt("Enter the new size in the [width,height] format. Empty text or text with errors will set the full screen size.","["+htmlPreviewIFrame.width+","+htmlPreviewIFrame.height+"]");
+	if(null==strNewSize)return;
+	if(0==strNewSize.length){
+		fullScreenSizePreview();
+		return;
+	}
+	var strError="The new size is not in the [width,height] format, where width and height are numbers.";
+	if("["!=strNewSize[0]||"]"!=strNewSize.substring(strNewSize.length-1,strNewSize.length)){
+		alert(strError);
+		fullScreenSizePreview();
+		return;
+	}
+	var lstDimensions=strNewSize.substring(1,strNewSize.length-1).split(",");
+	if(2!=lstDimensions.length){
+		alert(strError);
+		fullScreenSizePreview();
+		return;
+	}
+	var intWidth=parseInt(lstDimensions[0]);
+	var intHeight=parseInt(lstDimensions[1]);
+	if(true==Number.isNaN(intWidth)){
+		alert(strError);
+		fullScreenSizePreview();
+		return;
+	}
+	if(true==Number.isNaN(intHeight)){
+		alert(strError);
+		fullScreenSizePreview();
+		return;
+	}
+	htmlPreviewIFrame.width=intWidth;
+	htmlPreviewIFrame.height=intHeight;
+}
+function btnFindPressed(){
+	alert("Use the webbrowser functionality to search on the webpage.");
+}
+function getScriptString(strHTML){
+	var intScriptStart=strHTML.indexOf(String.fromCharCode(60)+"script");
+	var intScriptEnd=strHTML.indexOf("<\/script>");
+	var strScript=strHTML.substring(intScriptStart+7,intScriptEnd);
+	var intScriptStartEnd=strScript.indexOf(">");
+	strScript=strScript.substring(intScriptStartEnd+1);
+	return strScript;
+}
+function btnRunHTML_(blnWithConsoleRedirection,blnWithAdditionalTestEvaluation){
+	var blnEditedScriptFirst=confirm('Is your edited script first starting from the <head> in up to down direction? If no, and there is more than one script section, e.x. with external src links you are linking, you will have to precise which one is the script you are mainly editing now to debug etc. By the way, the occurence of rare strings and '+String.fromCharCode(60)+'script strings e.x. in other strings increases errors risk - it is the easiest to possibly put the edited script section first and all the src linkings and not edited scripts next. Otherwise, if the edited script is not first, better to change '+String.fromCharCode(60)+'script into String.fromCharCode(60)+"script... in the script strings. Is your edited '+String.fromCharCode(60)+'script><\/script> section first? Yes==OK, No==Cancel.');
+	if(false==blnEditedScriptFirst){
+		var strScriptNumber=prompt("Enter the script number bigger than 0. 1 denotes the "+String.fromCharCode(60)+"script...><\/script> section just after the <head> tag:","1");
+		var intScriptNumber=parseInt(strScriptNumber);
+		if(true==Number.isNaN(intScriptNumber)||intScriptNumber<1){
+			alert("Error, intScriptNumber incorrect, not running.");
+			return;
+		}
+	}
+	if(true==document.getElementById("chkClearAfterEveryRun").checked)btnClearConsolePressed();
+	var txtText=document.getElementById("txtText");
+	var strHTML=txtText.value;
+	if(true==blnWithConsoleRedirection||true==blnWithAdditionalTestEvaluation){
+		var strModiff='\nfunction postToConsole(strText){window.parent.postMessage(strText.toString(), "*");}';
+		strModiff+="\nconsole.log=function(strMessage){postToConsole(strMessage);};";
+		strModiff+="\nconsole.info=function(strMessage){postToConsole(strMessage);};";
+		strModiff+="\nconsole.debug=function(strMessage){postToConsole(strMessage);};";
+		strModiff+="\nconsole.warn=function(strMessage){postToConsole(strMessage);};";
+		strModiff+="\nconsole.error=function(strMessage){postToConsole(strMessage);};";
+		var intScriptStart=0;
+		var strTail;
+		var intOffset=0;
+		if(true==blnEditedScriptFirst){
+			intScriptStart=strHTML.indexOf(String.fromCharCode(60)+"script");
+			strTail=strHTML.substring(intScriptStart+7);
+		}else{
+			var strHead=strHTML;
+			intOffset=-7;
+			for(var ii=0;ii<intScriptNumber;ii++){
+				intOffset+=intScriptStart+7;
+				intScriptStart=strHead.indexOf(String.fromCharCode(60)+"script");
+				if(-1!=intScriptStart){
+					strHead=strHead.substring(intScriptStart+7);
+				}else{
+					alert("Error, more "+String.fromCharCode(60)+"script strings not found, not running.");
+					return;
+				}
+
+			}
+			strTail=strHead;
+		}
+		var intScriptStartEnd=strTail.indexOf(">");
+		strTail=strTail.substring(intScriptStartEnd+1);
+		var strHTML2=strHTML.substring(0,intOffset+intScriptStart+7+intScriptStartEnd+1)+strModiff+strTail;
+		if(true==blnWithAdditionalTestEvaluation){
+			var strScript=getScriptString(strHTML);
+			eval("console.log('before test evaluation')");
+			var strToEval=
+		'try{'+strScript+' ;console.log("test evaluation successful");}catch(xcp){console.log("test evaluation exception: ["+xcp.message+", "+xcp.stack+", "+xcp.lineNumber+"]")}';
+			eval(strToEval);
+		}
+	strHTMLBase64=btoa(strHTML2);
+	}
+	if(false==blnWithConsoleRedirection)
+		strHTMLBase64=btoa(strHTML);
+	try{
+		var htmlPreviewIFrame= document.getElementById("htmlPreviewIFrame");
+		htmlPreviewIFrame.src="data:text/html;base64, "+strHTMLBase64;
+		if(true==blnWithAdditionalTestEvaluation)console.log("frame loading success");
+	}catch(xcp){
+		console.log(xcp);
+	}
+}
+function btnRunHTMLPressed(){
+	btnRunHTML_(false,false);
+}
+function btnRunHTMLwithConsoleRedirectionPressed(){
+	btnRunHTML_(true,false);
+}
+function btnRunHTMLwithConsoleRedirectionAndAdditionalTestEvaluationPressed(){
+	btnRunHTML_(true,true);
+}
+function btnSubstituteCharactersOutsideLatin1RangePressed(){
+	var txtText=document.getElementById("txtText");
+	var strHTML=txtText.value;
+	var strNewHTML="";
+	var chrHTML;
+	var intSubstitutions=0;
+	var chrSubstituteWith=prompt("Enter ASCII character to sustitute all the characters outside the latin1 range with:","?");
+	if(null==chrSubstituteWith)return;
+	for(var ii=0;ii<strHTML.length;ii++){
+		chrHTML=strHTML[ii];
+		if(chrHTML.charCodeAt(0)<127)strNewHTML+=strHTML[ii];
+		else{
+			strNewHTML+=chrSubstituteWith;
+			intSubstitutions++;
+		}
+	}
+	txtText.value=strNewHTML;
+	alert("intSubstitusions="+intSubstitutions);
+}
+function btnClearConsolePressed(){
+	console.txtConsole.value="";
+}
+function init(){
+	console.txtConsole=document.getElementById("txtConsole");	
+	console.consoleAppend=function(strText){var strConsole=console.txtConsole.value;strConsole+=strText+"\n";if(true==document.getElementById("chkAdditionalNewlineAfterEveryEntry").checked)strConsole+="\n";console.txtConsole.value=strConsole;}
+	console.log=function(strMessage){console.consoleAppend(strMessage);};
+	console.info=function(strMessage){console.consoleAppend(strMessage);};
+	console.debug=function(strMessage){console.consoleAppend(strMessage);};
+	console.warn=function(strMessage){console.consoleAppend(strMessage);};
+	console.error=function(strMessage){console.consoleAppend(strMessage);};
+	document.getElementById("btnOpen").onclick=btnOpenPressed;
+	document.getElementById("btnSave").onclick=btnSavePressed;
+	document.getElementById("btnNewOrangeHTMLexample").onclick=btnNewOrangeHTMLexamplePressed;
+	document.getElementById("btnNew").onclick=btnNewPressed;
+	document.getElementById("btnGoto").onclick=btnGotoLinenumber;
+	document.getElementById("chkLineWrap").onclick=chkLineWrapClicked;
+	document.getElementById("btnResizeTextarea").onclick=btnResizeTextareaPressed;
+	document.getElementById("btnFind").onclick=btnFindPressed;
+	document.getElementById("btnRunHTML").onclick=btnRunHTMLPressed;
+	document.getElementById("btnRunHTMLwithConsoleRedirection").onclick=btnRunHTMLwithConsoleRedirectionPressed;
+	document.getElementById("btnRunHTMLwithConsoleRedirectionAndAdditionalTestEvaluation").onclick=btnRunHTMLwithConsoleRedirectionAndAdditionalTestEvaluationPressed;
+	document.getElementById("btnResizeHTMLpreview").onclick=btnResizeHTMLpreviewIFramePressed;
+	document.getElementById("btnSubstituteCharactersOutsideLatin1Range").onclick=btnSubstituteCharactersOutsideLatin1RangePressed;
+	document.getElementById("btnResizeConsole").onclick=btnResizeConsolePressed;
+	document.getElementById("btnClearConsole").onclick=btnClearConsolePressed;
+}
+window.onload=init;
+</script>
+</head>
+<body style="background-color:black;color:grey;">
+	<table><tr>	
+		<td><button id="btnOpen">Open...</button></td>
+		<td><button id="btnSave">Prepare for saving</button></td>
+		<td><a id="save" download="text.txt" href='data:text/plain,"Prepare for saving" first.&#10;'>Save as:</a></td>
+		<td><input type="text" id="txtFilename"></input></td>
+		<td><button id="btnResizeTextarea">Resize textarea...</button></td>
+		</tr>
+	</table>
+	<table><tr>
+		<td><button id="btnNewOrangeHTMLexample">New orange HTML example</button></td>
+		<td><button id="btnNew">New</button></td>
+		<td><button id="btnGoto">Goto line number:</button></td>
+		<td><input type="text" id="txtLineNumber"></input></td>
+		<td><input type="checkbox" id="chkLineWrap" checked="true" >Line wrap</input></td>
+		<td><button id="btnFind">Find...</button></td>
+	</tr></table>
+<textarea id="txtText" cols="60" rows="30"></textarea>
+<br/>
+	<table><tr>	
+		<td><button id="btnRunHTML">Run HTML...</button></td>
+		<td><button id="btnRunHTMLwithConsoleRedirection">Run HTML with console redirection...</button></td>
+		<td><button id="btnRunHTMLwithConsoleRedirectionAndAdditionalTestEvaluation">Run HTML with console redirection and additional test evaluation to catch uncaught errors...</button></td>
+		<td><button id="btnResizeHTMLpreview">Resize HTML preview...</button></td>
+		<td><button id="btnSubstituteCharactersOutsideLatin1Range">Substitute characters outside latin1 range...</button></td>
+		</tr></table>
+<iframe id="htmlPreviewIFrame" width="550" height="500">
+</iframe>
+<br/>
+	<table><tr>	
+		<td><button id="btnResizeConsole">Resize console...</button></td>
+		<td><button id="btnClearConsole">Clear console</button></td>
+		<td><input type="checkbox" id="chkAdditionalNewlineAfterEveryEntry" checked="true" >Additional newline after every entry</input></td>
+		<td><input type="checkbox" id="chkClearAfterEveryRun" checked="true" >Clear after every run</input></td>
+	</tr></table>
+<textarea id="txtConsole" cols="60" rows="15"></textarea>
+</body>
+</html>
