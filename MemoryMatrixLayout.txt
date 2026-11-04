@@ -1,0 +1,17 @@
+/*
+We want to maintain a C-style 2d matrices, arrays storage and the algebraic convention. In algebra you have the first letter and the alphabetically first letter i from top to bottom within one column traversing all the rows and the second letter j from left to right traversing one row through all the columns. It is contrary to analitical intuitions where with the function y=f(x) on the graph the first letter and the alphabetically first letter x is from left to right and y is from top to bottom. Previously we have written ij first for the 2d graphics and it stayed so, but ij has been used also for matrices - generally all the memory layout, so now we are inserting also ij_algebraic(i,j,intRows,intCols);
+
+In algebra matrix C^n_m denotes m x n matrix C with m-rows and n-columns. i is in range 1,...,m, from top to bottom and j is in range 1,...,n from left to right. From Latex formulas entry language ^ dentoes superscript, _ denotes subscript. So writing n on top in C_m^n can be quite counterintuitive with the convention that we read from left to right and from top to bottom, but let's imagine it is C language-style (C,C++, Java etc.) and n, the number of columns is the more important number for memory layout - i*intCols+j computed each and every time. Anyway, in algebra you say m-by-n matrix so finally
+var ij_algebraic=function(i,j,intRows,intCols){
+        return i*intCols+j;
+};
+Since in Latex both are correct also the C_m^n convention seems to be more proper. We have also inserted xy alias for the analytical function graphs conventions - nothing else then previous xy, but for compatiblity reasons ij is not modified:
+var xy=function(x,y,theCols,theRows){
+        return y*theCols+x;
+}
+Also with the loops traversing the matrix:
+for(var i=0;i<theRows;i++)
+        for(var j=0;j<theCols;j++)
+                M[ij_algebraic(i,j,theRows,theCols)]=...;
+it seems to be more elegant with the C-style memory layout, to traverse memory cells one by one next after prevrious just like they are really located in one line in the memory.
+*/
