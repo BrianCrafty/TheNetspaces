@@ -1,0 +1,473 @@
+<html>
+<head>
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0">
+	<meta charset="utf-8">
+<style>
+.button2{
+	background-color:rgba(255,60,0,1.0)
+	border:none;
+	color:grey;
+	padding:15px 32px;
+	text-align:center;
+	text-decoration:none;
+	display:inline-block;
+	font-size:16px;
+	margin:4px 2px;
+	cursor:pointer;
+}
+input,button{background-color:rgba(255,60,0,1.0);
+	border:none;
+	color:black;
+}
+textarea{background-color:black;
+	border-color:rgba(255,60,0,1.0);
+	color:grey;
+	scrollbar-face-color:black;
+	scrollbar-track-color:rgba(255,60,0,1.0);
+	scrollbar-arrow-color:black;
+	scrollbar-highlight-color:orange;
+	scrollbar-shadow-color:orange;
+	scrollbar-3dlight-color:orange;
+	scrollbar-darkshadow-color:orange;
+}
+</style>
+<script type="text/javascript">
+window.onload=init;
+var lstMatrixA=null;
+var lstMatrixB=null;
+var lstMatrixC=null;
+var lstEntriesMatrix=null;
+var lstCheckedEntries=null;
+var lstStrMatrixA=null;
+var lstStrMatrixB=null;
+var lstStrMatrixC=null;
+var intRowsA=3,intColsA=3,intRowsB=3,intColsB=3;
+var lstLastEntry=null;
+var objStatistics={intTime:0,intEntriesMultiplied:0,intErrors:0,intMatricesMultiplied:-1};
+//in matrices in Unicode text, string, chars or in universal digits
+//some digits not converted, e.x. when not in range etc.
+//then bold where possible
+var blnInUnicodeInAB=false; 
+var blnInUnicodeInC=false; 
+var intUnicodeMin=33;
+var intUnicodeMax=255;
+//var intUnicodeMax=999;
+var intMinNumberA=0;
+var intMaxNumberA=10;
+var intMinNumberB=0;
+var intMaxNumberB=10;
+
+function init(){
+	document.getElementById("chkZoomEnabled").onchange=chkZoomEnabledChanged;
+	document.getElementById("btnGenerateNewMatrices").onclick=generateNewMatrices;
+	document.getElementById("btnCheckResult").onclick=checkResult;
+	document.getElementById("btnClearResult").onclick=clearResult;
+	document.getElementById("btnClearLastEntry").onclick=clearLastEntry;
+	document.getElementById("btnConvertUnicodeInAB").onclick=convertUnicodeInABpressed;
+	document.getElementById("btnConvertUnicodeInC").onclick=convertUnicodeInCpressed;
+	document.getElementById("btnSetUnicodeRange").onclick=setUnicodeRange;
+	document.getElementById("btnResizeWidth").onclick=btnResizeWidthPressed;
+	document.getElementById("btnShowHideStatistics").onclick=btnShowHideStatisticsPressed;
+	document.getElementById("btnBrainputing").onclick=btnBrainputingPressed;
+	setInterval(updateStatistics,1000);
+}
+function fmt0(intInput){
+	strInput=""+intInput;
+	return strInput.length<2 ? "0"+strInput:strInput;
+}
+function formatTime(intSecondsInput){
+	var intSeconds=intSecondsInput%60;
+	var intMinutes=(Math.floor(intSecondsInput/60))%60;
+	var intHours=Math.floor(intSecondsInput/(60*60));
+	return fmt0(intHours)+":"+fmt0(intMinutes)+":"+fmt0(intSeconds);
+}
+function updateStatistics(){
+	var divStatistics=document.getElementById("divStatistics");
+	objStatistics.intTime++;
+	divStatistics.innerHTML="游戏时间: "+formatTime(objStatistics.intTime)+" <br/> C矩阵条目计算了数量: "+objStatistics.intEntriesMultiplied+" <br/> 错误数量: "+objStatistics.intErrors+" <br/> 矩阵计算了数量: "+ objStatistics.intMatricesMultiplied+" <br/>";
+}
+var nonNumber=function(a){
+	if("number"!=typeof(a))return true;
+	/*if(NaN==a)return true;*/
+	if(true==Number.isNaN(a))return true;
+	return false;
+};
+var parseList=function(strList){
+	if("["!=strList[0]||"]"!=strList[strList.length-1])
+		return null;
+	var strInner=strList.substring(1,strList.length-1);
+	var lstStrEntries=strInner.split(",");
+	var lstList=[];
+	var intNumber;
+	for(var ii=0;ii<lstStrEntries.length;ii++){
+		lstList.push(lstStrEntries[ii]);
+	}
+	return lstList;
+};
+var parseIntList=function(strList){
+	if("["!=strList[0]||"]"!=strList[strList.length-1])
+		return null;
+	var strInner=strList.substring(1,strList.length-1);
+	var lstStrEntries=strInner.split(",");
+	var lstInts=[];
+	var intNumber;
+	for(var ii=0;ii<lstStrEntries.length;ii++){
+		intNumber=parseInt(lstStrEntries[ii]);
+		if(true==nonNumber(intNumber))return null;
+		lstInts.push(intNumber);
+	}
+	return lstInts;
+};
+function rand(min,max){return min+(Math.abs(max-min)*Math.random());}
+var ij_algebraic=function(i,j,intRows,intCols){
+	return i*intCols+j;
+};
+var ij=function(i,j,theCols,theRows){
+	return j*theCols+i;
+}
+var xy=function(x,y,theCols,theRows){
+	return y*theCols+x;
+}
+function generateEmptyMatrixHTML(intRows,intCols){
+	var strText="<table style=\"border:10px;background-color:rgb(255,60,0);\">";
+	for(var i=0;i<intRows;i++){
+		strText+="<tr>";
+		for(var j=0;j<intCols;j++){
+			strText+="<td style=\"background-color:black;color:grey;\"><input type=\"number\" id=\"txtEntry"+i+"_"+j+"\"style=\"background-color:black; color:grey; width:75px\" onchange=\"txtEntryChanged("+i+","+j+")\" onfocus=\"txtEntryFocused("+i+","+j+")\" onblur=\"txtEntryBlured("+i+","+j+")\"></input></td>";
+		}
+		strText+="</tr>";
+	}
+	strText+="</table>";
+	return strText;
+
+}
+function generateMatrixHTML(lstMatrix, intRows,intCols){
+	var strText="<table style=\"border:10px;background-color:rgb(255,60,0);\">";
+	for(var i=0;i<intRows;i++){
+		strText+="<tr>";
+		for(var j=0;j<intCols;j++){
+			strText+="<td style=\"background-color:black;color:grey; width:75px\">"+lstMatrix[ij_algebraic(i,j,intRows,intCols)]+"</td>";
+		}
+		strText+="</tr>";
+	}
+	strText+="</table>";
+	return strText;
+
+}
+function premultiplyMatrices(lstMatrixA,lstMatrixB,lstMatrixC,intRowsA,intColsB){
+	var fltSum=0;
+	for(var i=0;i<intRowsA;i++){
+		for(var j=0;j<intColsB;j++){
+			fltSum=0.;
+			for(var k=0;k<intRowsB;k++){//or intColsA
+				fltSum+=lstMatrixA[ij_algebraic(i,k,intRowsA,intColsA)]*lstMatrixB[ij_algebraic(k,j,intRowsB,intColsB)];
+			}
+			lstMatrixC[ij_algebraic(i,j,intRowsA,intColsB)]=fltSum;
+		}
+	}
+}
+var lstUndefined0255Unicodes=[127,160];
+function unicodeInDefinedRange(strSubentry){
+	if(Number(strSubentry)>=lstUndefined0255Unicodes[0]&&Number(strSubentry)<=lstUndefined0255Unicodes[1])return false;
+	if(Number(strSubentry)>=intUnicodeMin&&Number(strSubentry)<=intUnicodeMax) return true;
+	return false;
+}
+function translateToUnicode(intEntry,blnHTML){
+	var strEntry=String(intEntry);
+	var intDigitsMax=String(intUnicodeMax).length;
+	var strConvertedEntry="";
+	var strSubentry="";
+	for(var ii=0;ii<=strEntry.length;ii+=intDigitsMax){
+		strSubentry=strEntry.substring(ii,ii+intDigitsMax);
+		if(unicodeInDefinedRange(strSubentry))
+			strConvertedEntry+=String.fromCharCode(strSubentry);
+		else{
+			if(blnHTML)
+				strConvertedEntry+="<b>"+String(strSubentry)+"</b>";
+			else
+				strConvertedEntry+=String(strSubentry);
+		}
+	}
+	return strConvertedEntry;
+}
+function translateFromUnicode(i,j){
+	return lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)];
+}
+function translateFromUnicodeIntoDigitsTextEntry(strEntry){
+	var intDigitsMax=String(intUnicodeMax).length;
+	var strConvertedEntry="";
+	var strSubentry="";
+	for(var ii=0;ii<strEntry.length;ii+=intDigitsMax){
+		strSubentry=strEntry.substring(ii,ii+intDigitsMax);
+		for(var jj=0;jj<strSubentry.length;jj++){
+			strConvertedEntry+=String(strSubentry.charCodeAt(jj));
+		}
+	}
+	return Number(strConvertedEntry);
+}
+function generateStrMatrix_AB(lstMatrix,intRows,intCols){
+	lstStrMatrix=[];
+	for(var i=0;i<intRows;i++){
+		for(var j=0;j<intCols;j++){
+			if(blnInUnicodeInAB)lstStrMatrix[ij_algebraic(i,j,intRows,intCols)]=translateToUnicode(lstMatrix[ij_algebraic(i,j,intRows,intCols)],true);
+			else lstStrMatrix[ij_algebraic(i,j,intRows,intCols)]=lstMatrix[ij_algebraic(i,j,intRows,intCols)];
+		}
+	}
+	return lstStrMatrix;
+}
+function generateNewMatrices(){
+	var strDimensions=prompt("在哪请写intMinNumberA,intMaxNumberA,intMinNumberB,intMaxNumberB,intRowsA,intColsA,intRowsB,intColsB:","["+intMinNumberA+","+intMaxNumberA+","+intMinNumberB+","+intMaxNumberB+","+intRowsA+","+intColsA+","+intRowsB+","+intColsB+"]");
+	if(null==strDimensions)return;
+	lstEntriesMatrix=[];
+	var lstDimensions=parseIntList(strDimensions);
+	//intRowsB!=intColsA
+	if(lstDimensions[6]!=lstDimensions[5]){
+		alert("矩阵大小错误: intRowsB!=intColsA");
+		return;
+	}
+	lstMatrixA=[];
+	intMinNumberA=lstDimensions[0];
+	intMaxNumberA=lstDimensions[1];
+	intMinNumberB=lstDimensions[2];
+	intMaxNumberB=lstDimensions[3];
+	intRowsA=lstDimensions[4];
+	intColsA=lstDimensions[5];
+	intRowsB=lstDimensions[6];
+	intColsB=lstDimensions[7];
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsA;j++)
+			lstMatrixA.push(Math.round(rand(intMinNumberA,intMaxNumberA)));
+	
+	lstMatrixB=[];
+	for(var i=0;i<intRowsB;i++)
+		for(var j=0;j<intColsB;j++)
+			lstMatrixB.push(Math.round(rand(intMinNumberB,intMaxNumberB)));
+	lstMatrixC=[];
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsB;j++)
+			lstMatrixC.push(0);
+	lstCheckedEntries=[];
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsB;j++)
+			lstCheckedEntries.push(false);
+
+	var lstStrMatrixA=generateStrMatrix_AB(lstMatrixA,intRowsA,intColsA);
+	var strMatrixA=generateMatrixHTML(lstStrMatrixA,intRowsA,intColsA);
+	var lstStrMatrixB=generateStrMatrix_AB(lstMatrixB,intRowsB,intColsB);
+	var strMatrixB=generateMatrixHTML(lstStrMatrixB,intRowsB,intColsB);
+	var strMatrixC=generateEmptyMatrixHTML(intRowsA,intColsB);
+	document.getElementById("divMatrixA").innerHTML=strMatrixA;
+	document.getElementById("divMatrixB").innerHTML=strMatrixB;
+	document.getElementById("divMatrixC").innerHTML=strMatrixC;
+	premultiplyMatrices(lstMatrixA,lstMatrixB,lstMatrixC,intRowsA,intColsB);
+	objStatistics.intMatricesMultiplied++;
+}
+function checkEntry(i,j){
+	if(null==lstMatrixC)return;
+	var fltCorrectValue=lstMatrixC[ij_algebraic(i,j,intRowsA,intColsB)];
+	var txtEntry=document.getElementById("txtEntry"+i+"_"+j);
+	var fltValue=lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)];
+	if(fltValue!=fltCorrectValue){
+		txtEntry.style="background-color:black; color:red; width:75px";
+		lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)]=fltCorrectValue;
+		if(false==lstCheckedEntries[ij_algebraic(i,j,intRowsA,intColsB)]){
+			lstCheckedEntries[ij_algebraic(i,j,intRowsA,intColsB)]=true;
+			objStatistics.intEntriesMultiplied++;
+			objStatistics.intErrors++;
+			
+	}
+
+	}else{
+		txtEntry.style="background-color:black; color:grey; width:75px";
+		if(false==lstCheckedEntries[ij_algebraic(i,j,intRowsA,intColsB)]){
+			lstCheckedEntries[ij_algebraic(i,j,intRowsA,intColsB)]=true;
+			objStatistics.intEntriesMultiplied++;
+			
+	}
+	}
+	refreshTxtEntry(i,j);
+}
+function refreshTxtEntry(i,j){
+	if(blnInUnicodeInC)translateTxtEntryToUnicode(i,j);
+	else translateTxtEntryFromUnicode(i,j);
+}
+function checkResult(){
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsB;j++){
+			checkEntry(i,j);
+		}
+}
+function clearResult(){
+	var txtEntry=null;
+	lstEntriesMatrix=[];
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsB;j++){
+			txtEntry=document.getElementById("txtEntry"+i+"_"+j);
+			if(null==txtEntry)return;
+			txtEntry.style="background-color:black; color:grey; width:75px";
+			txtEntry.value="";
+		}
+	lstLastEntry=null;
+}
+function translateTxtEntryFromUnicode(i,j){
+	var txtEntry=document.getElementById("txtEntry"+i+"_"+j);
+	var strEntry=txtEntry.value;
+	txtEntry.type="number";
+	var intNumber=translateFromUnicode(i,j);
+	if(undefined!=intNumber)txtEntry.value=intNumber;
+}
+function txtEntryFocused(i,j){
+	if(document.getElementById("chkUnicodeAutoconvert").checked){
+		translateTxtEntryFromUnicode(i,j);
+	}
+}
+function translateTxtEntryToUnicode(i,j){
+	var txtEntry=document.getElementById("txtEntry"+i+"_"+j);
+	var strEntry=txtEntry.value;
+	txtEntry.type="text";
+	var fltValue=lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)];
+	if(undefined!=fltValue)txtEntry.value=translateToUnicode(fltValue,false);
+}
+function txtEntryBlured(i,j){
+	if(document.getElementById("chkUnicodeAutoconvert").checked){
+		translateTxtEntryToUnicode(i,j);
+	}
+}
+function txtEntryChanged(i,j){
+	lstLastEntry=[i,j];
+	var txtEntry=document.getElementById("txtEntry"+i+"_"+j);
+	if(txtEntry.value==lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)])return;
+	var intEntry=null;
+	if(blnInUnicodeInC&&false==chkUnicodeAutoconvert.checked)intEntry=translateFromUnicodeIntoDigitsTextEntry(txtEntry.value);
+	else intEntry=Number(txtEntry.value);
+	lstEntriesMatrix[ij_algebraic(i,j,intRowsA,intColsB)]=intEntry;
+	if(document.getElementById("chkAutocheck").checked){
+		checkEntry(i,j);
+	}
+}
+function clearLastEntry(){
+	if(null!=lstLastEntry){
+		txtEntry=document.getElementById("txtEntry"+lstLastEntry[0]+"_"+lstLastEntry[1]);
+		txtEntry.style="background-color:black; color:grey; width:75px";
+		txtEntry.value="";
+		lstEntriesMatrix[ij_algebraic(lstLastEntry[0],lstLastEntry[1],intRowsA,intColsB)]=undefined;
+	}
+}
+function convertUnicodeInABpressed(){
+	if(null==lstMatrixA||null==lstMatrixB)return;
+	blnInUnicodeInAB=!blnInUnicodeInAB;
+	var lstStrMatrixA=generateStrMatrix_AB(lstMatrixA,intRowsA,intColsA);
+	var strMatrixA=generateMatrixHTML(lstStrMatrixA,intRowsA,intColsA);
+	var lstStrMatrixB=generateStrMatrix_AB(lstMatrixB,intRowsB,intColsB);
+	var strMatrixB=generateMatrixHTML(lstStrMatrixB,intRowsB,intColsB);
+	document.getElementById("divMatrixA").innerHTML=strMatrixA;
+	document.getElementById("divMatrixB").innerHTML=strMatrixB;
+	if(blnInUnicodeInAB)document.getElementById("btnConvertUnicodeInAB").innerText="A,B转换为数字";
+	else document.getElementById("btnConvertUnicodeInAB").innerText="A,B转换为unicode文本";
+}
+function convertUnicodeInCpressed(){
+	if(null==lstMatrixC)return;
+	blnInUnicodeInC=!blnInUnicodeInC;
+	for(var i=0;i<intRowsA;i++)
+		for(var j=0;j<intColsB;j++){
+			if (blnInUnicodeInC)translateTxtEntryToUnicode(i,j);
+			else translateTxtEntryFromUnicode(i,j);
+		}
+	if(blnInUnicodeInC)document.getElementById("btnConvertUnicodeInC").innerText="C转换为数字";
+	else document.getElementById("btnConvertUnicodeInC").innerText="C转换为unicode文本";
+}
+function setUnicodeRange(){
+	var strUnicodeRange=prompt("unicode范围设置:","["+intUnicodeMin+","+intUnicodeMax+"]");
+	if(null==strUnicodeRange)return;
+	lstUnicodeRange=parseIntList(strUnicodeRange);
+	var intNewUnicodeMin=lstUnicodeRange[0];
+	var intNewUnicodeMax=lstUnicodeRange[1];
+	var txtEntry;
+	if(intNewUnicodeMin!=intUnicodeMin||intNewUnicodeMax!=intUnicodeMax){
+		var prevBlnInUnicodeInAB=blnInUnicodeInAB;
+		if(blnInUnicodeInAB)convertUnicodeInABpressed();
+		var prevBlnInUnicodeInC=blnInUnicodeInC;
+		if(blnInUnicodeInC)convertUnicodeInCpressed();
+		intUnicodeMin=intNewUnicodeMin;
+		intUnicodeMax=intNewUnicodeMax;
+		if(prevBlnInUnicodeInAB!=blnInUnicodeInAB)convertUnicodeInABpressed();
+		if(prevBlnInUnicodeInC!=blnInUnicodeInC)convertUnicodeInCpressed();
+	}
+}
+function btnResizeWidthPressed(){
+	var divControls=document.getElementById("divControls");
+	var txtBrainputing=document.getElementById("txtBrainputing");
+	var btnBrainputing=document.getElementById("btnBrainputing");
+	var strWidth=prompt("Enter new width:","500");
+	if(null==strWidth)return;
+	divControls.style.width=strWidth+"px";
+	txtBrainputing.style.width=strWidth+"px";
+	btnBrainputing.style.width=strWidth+"px";
+}
+function btnShowHideStatisticsPressed(){
+	var divStatistics=document.getElementById("divStatistics");
+	var btnShowHideStatistics=document.getElementById("btnShowHideStatistics");
+	if(divStatistics.style.display=="none"){
+		divStatistics.style.display="";
+		btnShowHideStatistics.innerText="躲藏统计数据";
+	}else{
+		divStatistics.style.display="none";
+		btnShowHideStatistics.innerText="显示统计数据";
+	}
+
+}
+function btnBrainputingPressed(){
+	var blnAnswer=confirm("你要不要我删除Brainputing brainputations textarea?");
+	if(blnAnswer)document.getElementById("txtBrainputing").value="";
+}
+function chkZoomEnabledChanged(){
+	var chkZoomEnabled=document.getElementById("chkZoomEnabled");
+	var viewportMeta = document.querySelector('meta[name="viewport"]');
+	if(!viewportMeta){
+		alert("错误，没有方法这个设置。");
+	}
+	if(chkZoomEnabled.checked)viewportMeta.setAttribute("content","");
+	else viewportMeta.setAttribute("content","width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0");
+}
+</script>
+</head>
+<body style="background-color:black;color:grey;">
+<div id="divMatrices">
+<table>
+<tr>
+<td><div id="divStatistics" style="display:none">
+游戏时间: <br/>
+C矩阵条目计算了数量: <br/>
+错误数量: <br/>
+矩阵计算了数量: <br/>
+</div></td>
+<td><div id="divMatrixB">B</div>
+</tr>
+<tr>
+<td><div id="divMatrixA">A</div>
+<td><div id="divMatrixC">C</div></td>
+</tr>
+</table>
+</div>
+<div id="divControls" style="float:left; width:500px">
+<button id="btnGenerateNewMatrices">新矩阵做</button>
+<button id="btnCheckResult">结果查看</button>
+<button id="btnClearResult">删除</button>
+<button id="btnClearLastEntry">最后的删除</button>
+<button id="btnConvertUnicodeInAB">A,B转换为unicode文本</button>
+<button id="btnConvertUnicodeInC">C转换为unicode文本</button>
+<button id="btnSetUnicodeRange">unicode范围设置</button>
+<label for="chkAutocheck">自动的查看</label>
+<input type="checkbox" id="chkAutocheck" checked></input>
+<label for="chkUnicodeAutoconvert">unicode自动的转换</label>
+<input type="checkbox" id="chkUnicodeAutoconvert"></input>
+<label for="chkZoomEnabled">放大已启用</label>
+<input type="checkbox" id="chkZoomEnabled"></input>
+<button id="btnResizeWidth">大小换</button>
+<button id="btnShowHideStatistics">显示统计数据</button>
+<button id="btnBrainputing" style="width:500px">Brainputing brainputations</button>
+<textarea id="txtBrainputing" style="width:500px;height:250px">
+</textarea>
+</div>
+</body>
+</html>
