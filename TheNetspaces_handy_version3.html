@@ -117,6 +117,12 @@ var ij=function(i,j,theCols,theRows){
 var ijk=function(i,j,k,Xcount,Ycount,Zcount){
 	return Xcount*Ycount*k+Xcount*j+i;
 };
+var ij_algebraic=function(i,j,intRows,intCols){
+	return i*intCols+j;
+};
+var xy=function(x,y,theCols,theRows){
+	return y*theCols+x;
+}
 var nonNumber=function(a){
 	if("number"!=typeof(a))return true;
 	/*if(NaN==a)return true;*/
