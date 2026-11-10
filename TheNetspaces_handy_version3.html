@@ -362,9 +362,17 @@ VarietyManifold3D.prototype.refreshFromArraysWithSelection=function(arrVertices,
 	this.arrVertices=new Float32Array(arrVertices);
 	this.arrIndices=new Uint16Array(arrIndices);
 	this.arrNormals=new Float32Array(arrNormals);
+	//if(undefined==arrSelection&&undefined==this.arrSelection)
+		//this.arrSelection=new Float32Array(arrVertices.length);
 	this.refresh();
 	this.blnRenderWireframe=true;
 	this.generateWireframe(arrSelection);
+	this.intTextures=0;
+};
+VarietyManifold3D.prototype.refreshSelection=function(){
+	this.refresh();
+	this.blnRenderWireframe=true;
+	this.generateWireframe(this.arrSelection);
 	this.intTextures=0;
 };
 VarietyManifold3D.prototype.refresh=function(){
@@ -406,6 +414,9 @@ VarietyManifold3D.prototype.refreshFromListsWithSelection=function(lstVertices,l
 };
 VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 	//vec4vertices in wireframe shader already for future weight paint stuff and any other future extensions. Now vertex crunching easier with vec3 lstVertices and flt lstSelection
+	//generateWireframe(true); //new selection, all selected
+	//generateWireframe(false); //new selection, all deselected
+	//generateWireframe(this.arrSelection); //use actual vertex selection
 	//var blnNewSelection=!isList(theSelection);
 	var blnNewSelection=!isFloat32Array(theSelection);
 	this.wireframeEdgesBuffer=this.gl.createBuffer();
@@ -425,7 +436,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+0)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+0]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+0]]);
 
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+1)]+0]);
@@ -433,7 +444,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+1)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+1]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+1]]);
 
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+1)]+0]);
@@ -441,7 +452,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+1)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+1]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+1]]);
 
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+2)]+0]);
@@ -449,7 +460,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+2)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+2]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+2]]);
 
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+2)]+0]);
@@ -457,7 +468,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+2)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+2]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+2]]);
 
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+0)]+0]);
@@ -465,7 +476,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeEdges.push(this.arrVertices[3*this.arrIndices[(ii+0)]+2]);
 			if(true==blnNewSelection){
 				lstWireframeEdges.push(fltNewSelection);
-				lstSelection.push(fltNewSelection);
+				lstSelection[this.arrIndices[ii+0]]=fltNewSelection;
 			}else lstWireframeEdges.push(this.arrSelection[this.arrIndices[ii+0]]);
 
 		//normals
@@ -509,7 +520,7 @@ VarietyManifold3D.prototype.generateWireframe=function(theSelection){
 		lstWireframeVertices.push(this.arrVertices[ii+2]);
 		if(true==blnNewSelection){
 			lstWireframeVertices.push(fltNewSelection);
-			lstSelection.push(fltNewSelection);
+			lstSelection[ii/3]=fltNewSelection;
 		}else lstWireframeVertices.push(this.arrSelection[ii/3]);
 	}
 	this.arr4wireframeVertices=new Float32Array(lstWireframeVertices);
@@ -28051,13 +28062,7 @@ RoboticPen3Dconstructor=function(that){
 	that.vec4avatarColor=vec4.create([1.,0.235,0.,1.]);
 	that.vec4penColor=vec4.create([1.,0.235,0.,1.]);
 	that.strProgram="";
-	//that.varietyManifold3Davatar=that.createAvatarVarietyManifold3D();
 	that.varietyManifold3DconstructedObject=that.initialEmptyObject();
-	//object under construction to refresh
-	that.lstVertices=[];
-	that.lstSelection=[];
-	that.lstIndices=[];
-	that.lstNormals=[];
 	that.intSelectionMode=0;/*0-vertex mode, 1-edges mode, 2-faces modefor now in fact selecting both vertices selects fully edge, selecting three edges selects fully face*/
 	that.blnSelectWhenDrawing=true;
 	//that.blnSelectWhenDrawing=false;
@@ -28082,6 +28087,24 @@ RoboticPen3D.prototype.showAvatar=function(){
 RoboticPen3D.prototype.hideAvatar=function(){
 	this.varietyManifold3Davatar.blnShow=false;
 };
+var Float32ArrayPush=function(arrArray,fltElement){
+	var length=arrArray.length;
+	arrNewArray=new Float32Array(length+1);
+	for(var ii=0;ii<length;ii++){
+		arrNewArray[ii]=arrArray[ii];
+	}
+	arrNewArray[length]=fltElement;
+	return arrNewArray;
+};
+var Uint16ArrayPush=function(arrArray,intElement){
+	var length=arrArray.length;
+	arrNewArray=new Uint16Array(length+1);
+	for(var ii=0;ii<length;ii++){
+		arrNewArray[ii]=arrArray[ii];
+	}
+	arrNewArray[length]=intElement;
+	return arrNewArray;
+};
 RoboticPen3D.prototype.resetRoboticPen3D=function(){
 	this.fltX=0;
 	this.fltY=0;
@@ -28103,10 +28126,6 @@ RoboticPen3D.prototype.resetRoboticPen3D=function(){
 	//this.strPen="SelectEdges";//plus selectAll, deselectAll, selectLinked
 	this.strProgram="";
 	this.varietyManifold3DconstructedObject=this.initialEmptyObject();
-	this.lstVertices=[];
-	this.lstSelection=[];
-	this.lstIndices=[];
-	this.lstNormals=[];
 	this.intSelectionMode=0;/*0-vertex mode, 1-edges mode, 2-faces modefor now in fact selecting both vertices selects fully edge, selecting three edges selects fully face*/
 	this.blnSelectWhenDrawing=true;
 	//this.blnSelectWhenDrawing=false;
@@ -28164,10 +28183,6 @@ RoboticPen3D.prototype.defaultScriptInTxtFunFunFun=function(){
 	strCode+="p.extrudeFullySelectedFaces(true);"+String.fromCharCode(10);
 	strCode+="p.translateSelectedVertices([0,0,2]);"+String.fromCharCode(10);
 	strCode+=""+String.fromCharCode(10);
-	strCode+="var lstNewIndices=[];"+String.fromCharCode(10);
-	strCode+="for(var ii=0;ii<3*2;ii++)p.lstIndices.pop();"+String.fromCharCode(10);
-	strCode+="p.refresh();"+String.fromCharCode(10);
-	strCode+=""+String.fromCharCode(10);
 	strCode+="//p.createSimpleCube(5,0,7,1,1,1);"+String.fromCharCode(10);
 	strCode+="var vm3dCube=p.createAdvancedCube(5,0,7,1,1,1);"+String.fromCharCode(10);
 	strCode+="vm3dCube=netspace.pointLightIslands[0].varietyManifolds3D[netspace.pointLightIslands[0].varietyManifolds3D.length-1];"+String.fromCharCode(10);
@@ -28176,7 +28191,7 @@ RoboticPen3D.prototype.defaultScriptInTxtFunFunFun=function(){
 	strCode+="p.createSphere(0,0,7,1,1,1,1,16,32);"+String.fromCharCode(10);
 	txtFunFunFun.value=strCode;
 };
-RoboticPen3D.prototype.createAdvancedCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ){
+RoboticPen3D.prototype.createAdvancedCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ,blnObjectMode){
 	//better for precise texturing with lstTextureCoords etc. but bigger
 	if(undefined==fltSizeX)fltSizeX=1.0;
 	if(undefined==fltSizeY)fltSizeY=1.0;
@@ -28184,6 +28199,7 @@ RoboticPen3D.prototype.createAdvancedCube=function(fltX,fltY,fltZ,fltSizeX,fltSi
 	if(undefined==fltX)fltX=0.0;
 	if(undefined==fltY)fltY=0.0;
 	if(undefined==fltZ)fltZ=0.0;
+	if(undefined==blnObjectMode)blnObjectMode=true;
 	//arrVertices.length==arrNormals.length
 	var lstVertices=[
 		/*Front face*/
@@ -28298,18 +28314,23 @@ RoboticPen3D.prototype.createAdvancedCube=function(fltX,fltY,fltZ,fltSizeX,fltSi
 		-1.0,1.0,1.0,
 		-1.0,1.0,-1.0,
 	];
-	var intTextures=0;
-	var textureCanvas=null;
-	var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
-	var newCube=new VarietyManifold3D(netspace.gl,"RoboticPen3Davatar",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
-	netspace.pointLightIslands[0].varietyManifolds3D.push(newCube);
-	newCube.generateWireframe(true);
-	newCube.intTextures=0;
-	newCube.blnRenderWireframe=true;
-     	return newCube;
+	if(blnObjectMode){
+		var intTextures=0;
+		var textureCanvas=null;
+		var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+		var newCube=new VarietyManifold3D(netspace.gl,"cube",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
+		window.roboticPen3D.varietyManifold3DconstructedObject=newCube;
+		netspace.pointLightIslands[0].varietyManifolds3D.push(newCube);
+		newCube.generateWireframe(true);
+		newCube.intTextures=0;
+		newCube.blnRenderWireframe=true;
+		return newCube;
+	}else{
+		return [lstVertices,lstIndices,lstNormals,lstTextureCoords];
+	}
 
 };
-RoboticPen3D.prototype.createSimpleCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ){
+RoboticPen3D.prototype.createSimpleCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ,blnObjectMode){
 	//more space efficient
 	if(undefined==fltSizeX)fltSizeX=1.0;
 	if(undefined==fltSizeY)fltSizeY=1.0;
@@ -28317,6 +28338,7 @@ RoboticPen3D.prototype.createSimpleCube=function(fltX,fltY,fltZ,fltSizeX,fltSize
 	if(undefined==fltX)fltX=0.0;
 	if(undefined==fltY)fltY=0.0;
 	if(undefined==fltZ)fltZ=0.0;
+	if(undefined==blnObjectMode)blnObjectMode=true;
 	//arrVertices.length==arrNormals.length
 	var lstVertices=[-1., -1., -1., 1., -1., -1., 1., 1., -1., -1., 1., -1.,
 		 -1., -1., 1., 1., -1., 1., 1., 1., 1., -1., 1., 1.];
@@ -28361,25 +28383,27 @@ RoboticPen3D.prototype.createSimpleCube=function(fltX,fltY,fltZ,fltSizeX,fltSize
 		1.0,1.0,-1.0,
 		1.0,-1.0,-1.0,
 	];
-	var intTextures=0;
-	var textureCanvas=null;
-	var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
-	var newCube=new VarietyManifold3D(netspace.gl,"RoboticPen3Davatar",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
-	netspace.pointLightIslands[0].varietyManifolds3D.push(newCube);
-	newCube.generateWireframe(true);
-	newCube.intTextures=0;
-	newCube.blnRenderWireframe=true;
-     	return newCube;
+	if(blnObjectMode){
+		var intTextures=0;
+		var textureCanvas=null;
+		var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+		var newCube=new VarietyManifold3D(netspace.gl,"cube",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
+		window.roboticPen3D.varietyManifold3DconstructedObject=newCube;
+		netspace.pointLightIslands[0].varietyManifolds3D.push(newCube);
+		newCube.generateWireframe(true);
+		newCube.intTextures=0;
+		newCube.blnRenderWireframe=true;
+		return newCube;
+	}else{
+		return [lstVertices,lstIndices,lstNormals,lstTextureCoords];
+	}
 
 };
-RoboticPen3D.prototype.createCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ){
-	this.createAdvancedCube(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ);//better for precise texturing with lstTextureCoords etc. but bigger
-	//this.createSimpleCube(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ);//more space efficient
+RoboticPen3D.prototype.createCube=function(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ,blnObjectMode){
+	this.createAdvancedCube(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ,blnObjectMode);//better for precise texturing with lstTextureCoords etc. but bigger
+	//this.createSimpleCube(fltX,fltY,fltZ,fltSizeX,fltSizeY,fltSizeZ,blnObjectMode);//more space efficient
 };
-RoboticPen3D.prototype.createAvatarVarietyManifold3D=function(){
-	return this.createCube(0,0,0,0.1,0.1,0.1);
-};
-RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,fltScaleY,fltScaleZ,intSegmentsNS,intSegmentsWE){
+RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,fltScaleY,fltScaleZ,intSegmentsNS,intSegmentsWE,blnObjectMode){
 	//more space efficient
 	if(undefined==fltScaleX)fltScaleX=1.0;
 	if(undefined==fltScaleY)fltScaleY=1.0;
@@ -28389,6 +28413,7 @@ RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,
 	if(undefined==fltZ)fltZ=0.0;
 	if(undefined==intSegmentsNS)intSegmentsNS=16;
 	if(undefined==intSegmentsWE)intSegmentsWE=32;
+	if(undefined==blnObjectMode)blnObjectMode=true;
 	//arrVertices.length==arrNormals.length
 	var radAngleWE=0,radAngleNS=0.;
 	var degDangleNS=180./intSegmentsNS;
@@ -28457,11 +28482,12 @@ RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,
 	for(var jj=0;jj<intSegmentsWE;jj++){
 		lstIndices.push((lstVertices.length-1)/3);
 		lstIndices.push(jj+0);
-		lstIndices.push(jj+1);
+		lstIndices.push((jj+1)%(intSegmentsWE));
 	}
 	fltVertexX=0;
 	fltVertexY=0;
 	fltVertexZ=1.*fltRadius;
+	//fltVertexZ=0;
 	lstVertices.push(fltVertexX);
 	lstVertices.push(fltVertexY);
 	lstVertices.push(fltVertexZ);
@@ -28471,9 +28497,12 @@ RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,
 	lstNormals.push(fltVertexZ);
 	lstTextureCoords.push((0+0)%2);
 	lstTextureCoords.push((0+0)%2);
-	for(var jj=lstVertices.length-1-2*3;jj>=lstVertices.length-1-2*3-3*intSegmentsWE;jj-=3){
+	for(var jj=lstVertices.length-1-3*3;jj>lstVertices.length-1-3*3-3*intSegmentsWE;jj-=3){
 		lstIndices.push((lstVertices.length-1)/3);
-		lstIndices.push(jj/3+0);
+		if(lstVertices.length-1-3*3-3*intSegmentsWE+3==jj)
+			lstIndices.push((lstVertices.length-1-3*3)/3+1);
+		else
+			lstIndices.push(jj/3+0);
 		lstIndices.push(jj/3+1);
 	}
 	
@@ -28485,16 +28514,147 @@ RoboticPen3D.prototype.createSphere=function(fltX,fltY,fltZ,fltRadius,fltScaleX,
 		lstVertices[3*ii+2]*=fltScaleZ;
 		lstVertices[3*ii+2]+=fltZ;
 	}
-	var intTextures=0;
-	var textureCanvas=null;
-	var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
-	var newSphere=new VarietyManifold3D(netspace.gl,"RoboticPen3Davatar",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
-	netspace.pointLightIslands[0].varietyManifolds3D.push(newSphere);
-	newSphere.generateWireframe(true);
-	newSphere.intTextures=0;
-	newSphere.blnRenderWireframe=true;
-     	return newSphere;
+	if(blnObjectMode){
+		var intTextures=0;
+		var textureCanvas=null;
+		var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+		var newSphere=new VarietyManifold3D(netspace.gl,"sphere",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
+		window.roboticPen3D.varietyManifold3DconstructedObject=newSphere;
+		netspace.pointLightIslands[0].varietyManifolds3D.push(newSphere);
+		newSphere.generateWireframe(true);
+		newSphere.intTextures=0;
+		newSphere.blnRenderWireframe=true;
+		return newSphere;
+	}else{
+		return [lstVertices,lstIndices,lstNormals,lstTextureCoords];
+	}
+};
+RoboticPen3D.prototype.createCircle=function(fltX,fltY,fltZ,fltRadius,fltScaleX,fltScaleY,fltScaleZ,intSegments,blnObjectMode){
+	if(undefined==fltScaleX)fltScaleX=1.0;
+	if(undefined==fltScaleY)fltScaleY=1.0;
+	if(undefined==fltScaleZ)fltScaleZ=1.0;
+	if(undefined==fltX)fltX=0.0;
+	if(undefined==fltY)fltY=0.0;
+	if(undefined==fltZ)fltZ=0.0;
+	if(undefined==intSegments)intSegments=32;
+	if(undefined==blnObjectMode)blnObjectMode=true;
+	var radAngle=0;
+	var degAngle=0;
+	var degDangle=360./intSegments;
+	var lstVertices=[],lstIndices=[],lstNormals=[],lstTextureCoords=[];
+	lstVertices.push(0.0);lstVertices.push(0.0);lstVertices.push(0.0);
+	lstNormals.push(0.0);lstNormals.push(0.0);lstNormals.push(1.0);
+	var fltVertexX,fltVertexY;
+	for(var ii=0;ii<intSegments;ii++){
+		radAngle=toRadian(degAngle);
+		fltVertexX=fltRadius*Math.cos(radAngle);
+		fltVertexY=fltRadius*Math.sin(radAngle);
+		lstVertices.push(fltVertexX);lstVertices.push(fltVertexY);lstVertices.push(0.0);
+		lstNormals.push(0.0);lstNormals.push(0.0);lstNormals.push(1.0);
+		degAngle+=degDangle;
+	}
+	for(var ii=1;ii<lstVertices.length/3;ii++){
+		lstIndices.push(0);
+		lstIndices.push(ii);
+		if(ii+1<lstVertices.length/3)
+			lstIndices.push(ii+1);
+		else
+			lstIndices.push(1);
+	}
+	for(var ii=0;ii<lstVertices.length/3;ii++){
+		lstVertices[3*ii+0]*=fltScaleX;
+		lstVertices[3*ii+0]+=fltX;
+		lstVertices[3*ii+1]*=fltScaleY;
+		lstVertices[3*ii+1]+=fltY;
+		lstVertices[3*ii+2]*=fltScaleZ;
+		lstVertices[3*ii+2]+=fltZ;
+	}
+	if(blnObjectMode){
+		var intTextures=0;
+		var textureCanvas=null;
+		var mat4transformation=mat4.create([1,0,0,0,0,1,0,0,0,0,1,0,0,0,0,1]);
+		var newCircle=new VarietyManifold3D(netspace.gl,"circle",lstVertices,lstIndices,lstNormals,this.vec4avatarColor,this.vec4avatarColor,0.5,this.vec4avatarColor,0.4,vec4.create([1.0,1.0,1.0,1.0]),0.1,1.0,textureCanvas,mat4transformation,intTextures,lstTextureCoords,null);
+		window.roboticPen3D.varietyManifold3DconstructedObject=newCircle;
+		
+		netspace.pointLightIslands[0].varietyManifolds3D.push(newCircle);
+		newCircle.generateWireframe(true);
+		newCircle.intTextures=0;
+		newCircle.blnRenderWireframe=true;
+		return newCircle;
+	}else{
+		return [lstVertices,lstIndices,lstNormals,lstTextureCoords];
+	}
+};
+RoboticPen3D.prototype.createCylinder=function(fltX,fltY,fltZ,fltRadius,fltHeight,fltScaleX,fltScaleY,fltScaleZ,intSegments,blnObjectMode){
+	if(undefined==fltScaleX)fltScaleX=1.0;
+	if(undefined==fltScaleY)fltScaleY=1.0;
+	if(undefined==fltScaleZ)fltScaleZ=1.0;
+	if(undefined==fltX)fltX=0.0;
+	if(undefined==fltY)fltY=0.0;
+	if(undefined==fltZ)fltZ=0.0;
+	if(undefined==intSegments)intSegments=32;
+	if(undefined==blnObjectMode)blnObjectMode=true;
+	var fltHeightHalf=fltHeight/2.;
+	var newCylinder=this.createCircle(fltX,fltY,fltZ-fltHeightHalf*fltScaleZ,fltRadius,fltScaleX,fltScaleY,fltScaleZ,intSegments,true);
+	this.addMesh(newCylinder,this.createCircle(fltX,fltY,fltZ+fltHeightHalf*fltScaleZ,fltRadius,fltScaleX,fltScaleY,fltScaleZ,intSegments,false));
+	if(blnObjectMode){
+		window.roboticPen3D.varietyManifold3DconstructedObject=newCylinder;
+		window.roboticPen3D.varietyManifold3DconstructedObject.name="cylinder";
+		newCylinder.generateWireframe(true);
+		return newCylinder;
+	}
+	else return getMesh(newCylinder);
+	
+};
+RoboticPen3D.prototype.getMesh=function(varietyManifold3D){
+	return [varietyManifold3D.arrVertices,varietyManifold3D.arrIndices,varietyManifold3D.arrNormals,varietyManifold3D.arrTextureUVs];
+};
+RoboticPen3D.prototype.addMesh=function(varietyManifold3D,lstMesh){
+	//TODO: texture coordinates
+	//TODO: transformations simplewords of lstMesh, like default arguments shift,rotation scale in addMesh() arguments
+	var arrVertices0=varietyManifold3D.arrVertices;
+	var arrIndices0=varietyManifold3D.arrIndices;
+	var arrNormals0=varietyManifold3D.arrNormals;
+	var arrVertices1=lstMesh[0];
+	var arrIndices1=lstMesh[1];
+	var arrNormals1=lstMesh[2];
+	var lstVertices2=[];
+	var lstIndices2=[];
+	var lstNormals2=[];
+	for(var ii=0;ii<arrVertices0.length;ii++)
+		lstVertices2.push(arrVertices0[ii]);
+	for(var ii=0;ii<arrVertices1.length;ii++)
+		lstVertices2.push(arrVertices1[ii]);
+	for(var ii=0;ii<arrIndices0.length;ii++)
+		lstIndices2.push(arrIndices0[ii]);
+	var intIndicesShift=arrVertices0.length/3;
+	for(var ii=0;ii<arrIndices1.length;ii++)
+		lstIndices2.push(intIndicesShift+arrIndices1[ii]);
+	for(var ii=0;ii<arrNormals0.length;ii++)
+		lstNormals2.push(arrNormals0[ii]);
+	for(var ii=0;ii<arrNormals1.length;ii++)
+		lstNormals2.push(arrNormals1[ii]);
+	for(var ii=1;ii<intIndicesShift;ii++){
+		lstIndices2.push(ii);
+		lstIndices2.push(ii+intIndicesShift);
+		if(ii+1<intIndicesShift)
+			lstIndices2.push(ii+1);
+		else
+			lstIndices2.push(1);
 
+		lstIndices2.push(ii+intIndicesShift);
+		if(ii+1<intIndicesShift){
+			lstIndices2.push(ii+1);
+			lstIndices2.push(ii+intIndicesShift+1);
+		}else{
+			lstIndices2.push(1);
+			lstIndices2.push(intIndicesShift+1);
+		}
+	}
+	//TODO: normals computations
+	//TODO: texture coords
+	varietyManifold3D.refreshFromArrays(lstVertices2,lstIndices2,lstNormals2);
+	return varietyManifold3D;
 };
 RoboticPen3D.prototype.createPenAvatarVarietyManifold3D=function(){
 	//var p=window.roboticPen3D;
@@ -28520,6 +28680,7 @@ RoboticPen3D.prototype.createPenAvatarVarietyManifold3D=function(){
 	p.selectAllVertices();
 	p.translateSelectedVertices([0.125,0.,-3.3]);
 	p.scaleSelectedVerticesAroundMedian([0.1,0.1,0.1]);
+	p.deselectAllVertices();
 	return p.varietyManifold3DconstructedObject;
 };
 RoboticPen3D.prototype.initialEmptyObject=function(){
@@ -28614,63 +28775,77 @@ RoboticPen3D.prototype.createFloorGrid=function(fltX,fltY,fltZ,fltWidth,fltHeigh
 	return this.createPlane("Grid floor",fltX,fltY,fltZ,fltWidth,fltHeight,floorTextureCanvas);
 };
 RoboticPen3D.prototype.refresh=function(){
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	//this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refresh();
 };
 RoboticPen3D.prototype.getMaximalIndex=function(){
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
 	var intMaximalIndex=0;
-	for(var ii=0;ii<this.lstIndices.length;ii++)
-		if(intMaximalIndex<this.lstIndices[ii])intMaximalIndex=this.lstIndices[ii];
+	for(var ii=0;ii<arrIndices.length;ii++)
+		if(intMaximalIndex<arrIndices[ii])intMaximalIndex=arrIndices[ii];
 	return intMaximalIndex;
 };
 RoboticPen3D.prototype.finalizeTriangleFace=function(){
-	if(0==this.lstIndices.length)
-		this.lstIndices=[0,1,2];
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	if(0==arrIndices.length)
+		arrIndices=[0,1,2];
 	else{
-		var intStart=this.lstIndices[this.lstIndices.length-1];
+		var intStart=arrIndices[arrIndices.length-1];
 		for(var ii=intStart;ii<intStart+3;ii++){
-			this.lstIndices.push(ii);
+			arrIndices=Uint16ArrayPush(arrIndices,ii);
 		}
 	}
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.tri=function(){
 	this.finalizeTriangleFace();
 };
 RoboticPen3D.prototype.finalizeTriangleFanFaceWithFixedPoint=function(intFixedIndex){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	if(undefined==intFixedIndex)intFixedIndex=0;
-	if(0==this.lstIndices.length||true==this.blnPenUpDownChanged_faces){
+	if(0==arrIndices.length||true==this.blnPenUpDownChanged_faces){
 		var intShift=this.getMaximalIndex();
 		if(intShift>0)intShift++;
-		this.lstIndices.push(intShift+0);
-		this.lstIndices.push(intShift+1);
-		this.lstIndices.push(intShift+2);
+		arrIndices=Uint16ArrayPush(arrIndices,intShift+0);
+		arrIndices=Uint16ArrayPush(arrIndices,intShift+1);
+		arrIndices=Uint16ArrayPush(arrIndices,intShift+2);
 		this.blnPenUpDownChanged_faces=false;
 		//this.intPenOnVertexAgain=-1;//?
 	}
 	else{
 		if(-1==this.intPenOnVertexAgain){
-			var intStart=this.lstIndices[this.lstIndices.length-1];
-			this.lstIndices.push(intFixedIndex);
+			var intStart=arrIndices[arrIndices.length-1];
+			arrIndices=Uint16ArrayPush(arrIndices,intFixedIndex);
 			for(var ii=intStart;ii<intStart+2;ii++){
-				this.lstIndices.push(ii);
+				arrIndices=Uint16ArrayPush(arrIndices,ii);
 			}
 		}else{
-			var intPreviousPoint=this.lstIndices[this.lstIndices.length-1];
-			this.lstIndices.push(intFixedIndex);
-			this.lstIndices.push(intPreviousPoint);
-			this.lstIndices.push(this.intPenOnVertexAgain);
+			var intPreviousPoint=arrIndices[arrIndices.length-1];
+			arrIndices=Uint16ArrayPush(arrIndices,intFixedIndex);
+			arrIndices=Uint16ArrayPush(arrIndices,intPreviousPoint);
+			arrIndices=Uint16ArrayPush(arrIndices,this.intPenOnVertexAgain);
 			this.intPenOnVertexAgain=-1;
 		}
 	}
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.triFan=function(intFixedIndex){
 	if(undefined==intFixedIndex)intFixedIndex=0;
 	this.finalizeTriangleFanFaceWithFixedPoint(intFixedIndex);
 };
 RoboticPen3D.prototype.penOnVertex=function(strPen,fltX1,fltY1,fltZ1){
-	for(var ii=0;ii<this.lstVertices.length;ii+=3){
-		if(Math.abs(this.lstVertices[ii+0]-fltX1)<this.fltPenActionPrecision&&Math.abs(this.lstVertices[ii+1]-fltY1)<this.fltPenActionPrecision&&Math.abs(this.lstVertices[ii+2]-fltZ1)<this.fltPenActionPrecision){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrVertices.length;ii+=3){
+		if(Math.abs(arrVertices[ii+0]-fltX1)<this.fltPenActionPrecision&&Math.abs(arrVertices[ii+1]-fltY1)<this.fltPenActionPrecision&&Math.abs(arrVertices[ii+2]-fltZ1)<this.fltPenActionPrecision){
 			this.intPenOnVertexAgain=ii/3;
 			return true;
 		}
@@ -28679,34 +28854,38 @@ RoboticPen3D.prototype.penOnVertex=function(strPen,fltX1,fltY1,fltZ1){
 	return false;
 };
 RoboticPen3D.prototype.penAction=function(strPen,fltX0,fltY0,fltZ0,fltX1,fltY1,fltZ1,fltAngleNS,fltAngleWE){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var fltSelection=(this.blnSelectWhenDrawing)?0.5:0.;
 	switch(this.strPen){
 		case "PointStrip":
-			if(0==this.lstVertices.length||true==this.blnPenUpDownChanged_vertices){
-				this.lstVertices.push(fltX0);
-				this.lstVertices.push(fltY0);
-				this.lstVertices.push(fltZ0);
-				this.lstSelection.push(fltSelection);
-				this.lstVertices.push(fltX1);
-				this.lstVertices.push(fltY1);
-				this.lstVertices.push(fltZ1);
-				this.lstSelection.push(fltSelection);
-				this.lstNormals.push(1.0);
-				this.lstNormals.push(1.0);
-				this.lstNormals.push(1.0);
-				this.lstNormals.push(1.0);
-				this.lstNormals.push(1.0);
-				this.lstNormals.push(1.0);
+			if(0==arrVertices.length||true==this.blnPenUpDownChanged_vertices){
+				arrVertices=Float32ArrayPush(arrVertices,fltX0);
+				arrVertices=Float32ArrayPush(arrVertices,fltY0);
+				arrVertices=Float32ArrayPush(arrVertices,fltZ0);
+				arrSelection=Float32ArrayPush(arrSelection,fltSelection);
+				arrVertices=Float32ArrayPush(arrVertices,fltX1);
+				arrVertices=Float32ArrayPush(arrVertices,fltY1);
+				arrVertices=Float32ArrayPush(arrVertices,fltZ1);
+				arrSelection=Float32ArrayPush(arrSelection,fltSelection);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
+				arrNormals=Float32ArrayPush(arrNormals,1.0);
 				this.blnPenUpDownChanged_vertices=false;
 			}else{
 				if(false==this.penOnVertex(strPen,fltX1,fltY1,fltZ1)){
-					this.lstVertices.push(fltX1);
-					this.lstVertices.push(fltY1);
-					this.lstVertices.push(fltZ1);
-					this.lstSelection.push(fltSelection);
-					this.lstNormals.push(1.0);
-					this.lstNormals.push(1.0);
-					this.lstNormals.push(1.0);
+					arrVertices=Float32ArrayPush(arrVertices,fltX1);
+					arrVertices=Float32ArrayPush(arrVertices,fltY1);
+					arrVertices=Float32ArrayPush(arrVertices,fltZ1);
+					arrSelection=Float32ArrayPush(arrSelection,fltSelection);
+					arrNormals=Float32ArrayPush(arrNormals,1.0);
+					arrNormals=Float32ArrayPush(arrNormals,1.0);
+					arrNormals=Float32ArrayPush(arrNormals,1.0);
 				}
 			}
 		break;
@@ -28719,7 +28898,7 @@ RoboticPen3D.prototype.penAction=function(strPen,fltX0,fltY0,fltZ0,fltX1,fltY1,f
 		case "Quads":
 		break;
 	}
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.penUp=function(){
 	this.blnPenDown=false;
@@ -28767,54 +28946,84 @@ RoboticPen3D.prototype.exportObjectToOBJstr=function(varietyManifold3Dobject){
 	return varietyManifold3Dobject.toStringOBJ();
 };
 RoboticPen3D.prototype.selectAllEdges=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.5;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.5;
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.deselectAllEdges=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.;
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.selectAllVertices=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.5;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.5;
+	this.varietyManifold3DconstructedObject.refreshFromArraysWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.deselectAllVertices=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.;
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.selectAllFaces=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.5;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.5;
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.deselectAllFaces=function(){
-	for(var ii=0;ii<this.lstSelection.length;ii++)this.lstSelection[ii]=0.;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	for(var ii=0;ii<arrSelection.length;ii++)arrSelection[ii]=0.;
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.computeMedianFromSelectedVertices=function(){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var fltSumX=0, fltSumY=0, fltSumZ=0;
 	var intPointsAveraged=0;
-	for(var ii=0;ii<this.lstSelection.length;ii++){
-		if(this.lstSelection[ii]>=0.5){
-			fltSumX+=this.lstVertices[3*ii+0];
-			fltSumY+=this.lstVertices[3*ii+1];
-			fltSumZ+=this.lstVertices[3*ii+2];
+	for(var ii=0;ii<arrSelection.length;ii++){
+		if(arrSelection[ii]>=0.5){
+			fltSumX+=arrVertices[3*ii+0];
+			fltSumY+=arrVertices[3*ii+1];
+			fltSumZ+=arrVertices[3*ii+2];
 			intPointsAveraged++;
 		}
 	}
 	return vec3.create([fltSumX/intPointsAveraged,fltSumY/intPointsAveraged,fltSumZ/intPointsAveraged]);
 };
 RoboticPen3D.prototype.applyTransformationToSelectedVertices=function(mat4transformation){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var vec4verticesIn, vec4verticesOut;
-	for(var ii=0;ii<this.lstSelection.length;ii++){
-		if(this.lstSelection[ii]>=0.5){
-			vec4verticesIn=vec4.create([this.lstVertices[3*ii+0],this.lstVertices[3*ii+1],this.lstVertices[3*ii+2],1.]);
+	for(var ii=0;ii<arrSelection.length;ii++){
+		if(arrSelection[ii]>=0.5){
+			vec4verticesIn=vec4.create([arrVertices[3*ii+0],arrVertices[3*ii+1],arrVertices[3*ii+2],1.]);
 			vec4verticesOut=mat4.multiplyVec4(vec4.create([0.,0.,0.]),mat4transformation,vec4verticesIn);
-			this.lstVertices[3*ii+0]=vec4verticesOut[0];
-			this.lstVertices[3*ii+1]=vec4verticesOut[1];
-			this.lstVertices[3*ii+2]=vec4verticesOut[2];
+			arrVertices[3*ii+0]=vec4verticesOut[0];
+			arrVertices[3*ii+1]=vec4verticesOut[1];
+			arrVertices[3*ii+2]=vec4verticesOut[2];
 		}
 	}
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.translateSelectedVertices=function(vec3translation){
 	var mat4transformation=mat4.identity(new Float32Array(16));
@@ -28835,6 +29044,11 @@ RoboticPen3D.prototype.scaleSelectedVerticesAroundMedian=function(vec3scale){
 };
 RoboticPen3D.prototype.rotateXselectedVertices=function(fltAngle){
 	var mat4transformation=mat4.identity(new Float32Array(16));
+	mat4.rotateX(mat4transformation,mat4transformation,toRadian(fltAngle));
+	this.applyTransformationToSelectedVertices(mat4transformation);
+};
+RoboticPen3D.prototype.rotateXselectedVertices_radian=function(fltAngle){
+	var mat4transformation=mat4.identity(new Float32Array(16));
 	mat4.rotateX(mat4transformation,mat4transformation,fltAngle);
 	this.applyTransformationToSelectedVertices(mat4transformation);
 };
@@ -28845,7 +29059,19 @@ RoboticPen3D.prototype.rotateXselectedVerticesAroundMedian=function(fltAngle){
 	this.rotateXselectedVertices(fltAngle);
 	this.translateSelectedVertices(vec3median);
 };
+RoboticPen3D.prototype.rotateXselectedVerticesAroundMedian_radian=function(fltAngle){
+	var vec3median=this.computeMedianFromSelectedVertices();
+	var vec3minusMedian=vec3.create([-1.*vec3median[0],-1.*vec3median[1],-1.*vec3median[2]]);
+	this.translateSelectedVertices(vec3minusMedian);
+	this.rotateXselectedVertices_radian(fltAngle);
+	this.translateSelectedVertices(vec3median);
+};
 RoboticPen3D.prototype.rotateYselectedVertices=function(fltAngle){
+	var mat4transformation=mat4.identity(new Float32Array(16));
+	mat4.rotateY(mat4transformation,mat4transformation,toRadian(fltAngle));
+	this.applyTransformationToSelectedVertices(mat4transformation);
+};
+RoboticPen3D.prototype.rotateYselectedVertices_radian=function(fltAngle){
 	var mat4transformation=mat4.identity(new Float32Array(16));
 	mat4.rotateY(mat4transformation,mat4transformation,fltAngle);
 	this.applyTransformationToSelectedVertices(mat4transformation);
@@ -28857,7 +29083,19 @@ RoboticPen3D.prototype.rotateYselectedVerticesAroundMedian=function(fltAngle){
 	this.rotateYselectedVertices(fltAngle);
 	this.translateSelectedVertices(vec3median);
 };
+RoboticPen3D.prototype.rotateYselectedVerticesAroundMedian_radian=function(fltAngle){
+	var vec3median=this.computeMedianFromSelectedVertices();
+	var vec3minusMedian=vec3.create([-1.*vec3median[0],-1.*vec3median[1],-1.*vec3median[2]]);
+	this.translateSelectedVertices(vec3minusMedian);
+	this.rotateYselectedVertices_radian(fltAngle);
+	this.translateSelectedVertices(vec3median);
+};
 RoboticPen3D.prototype.rotateZselectedVertices=function(fltAngle){
+	var mat4transformation=mat4.identity(new Float32Array(16));
+	mat4.rotateZ(mat4transformation,mat4transformation,toRadian(fltAngle));
+	this.applyTransformationToSelectedVertices(mat4transformation);
+};
+RoboticPen3D.prototype.rotateZselectedVertices_radian=function(fltAngle){
 	var mat4transformation=mat4.identity(new Float32Array(16));
 	mat4.rotateZ(mat4transformation,mat4transformation,fltAngle);
 	this.applyTransformationToSelectedVertices(mat4transformation);
@@ -28869,32 +29107,51 @@ RoboticPen3D.prototype.rotateZselectedVerticesAroundMedian=function(fltAngle){
 	this.rotateZselectedVertices(fltAngle);
 	this.translateSelectedVertices(vec3median);
 };
+RoboticPen3D.prototype.rotateZselectedVerticesAroundMedian_radian=function(fltAngle){
+	var vec3median=this.computeMedianFromSelectedVertices();
+	var vec3minusMedian=vec3.create([-1.*vec3median[0],-1.*vec3median[1],-1.*vec3median[2]]);
+	this.translateSelectedVertices(vec3minusMedian);
+	this.rotateZselectedVertices_radian(fltAngle);
+	this.translateSelectedVertices(vec3median);
+};
 RoboticPen3D.prototype.findAllFullySelectedFaces=function(){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstFullySelectedFaces=[];
-	for(var ii=0;ii<this.lstIndices.length/3;ii++){
-		if(this.lstSelection[this.lstIndices[3*ii+0]]>=0.5&&this.lstSelection[this.lstIndices[3*ii+1]]>=0.5&&this.lstSelection[this.lstIndices[3*ii+2]]>=0.5){
-			lstFullySelectedFaces.push(this.lstIndices[3*ii+0]);
-			lstFullySelectedFaces.push(this.lstIndices[3*ii+1]);
-			lstFullySelectedFaces.push(this.lstIndices[3*ii+2]);
+	for(var ii=0;ii<arrIndices.length/3;ii++){
+		if(arrSelection[arrIndices[3*ii+0]]>=0.5&&arrSelection[arrIndices[3*ii+1]]>=0.5&&arrSelection[arrIndices[3*ii+2]]>=0.5){
+			lstFullySelectedFaces.push(arrIndices[3*ii+0]);
+			lstFullySelectedFaces.push(arrIndices[3*ii+1]);
+			lstFullySelectedFaces.push(arrIndices[3*ii+2]);
 		}
 	}
 	return lstFullySelectedFaces;
 };
 RoboticPen3D.prototype.findAllNonFullySelectedFaces=function(){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstNonFullySelectedFaces=[];
-	for(var ii=0;ii<this.lstIndices.length/3;ii++){
-		if(this.lstSelection[this.lstIndices[3*ii+0]]<0.5||this.lstSelection[this.lstIndices[3*ii+1]]<0.5||this.lstSelection[this.lstIndices[3*ii+2]]<0.5){
-			lstNonFullySelectedFaces.push(this.lstIndices[3*ii+0]);
-			lstNonFullySelectedFaces.push(this.lstIndices[3*ii+1]);
-			lstNonFullySelectedFaces.push(this.lstIndices[3*ii+2]);
+	for(var ii=0;ii<arrIndices.length/3;ii++){
+		if(arrSelection[arrIndices[3*ii+0]]<0.5||arrSelection[arrIndices[3*ii+1]]<0.5||arrSelection[arrIndices[3*ii+2]]<0.5){
+			lstNonFullySelectedFaces.push(arrIndices[3*ii+0]);
+			lstNonFullySelectedFaces.push(arrIndices[3*ii+1]);
+			lstNonFullySelectedFaces.push(arrIndices[3*ii+2]);
 		}
 	}
 	return lstNonFullySelectedFaces;
 };
 RoboticPen3D.prototype.findReferencesToAllNonFullySelectedFaces=function(){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstNonFullySelectedFaces=[];
-	for(var ii=0;ii<this.lstIndices.length/3;ii++){
-		if(this.lstSelection[this.lstIndices[3*ii+0]]<0.5||this.lstSelection[this.lstIndices[3*ii+1]]<0.5||this.lstSelection[this.lstIndices[3*ii+2]]<0.5){
+	for(var ii=0;ii<arrIndices.length/3;ii++){
+		if(arrSelection[arrIndices[3*ii+0]]<0.5||arrSelection[arrIndices[3*ii+1]]<0.5||arrSelection[arrIndices[3*ii+2]]<0.5){
 			lstNonFullySelectedFaces.push(3*ii+0);
 			lstNonFullySelectedFaces.push(3*ii+1);
 			lstNonFullySelectedFaces.push(3*ii+2);
@@ -28903,21 +29160,25 @@ RoboticPen3D.prototype.findReferencesToAllNonFullySelectedFaces=function(){
 	return lstNonFullySelectedFaces;
 };
 RoboticPen3D.prototype.findConnectedFaces=function(intIndex,blnFullySelectedOnly){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstConnectedFaces=[];
 	var lstConnedtedFace;
 	var jj,kk;
-	for(var ii=0;ii<this.lstIndices.length;ii++){
-		if(intIndex==this.lstIndices[ii]){
+	for(var ii=0;ii<arrIndices.length;ii++){
+		if(intIndex==arrIndices[ii]){
 			if(0==ii%3){
 				if(false==blnFullySelectedOnly){
-					jj=this.lstIndices[ii+1];
-					kk=this.lstIndices[ii+2];
+					jj=arrIndices[ii+1];
+					kk=arrIndices[ii+2];
 					lstConnectedFace=[jj,kk];
 					lstConnectedFaces.push(lstConnectedFace);
 				}else{
-					jj=this.lstIndices[ii+1];
-					kk=this.lstIndices[ii+2];
-					if(this.lstSelection[jj]>=0.5&&this.lstSelection[kk]>=0.5){
+					jj=arrIndices[ii+1];
+					kk=arrIndices[ii+2];
+					if(arrSelection[jj]>=0.5&&arrSelection[kk]>=0.5){
 						lstConnectedFace=[jj,kk];
 						lstConnectedFaces.push(lstConnectedFace);
 					}
@@ -28925,14 +29186,14 @@ RoboticPen3D.prototype.findConnectedFaces=function(intIndex,blnFullySelectedOnly
 			}
 			if(1==ii%3){
 				if(false==blnFullySelectedOnly){
-					jj=this.lstIndices[ii-1];
-					kk=this.lstIndices[ii+1];
+					jj=arrIndices[ii-1];
+					kk=arrIndices[ii+1];
 					lstConnectedFace=[jj,kk];
 					lstConnectedFaces.push(lstConnectedFace);
 				}else{
-					jj=this.lstIndices[ii-1];
-					kk=this.lstIndices[ii+1];
-					if(this.lstSelection[jj]>=0.5&&this.lstSelection[kk]>=0.5){
+					jj=arrIndices[ii-1];
+					kk=arrIndices[ii+1];
+					if(arrSelection[jj]>=0.5&&arrSelection[kk]>=0.5){
 						lstConnectedFace=[jj,kk];
 						lstConnectedFaces.push(lstConnectedFace);
 					}
@@ -28940,14 +29201,14 @@ RoboticPen3D.prototype.findConnectedFaces=function(intIndex,blnFullySelectedOnly
 			}
 			if(2==ii%3){
 				if(false==blnFullySelectedOnly){
-					jj=this.lstIndices[ii-1];
-					kk=this.lstIndices[ii-2];
+					jj=arrIndices[ii-1];
+					kk=arrIndices[ii-2];
 					lstConnectedFace=[jj,kk];
 					lstConnectedFaces.push(lstConnectedFace);
 				}else{
-					jj=this.lstIndices[ii-1];
-					kk=this.lstIndices[ii-2];
-					if(this.lstSelection[jj]>=0.5&&this.lstSelection[kk]>=0.5){
+					jj=arrIndices[ii-1];
+					kk=arrIndices[ii-2];
+					if(arrSelection[jj]>=0.5&&arrSelection[kk]>=0.5){
 						lstConnectedFace=[jj,kk];
 						lstConnectedFaces.push(lstConnectedFace);
 					}
@@ -28958,89 +29219,92 @@ RoboticPen3D.prototype.findConnectedFaces=function(intIndex,blnFullySelectedOnly
 	return lstConnectedFaces;
 };
 RoboticPen3D.prototype.findConnectedEdges=function(intIndex,blnSelectedOnlyVertices){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstConnectedIndices=[];
 	var jj;
-	for(var ii=0;ii<this.lstIndices.length;ii++){
-		if(intIndex==this.lstIndices[ii]){
+	for(var ii=0;ii<arrIndices.length;ii++){
+		if(intIndex==arrIndices[ii]){
 			if(0==ii%3){
-				jj=this.lstIndices[ii+1];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(jj);
-				jj=this.lstIndices[ii+2];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(jj);
+				jj=arrIndices[ii+1];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(jj);
+				jj=arrIndices[ii+2];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(jj);
 				lstConnectedIndices.push(jj);
 			}
 			if(1==ii%3){
-				jj=this.lstIndices[ii-1];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(this.lstIndices[ii-1]);
-				jj=this.lstIndices[ii+1];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(this.lstIndices[ii+1]);
+				jj=arrIndices[ii-1];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(arrIndices[ii-1]);
+				jj=arrIndices[ii+1];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(arrIndices[ii+1]);
 			}
 			if(2==ii%3){
-				jj=this.lstIndices[ii-1];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(this.lstIndices[ii-1]);
-				jj=this.lstIndices[ii-2];
-				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&this.lstSelection[jj]>=0.5))lstConnectedIndices.push(this.lstIndices[ii-2]);
+				jj=arrIndices[ii-1];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(arrIndices[ii-1]);
+				jj=arrIndices[ii-2];
+				if(false==blnSelectedOnlyVertices||(true==blnSelectedOnlyVertices&&arrSelection[jj]>=0.5))lstConnectedIndices.push(arrIndices[ii-2]);
 			}
 		}
 	}
 	return lstConnectedIndices;
 };
 RoboticPen3D.prototype.duplicateFullySelectedFaces=function(blnSelectExtrudedOnly){
-	var intVerticesBeforeExtrusion=this.lstVertices.length;
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	var intVerticesBeforeExtrusion=arrVertices.length;
 	var lstNewIndices=[],lstNewSelection=[];
 	var lstAlreadyExtrudedIndices=[];
 	var ii;
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		lstNewIndices.push(this.lstIndices[ii]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		lstNewIndices.push(arrIndices[ii]);
 	};
-	for(ii=0;ii<this.lstSelection.length;ii++){
-		lstNewSelection.push(this.lstSelection[ii]);
+	for(ii=0;ii<arrSelection.length;ii++){
+		lstNewSelection.push(arrSelection[ii]);
 	};
 	var dctIndexMappings={};
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		if(this.lstSelection[this.lstIndices[ii]]>=0.5){
-			if(-1==lstAlreadyExtrudedIndices.indexOf(this.lstIndices[ii])){
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+0]);
-				dctIndexMappings[this.lstIndices[ii]]=(this.lstVertices.length-1)/3;
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+1]);
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+2]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		if(arrSelection[arrIndices[ii]]>=0.5){
+			if(-1==lstAlreadyExtrudedIndices.indexOf(arrIndices[ii])){
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+0]);
+				dctIndexMappings[arrIndices[ii]]=(arrVertices.length-1)/3;
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+1]);
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+2]);
 				lstNewSelection.push(0.5);
-				if(true==blnSelectExtrudedOnly)lstNewSelection[this.lstIndices[ii]]=0.;
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+0]);
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+1]);
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+2]);
-				lstAlreadyExtrudedIndices.push(this.lstIndices[ii]);
+				if(true==blnSelectExtrudedOnly)lstNewSelection[arrIndices[ii]]=0.;
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+0]);
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+1]);
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+2]);
+				lstAlreadyExtrudedIndices.push(arrIndices[ii]);
 			}
 		}
 	}
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		if(this.lstSelection[this.lstIndices[ii]]>=0.5){
-			lstNewIndices.push(dctIndexMappings[this.lstIndices[ii]]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		if(arrSelection[arrIndices[ii]]>=0.5){
+			lstNewIndices.push(dctIndexMappings[arrIndices[ii]]);
 		}
 	}
-	this.lstSelection=lstNewSelection;
-	this.lstIndices=lstNewIndices;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	arrSelection=new Float32Array(lstNewSelection);
+	arrIndices=new Float32Array(lstNewIndices);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.sortEdge=function(lstEdge){
 	if(lstEdge[0]<=lstEdge[1])return lstEdge;
 	else return [lstEdge[1],lstEdge[0]];
 };
 RoboticPen3D.prototype.computeAmountOfSelectedVertices=function(lstIndices){
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var intAmountOfSelectedVertices=0;
 	var lstIndicesAlreadyTested=[];
 	for(ii=0;ii<lstIndices.length;ii++)
-		if(this.lstSelection[lstIndices[ii]]>=0.5)
+		if(arrSelection[lstIndices[ii]]>=0.5)
 			if(-1==lstIndicesAlreadyTested.indexOf(lstIndices[ii])){
 				intAmountOfSelectedVertices++;
 				lstIndicesAlreadyTested.push(lstIndices[ii]);
 			}
-	return intAmountOfSelectedVertices;
-};
-RoboticPen3D.prototype.computeAmountOfSelectedVerticesPrev=function(lstIndices){
-	var intAmountOfSelectedVertices=0;
-	for(ii=0;ii<this.lstSelection.length;ii++)
-		if(this.lstSelection[ii]>=0.5)intAmountOfSelectedVertices++;
 	return intAmountOfSelectedVertices;
 };
 RoboticPen3D.prototype.findAllNonSharedEdges=function(lstIndices){
@@ -29108,49 +29372,57 @@ RoboticPen3D.prototype.findAllNonSharedEdges=function(lstIndices){
 	return lstUniqueEdges;
 };
 RoboticPen3D.prototype.extrudeFullySelectedFaces=function(blnSelectExtrudedOnly){
-	var lstUniqueEdges=this.findAllNonSharedEdges(this.lstIndices);
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
+	var lstUniqueEdges=this.findAllNonSharedEdges(arrIndices);
 	if(lstUniqueEdges.length>0)
 		this.extrudeFullySelectedFaces_surface(blnSelectExtrudedOnly,lstUniqueEdges);
 	else
 		this.extrudeFullySelectedFaces_closedObject(blnSelectExtrudedOnly);
 };
 RoboticPen3D.prototype.extrudeFullySelectedFaces_surface=function(blnSelectExtrudedOnly,lstUniqueEdges){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstNewIndices=[],lstNewSelection=[];
 	var lstAlreadyExtrudedIndices=[];
 	var ii;
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		lstNewIndices.push(this.lstIndices[ii]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		lstNewIndices.push(arrIndices[ii]);
 	};
-	for(ii=0;ii<this.lstSelection.length;ii++){
-		lstNewSelection.push(this.lstSelection[ii]);
+	for(ii=0;ii<arrSelection.length;ii++){
+		lstNewSelection.push(arrSelection[ii]);
 	};
 	var dctIndexMappings={};
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		if(this.lstSelection[this.lstIndices[ii]]>=0.5){
-			if(-1==lstAlreadyExtrudedIndices.indexOf(this.lstIndices[ii])){
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+0]);
-				dctIndexMappings[this.lstIndices[ii]]=(this.lstVertices.length-1)/3;
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+1]);
-				this.lstVertices.push(this.lstVertices[3*this.lstIndices[ii]+2]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		if(arrSelection[arrIndices[ii]]>=0.5){
+			if(-1==lstAlreadyExtrudedIndices.indexOf(arrIndices[ii])){
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+0]);
+				dctIndexMappings[arrIndices[ii]]=(arrVertices.length-1)/3;
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+1]);
+				arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*arrIndices[ii]+2]);
 				lstNewSelection.push(0.5);
-				if(true==blnSelectExtrudedOnly)lstNewSelection[this.lstIndices[ii]]=0.;
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+0]);
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+1]);
-				this.lstNormals.push(this.lstNormals[3*this.lstIndices[ii]+2]);
-				lstAlreadyExtrudedIndices.push(this.lstIndices[ii]);
+				if(true==blnSelectExtrudedOnly)lstNewSelection[arrIndices[ii]]=0.;
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+0]);
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+1]);
+				arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*arrIndices[ii]+2]);
+				lstAlreadyExtrudedIndices.push(arrIndices[ii]);
 
 			}
 		}
 	}
-	for(ii=0;ii<this.lstIndices.length;ii++){
-		if(this.lstSelection[this.lstIndices[ii]]>=0.5){
-			lstNewIndices.push(dctIndexMappings[this.lstIndices[ii]]);
+	for(ii=0;ii<arrIndices.length;ii++){
+		if(arrSelection[arrIndices[ii]]>=0.5){
+			lstNewIndices.push(dctIndexMappings[arrIndices[ii]]);
 		}
 	}
-	this.lstSelection=lstNewSelection;
+	arrSelection=new Float32Array(lstNewSelection);
 	//interconnections
 	if(undefined==lstUniqueEdges)
-		lstUniqueEdges=this.findAllNonSharedEdges(this.lstIndices);
+		lstUniqueEdges=this.findAllNonSharedEdges(arrIndices);
 	for(ii=0;ii<lstUniqueEdges.length;ii++){
 		if(undefined==dctIndexMappings[lstUniqueEdges[ii][0]]||undefined==dctIndexMappings[lstUniqueEdges[ii][1]])continue;
 		lstNewIndices.push(lstUniqueEdges[ii][0]);
@@ -29161,10 +29433,14 @@ RoboticPen3D.prototype.extrudeFullySelectedFaces_surface=function(blnSelectExtru
 		lstNewIndices.push(dctIndexMappings[lstUniqueEdges[ii][1]]);
 		lstNewIndices.push(lstUniqueEdges[ii][0]);
 	}
-	this.lstIndices=lstNewIndices;
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	arrIndices=new Uint16Array(lstNewIndices);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.extrudeFullySelectedFaces_closedObject=function(blnSelectExtrudedOnly){
+	var arrVertices=this.varietyManifold3DconstructedObject.arrVertices;
+	var arrIndices=this.varietyManifold3DconstructedObject.arrIndices;
+	var arrNormals=this.varietyManifold3DconstructedObject.arrNormals;
+	var arrSelection=this.varietyManifold3DconstructedObject.arrSelection;
 	var lstFullySelectedFaces=this.findAllFullySelectedFaces();
 	var lstReferencesToNonFullySelectedFaces=this.findReferencesToAllNonFullySelectedFaces();	
 	var lstUniqueEdges=this.findAllNonSharedEdges(lstFullySelectedFaces);
@@ -29176,37 +29452,37 @@ RoboticPen3D.prototype.extrudeFullySelectedFaces_closedObject=function(blnSelect
 	for(ii=0;ii<lstUniqueEdgesFlattened.length;ii++){
 		intIndex=lstUniqueEdgesFlattened[ii];
 		if(-1==lstAlreadyExtrudedIndices.indexOf(intIndex)){
-			this.lstVertices.push(this.lstVertices[3*intIndex+0]);
-			dctIndexMappings[intIndex]=(this.lstVertices.length-1)/3;
-			this.lstVertices.push(this.lstVertices[3*intIndex+1]);
-			this.lstVertices.push(this.lstVertices[3*intIndex+2]);
-			this.lstSelection.push(0.);
-			this.lstNormals.push(this.lstNormals[3*intIndex+0]);
-			this.lstNormals.push(this.lstNormals[3*intIndex+1]);
-			this.lstNormals.push(this.lstNormals[3*intIndex+2]);
+			arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*intIndex+0]);
+			dctIndexMappings[intIndex]=(arrVertices.length-1)/3;
+			arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*intIndex+1]);
+			arrVertices=Float32ArrayPush(arrVertices,arrVertices[3*intIndex+2]);
+			arrSelection=Float32ArrayPush(arrSelection,0.);
+			arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*intIndex+0]);
+			arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*intIndex+1]);
+			arrNormals=Float32ArrayPush(arrNormals,arrNormals[3*intIndex+2]);
 			lstAlreadyExtrudedIndices.push(intIndex);
 		}
 	}
 	for(ii=0;ii<lstUniqueEdgesFlattened.length;ii++){
 		intIndex=lstUniqueEdgesFlattened[ii];
 		for(jj=0;jj<lstReferencesToNonFullySelectedFaces.length;jj++){
-			if(intIndex==this.lstIndices[lstReferencesToNonFullySelectedFaces[jj]]){
-				this.lstIndices[lstReferencesToNonFullySelectedFaces[jj]]=dctIndexMappings[intIndex];
+			if(intIndex==arrIndices[lstReferencesToNonFullySelectedFaces[jj]]){
+				arrIndices[lstReferencesToNonFullySelectedFaces[jj]]=dctIndexMappings[intIndex];
 			}
 		}
 	}
 
 	for(ii=0;ii<lstUniqueEdgesFlattened.length;ii+=2){
-		this.lstIndices.push(dctIndexMappings[lstUniqueEdgesFlattened[ii+0]]);
-		this.lstIndices.push(dctIndexMappings[lstUniqueEdgesFlattened[ii+1]]);
-		this.lstIndices.push(lstUniqueEdgesFlattened[ii+1]);
+		arrIndices=Uint16ArrayPush(arrIndices,dctIndexMappings[lstUniqueEdgesFlattened[ii+0]]);
+		arrIndices=Uint16ArrayPush(arrIndices,dctIndexMappings[lstUniqueEdgesFlattened[ii+1]]);
+		arrIndices=Uint16ArrayPush(arrIndices,lstUniqueEdgesFlattened[ii+1]);
 
-		this.lstIndices.push(lstUniqueEdgesFlattened[ii+0]);
-		this.lstIndices.push(lstUniqueEdgesFlattened[ii+1]);
-		this.lstIndices.push(dctIndexMappings[lstUniqueEdgesFlattened[ii+0]]);
+		arrIndices=Uint16ArrayPush(arrIndices,lstUniqueEdgesFlattened[ii+0]);
+		arrIndices=Uint16ArrayPush(arrIndices,lstUniqueEdgesFlattened[ii+1]);
+		arrIndices=Uint16ArrayPush(arrIndices,dctIndexMappings[lstUniqueEdgesFlattened[ii+0]]);
 
 	}
-	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(this.lstVertices,this.lstIndices,this.lstNormals,this.lstSelection);
+	this.varietyManifold3DconstructedObject.refreshFromListsWithSelection(arrVertices,arrIndices,arrNormals,arrSelection);
 };
 RoboticPen3D.prototype.glueTwoObjectsThroughSelectedFaces=function(varietyManifold3Dobject1,varietyManifold3Dobject2){
 	//if union of any two objects with intersection detection is too problematic for now, maybe glue function will solve most of the challenges
@@ -29268,6 +29544,23 @@ RoboticPen3D.prototype.initExtensionInterface=function(){
 	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
 		netspace.extensionManager.appendChild("RoboticPen3DExtension",RoboticPen3D_btnEvalTxtFunFunFun);	
 	var RoboticPen3D_btnCreateFloorGrid=document.createElement("button");
+	var RoboticPen3D_btnClearScene=document.createElement("button");
+	RoboticPen3D_btnClearScene.innerText="Clear scene";
+	RoboticPen3D_btnClearScene.id="RoboticPen3D_btnClearScene";
+	RoboticPen3D_btnClearScene.onclick=function(){
+	var lstVm3Dlength=netspace.pointLightIslands[0].varietyManifolds3D.length;
+	var vm3Dobject=null;
+	for(var ii=0;ii<lstVm3Dlength;ii++){
+		vm3Dobject=netspace.pointLightIslands[0].varietyManifolds3D.pop();
+	}
+	netspace.pointLightIslands[0].varietyManifolds3D.push(window.roboticPen3D.varietyManifold3Davatar);
+	vm3Dobject=null;
+	window.roboticPen3D.resetRoboticPen3D();
+	alert("Scene cleared.");
+	}
+	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
+		netspace.extensionManager.appendChild("RoboticPen3DExtension",RoboticPen3D_btnClearScene);	
+	var RoboticPen3D_btnCreateFloorGrid=document.createElement("button");
 	RoboticPen3D_btnCreateFloorGrid.innerText="Create floor grid";
 	RoboticPen3D_btnCreateFloorGrid.id="RoboticPen3D_btnCreateFloorGrid";
 	RoboticPen3D_btnCreateFloorGrid.onclick=function(){
@@ -29287,6 +29580,7 @@ RoboticPen3D.prototype.initExtensionInterface=function(){
 	}
 	if(undefined!=netspace.extensionManager&&null!=netspace.extensionManager)
 		netspace.extensionManager.appendChild("RoboticPen3DExtension",RoboticPen3D_btnCreateFloorGrid);	
+	alert('RoboticPen3D loaded, example in txtFunFunFun. Set "Fullwindow screen size" for the best experience.');
 };
 netspace.roboticPen3D=new RoboticPen3D();
 window.roboticPen3D=netspace.roboticPen3D;
